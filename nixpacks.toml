@@ -1,0 +1,6 @@
+# Railway(Nixpacks) 빌드 설정
+# better-sqlite3는 Node 22/24용 prebuilt 바이너리만 제공한다(Node 20용 없음).
+# engines를 22.x로 고정해 prebuilt를 받게 하고, 혹시 내려받지 못할 때를 대비해
+# node-gyp 소스 빌드에 필요한 도구를 함께 설치한다.
+[phases.setup]
+aptPkgs = ["python3", "build-essential"]

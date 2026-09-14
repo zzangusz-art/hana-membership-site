@@ -1,0 +1,31 @@
+{
+  "name": "hana-membership-site",
+  "version": "1.0.0",
+  "description": "(주)하나회원권거래소 홈페이지 + 관리자 — 골프·콘도·피트니스 회원권 시세, 콘텐츠 자동발행(인블로그 연동), 주간 리포트 자동 생성. SEO·AEO·GEO 최적화.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "seed": "node scripts/seed.js",
+    "smoke": "node scripts/smoke.js",
+    "template": "node scripts/make-price-template.js"
+  },
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.69.0",
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^12.9.0",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.6",
+    "docx": "^9.0.2",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.3.1",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "xlsx": "^0.18.5"
+  }
+}

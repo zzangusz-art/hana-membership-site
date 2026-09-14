@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "hana-site",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server.js"],
+      "port": 3000,
+      "cwd": "C:\\Users\\user\\Desktop\\하나회원권 홈페이지\\hana-site"
+    }
+  ]
+}
