@@ -51,6 +51,12 @@ const STAMP = (() => { try { return String(Math.max(...['css/site.css', 'js/site
 layout.setStamp(STAMP);
 app.use(express.static(PUBLIC_DIR, { maxAge: '7d', index: false, setHeaders: (res, p) => { if (/\.html$/.test(p)) res.setHeader('Cache-Control', 'no-cache'); } }));
 
+// 임시 도메인(Railway *.up.railway.app 등)으로 접속되면 검색엔진 색인 금지 — 정식 도메인 연결 전 중복 색인 방지
+app.use((req, res, next) => {
+  try { const canon = new URL(settings.siteUrl()).hostname; const host = String(req.hostname || '').toLowerCase();
+    if (host && host !== canon && host !== 'localhost' && host !== '127.0.0.1') res.setHeader('X-Robots-Tag', 'noindex, nofollow'); } catch (_) { /* no-op */ }
+  next();
+});
 app.use(analytics.middleware);
 app.get('/healthz', (req, res) => res.json({ ok: true, app: '하나회원권거래소', dataDir: DATA_DIR, prices: db.prepare('SELECT COUNT(*) c FROM prices').get().c, posts: db.prepare("SELECT COUNT(*) c FROM posts WHERE status='published'").get().c, time: new Date().toISOString() }));
 

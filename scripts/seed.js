@@ -53,8 +53,16 @@ function seedNotice() {
   return 1;
 }
 
+function seedVideos() {
+  if (db.prepare('SELECT COUNT(*) c FROM videos').get().c) return 0;
+  if (!fs.existsSync(path.join(SEED, 'videos.json'))) return 0;
+  const ins = db.prepare('INSERT OR IGNORE INTO videos (youtube_id,title,description,published,sort,created_at) VALUES (?,?,?,?,?,?)'); let n = 0;
+  J('videos.json').forEach((v, i) => { ins.run(v.youtube_id, v.title, v.description || '', v.published || '', i, now()); n++; });
+  return n;
+}
+
 function seedIfEmpty(force = false) {
-  const r = { prices: seedPrices(), clubs: seedClubs(), topics: seedTopics(force), plan: seedPlan(force), articles: seedArticles(), notice: seedNotice() };
+  const r = { prices: seedPrices(), clubs: seedClubs(), topics: seedTopics(force), plan: seedPlan(force), articles: seedArticles(), notice: seedNotice(), videos: seedVideos() };
   if (Object.values(r).some(Boolean)) console.log('[seed]', JSON.stringify(r));
   return r;
 }

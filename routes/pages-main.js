@@ -137,7 +137,7 @@ ${featured.length ? `<section class="section listings-hl"><div class="wrap"><div
 
 <section class="section videos">
   <div class="wrap">
-    <div class="sec-head"><div><p class="eyebrow">유튜브</p><h2>하나회원권거래소 영상으로 보는 회원권 이야기</h2></div><a class="link" href="${attr(s.youtube)}" target="_blank" rel="noopener">채널 구독 →</a></div>
+    <div class="sec-head"><div><p class="eyebrow">유튜브</p><h2>하나회원권TV — 구독자 1.4만 채널에서 보는 회원권 이야기</h2></div><a class="link" href="${attr(s.youtube)}" target="_blank" rel="noopener">채널 구독 →</a></div>
     ${videos.length ? `<div class="video-grid">${videos.map(v => `<div class="video reveal"><div class="yt" data-id="${attr(v.youtube_id)}"><img src="https://i.ytimg.com/vi/${attr(v.youtube_id)}/hqdefault.jpg" alt="${attr(v.title)}" loading="lazy" width="480" height="360"><button class="yt-play" aria-label="${attr(v.title)} 재생">▶</button></div><h3>${esc(v.title)}</h3></div>`).join('')}</div>` : `<div class="video-empty reveal"><p>공식 채널 <a href="${attr(s.youtube)}" target="_blank" rel="noopener">${esc(s.youtube)}</a>에서 회원권 시세 해설과 골프장 소개 영상을 보실 수 있습니다.</p></div>`}
   </div>
 </section>
