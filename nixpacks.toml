@@ -3,4 +3,5 @@
 # engines를 22.x로 고정해 prebuilt를 받게 하고, 혹시 내려받지 못할 때를 대비해
 # node-gyp 소스 빌드에 필요한 도구를 함께 설치한다.
 [phases.setup]
-aptPkgs = ["python3", "build-essential"]
+# chromium: 리포트용 전후 스크린샷 캡처(puppeteer-core). 없으면 이미지 없이 리포트 생성.
+aptPkgs = ["python3", "build-essential", "chromium", "fonts-noto-cjk"]

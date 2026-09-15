@@ -177,13 +177,19 @@ ${p.weeks.map(w => { const done = w.tasks.filter(t => t.done || t.auto === true)
 
   // ── 리포트 ──
   views.reports = async () => {
-    const rows = await api('/reports'); const KL = { weekly: '주간', monthly: '월간', baseline: '베이스라인' };
+    const [rows, sh] = await Promise.all([api('/reports'), api('/screenshots')]); const KL = { weekly: '주간', monthly: '월간', baseline: '베이스라인' };
     $('#view').innerHTML = `<h1>리포트</h1><p class="small muted">매주 월요일 08:30(KST) 지난주 주간 리포트가 자동 생성되고, 4주차가 끝나면 월간 종합 리포트가 추가됩니다. 착수 시점 기준선은 「베이스라인 생성」으로 지금 만들어 두세요. HTML(인쇄·PDF 저장)과 DOCX 두 형식으로 내려받을 수 있습니다.</p>
 <div class="toolbar"><button class="btn primary" id="genBase">베이스라인 생성</button><select id="wk" style="width:auto"><option value="1">1주차</option><option value="2">2주차</option><option value="3">3주차</option><option value="4">4주차</option></select><button class="btn" id="genWeek">주간 리포트 생성(재생성)</button><button class="btn" id="genMonth">월간 종합 리포트 생성</button><a class="btn" id="prev" href="/api/admin/reports/preview/1" target="_blank">미리보기(현재 데이터)</a></div>
+<div class="card"><div class="toolbar"><h3 style="margin:0">전후 스크린샷 <span class="pill ${sh.available ? 'ok' : 'warn'}">${sh.available ? '자동 캡처 가능' : '서버에 크롬 없음 — 수동 업로드'}</span></h3><span class="sp"></span><button class="btn sm" id="shotNow" ${sh.available ? '' : 'disabled'}>지금 캡처</button><label class="btn sm" style="cursor:pointer">이미지 업로드<input type="file" id="shotUp" accept="image/png,image/jpeg" multiple hidden></label></div>
+<p class="small muted">기준(이전) 세트: ${sh.baseline ? '구 hanamarket.co.kr 캡처 보유' : '없음'} · 최신(이후) 세트: ${sh.latest || '없음'} · 매주 월요일 리포트 생성 직전 자동 캡처되어 리포트 0번 섹션에 좌우 비교로 들어갑니다. 파일명 규칙: after_home_thumb.jpg / after_market_thumb.jpg / after_golf_thumb.jpg / after_about_thumb.jpg</p>
+<div class="grid g4">${sh.pairs.map(p => `<div><div class="small"><b>${p.label}</b></div><div class="grid g2" style="gap:4px"><div><div class="small muted">이전</div>${p.before ? `<img src="/api/admin/screenshots/file?path=${encodeURIComponent(p.before)}" style="width:100%;border:1px solid #e3e8f0;border-radius:6px" loading="lazy">` : '<div class="muted small">-</div>'}</div><div><div class="small muted">이후</div>${p.after ? `<img src="/api/admin/screenshots/file?path=${encodeURIComponent(p.after)}" style="width:100%;border:1px solid #e3e8f0;border-radius:6px" loading="lazy">` : '<div class="muted small">-</div>'}</div></div></div>`).join('')}</div>
+<p class="small muted" style="margin-top:8px">캡처 이력: ${sh.dirs.map(d => `${d.date}(${d.files.length})`).join(' · ') || '없음'}</p></div>
 <table><thead><tr><th>종류</th><th>제목</th><th>기간</th><th>생성</th><th></th></tr></thead><tbody>${rows.map(r => `<tr><td>${KL[r.kind]}</td><td><b>${esc(r.title)}</b></td><td class="small">${r.period_start} ~ ${r.period_end}</td><td class="small">${dt(r.created_at)}</td><td><a class="btn sm" href="/api/admin/reports/${r.id}/html" target="_blank">HTML 열기</a> ${r.docx_path ? `<a class="btn sm" href="/api/admin/reports/${r.id}/docx">DOCX</a>` : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">아직 없음</td></tr>'}</tbody></table>`;
     $('#wk').onchange = () => $('#prev').href = '/api/admin/reports/preview/' + $('#wk').value;
     const gen = (kind) => (e) => busy(e.target, async () => { const r = await api('/reports/generate', { method: 'POST', body: { kind, week: Number($('#wk').value) } }); toast('생성: ' + r.report.title); views.reports(); });
     $('#genBase').onclick = gen('baseline'); $('#genWeek').onclick = gen('weekly'); $('#genMonth').onclick = gen('monthly');
+    const sb = $('#shotNow'); if (sb) sb.onclick = (e) => busy(e.target, async () => { const r = await api('/screenshots/capture', { method: 'POST' }); toast(`캡처 ${r.count}장${r.errors.length ? ' · 오류 ' + r.errors.length : ''}`); views.reports(); });
+    $('#shotUp').onchange = async (e) => { const fd = new FormData(); for (const f of e.target.files) fd.append('files', f); try { const r = await api('/screenshots/upload', { method: 'POST', body: fd }); toast(`업로드 ${r.saved}장`); views.reports(); } catch (err) { toast(err.message, true); } };
   };
 
   // ── 감사·방문 ──

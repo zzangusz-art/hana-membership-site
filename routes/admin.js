@@ -17,6 +17,7 @@ const scheduler = require('../lib/scheduler');
 const report = require('../lib/report');
 const audit = require('../lib/audit');
 const analytics = require('../lib/analytics');
+const shot = require('../lib/screenshot');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -164,6 +165,12 @@ router.get('/reports/preview/:week', (req, res) => res.type('html').send(report.
 router.post('/audit/run', async (req, res) => { try { res.json(await auditRunner()); } catch (e) { res.status(500).json({ error: e.message }); } });
 router.get('/audit', (req, res) => res.json({ latest: audit.latest(), history: audit.history(30) }));
 router.get('/traffic', (req, res) => { const to = kstDate(); const from = req.query.from || report.kickoff(); res.json({ from, to, ...analytics.summary(from, to) }); });
+
+// ── 스크린샷(전후 비교) ──
+router.get('/screenshots', (req, res) => { const p = shot.pairs(); res.json({ available: shot.available(), chrome: shot.findChrome(), dirs: shot.listDirs(), baseline: !!p.beforeDir, latest: p.afterDir ? path.basename(p.afterDir) : null, pairs: p.pairs, admin: p.admin }); });
+router.post('/screenshots/capture', async (req, res) => { try { if (!shot.available()) return res.status(400).json({ error: '서버에 크롬/크로미움이 없습니다. 로컬에서 node scripts/capture.js after <배포URL> 로 캡처 후 업로드하세요.' }); const base = `http://127.0.0.1:${process.env.PORT || 3000}`; const r = await shot.weeklyCapture({ base, adminCookie: auth.signInternal() }); res.json({ ok: true, count: r.files.length, errors: r.errors }); } catch (e) { res.status(500).json({ error: e.message }); } });
+router.get('/screenshots/file', (req, res) => { const f = path.resolve(String(req.query.path || '')); const ok = [shot.SHOT_DIR, shot.baselineDir()].filter(Boolean).some(d => f.startsWith(path.resolve(d))); if (!ok || !fs.existsSync(f)) return res.status(404).end(); res.sendFile(f); });
+router.post('/screenshots/upload', upload.array('files', 40), (req, res) => { const dir = path.join(shot.SHOT_DIR, kstDate()); fs.mkdirSync(dir, { recursive: true }); let n = 0; for (const f of req.files || []) { const name = Buffer.from(f.originalname, 'latin1').toString('utf8').replace(/[^\w.가-힣-]/g, '_'); if (!/\.(png|jpe?g)$/i.test(name)) continue; fs.writeFileSync(path.join(dir, name), f.buffer); n++; } res.json({ ok: true, saved: n, dir }); });
 
 // ── 설정 ──
 const SETTING_KEYS = ['site_url', 'site_name', 'legal_name', 'slogan', 'phone', 'fax', 'email', 'address', 'ceo', 'privacy_officer', 'youtube', 'naver_blog', 'instagram', 'kakao_channel', 'inblog_url', 'naver_verification', 'google_verification', 'ga_id', 'gen_times', 'auto_generate', 'auto_publish', 'inblog_push', 'llm_provider', 'kickoff_date', 'inblog_api_key', ...Object.values(providers.KEY_SETTING), ...Object.values(providers.BASEURL_SETTING), 'model_anthropic', 'model_openai', 'model_gemini', 'model_openai-compatible'];

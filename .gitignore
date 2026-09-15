@@ -5,3 +5,7 @@ data/uploads/
 data/reports/
 .env
 *.log
+data/screenshots/
+data/seed/screenshots/**/*_full.png
+data/seed/screenshots/**/*_desktop.png
+data/seed/screenshots/**/*_mobile.png
