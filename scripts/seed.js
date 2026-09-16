@@ -21,8 +21,8 @@ function seedPrices() {
 function seedClubs() {
   if (db.prepare('SELECT COUNT(*) c FROM clubs').get().c) return 0;
   const ts = now(); let n = 0;
-  const ins = db.prepare('INSERT OR IGNORE INTO clubs (slug,name,region,address,holes,opened,type,price_name,status,verified,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,0,?,?)');
-  for (const c of J('clubs.json').clubs) { ins.run(koSlug(c.name), c.name, c.region || '', c.address || '', c.holes || null, c.opened || '', c.type || '회원제', c.price_name || '', 'published', ts, ts); n++; }
+  const ins = db.prepare('INSERT OR IGNORE INTO clubs (slug,name,region,address,holes,opened,type,price_name,status,verified,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
+  for (const c of J('clubs.json').clubs) { ins.run(koSlug(c.name), c.name, c.region || '', c.address || '', c.holes || null, c.opened || '', c.type || '회원제', c.price_name || '', 'published', c.verified ? 1 : 0, ts, ts); n++; }
   return n;
 }
 function seedTopics(force) {
@@ -38,11 +38,20 @@ function seedPlan(force) {
   db.prepare("INSERT INTO settings (key,value) VALUES ('kickoff_date',?) ON CONFLICT(key) DO NOTHING").run(plan.kickoff);
   return n;
 }
+// 가이드 글 시드 — articles.json + articles-*.json 을 slug 기준으로 없는 것만 추가(멱등). 발행일은 파일의 date(YYYY-MM-DD) 또는 지금.
 function seedArticles() {
-  if (db.prepare("SELECT COUNT(*) c FROM posts WHERE kind='blog'").get().c) return 0;
-  const ts = now(); let n = 0;
+  const files = fs.readdirSync(SEED).filter(f => /^articles.*\.json$/.test(f)).sort();
   const ins = db.prepare("INSERT INTO posts (kind,type,slug,title,excerpt,meta_description,body_html,tags,status,source,source_urls,published_at,created_at,updated_at) VALUES ('blog',?,?,?,?,?,?,?,'published','manual',?,?,?,?)");
-  J('articles.json').forEach((a, i) => { const t = ts - (J('articles.json').length - i) * 3600; ins.run(a.type, a.slug, a.title, a.excerpt, a.meta_description, a.body_html, (a.tags || []).join(','), JSON.stringify({ sources: [], faq: a.faq || [] }), t, t, t); n++; });
+  let n = 0;
+  for (const f of files) {
+    const m = f.match(/articles-(\d{4}-\d{2}-\d{2})/); const base = m ? Math.floor(new Date(m[1] + 'T09:00:00+09:00') / 1000) : now() - 86400;
+    const arr = J(f);
+    arr.forEach((a, i) => {
+      if (db.prepare('SELECT 1 FROM posts WHERE slug=?').get(a.slug)) return;
+      const t = Math.min(now(), base + i * 3600);
+      ins.run(a.type, a.slug, a.title, a.excerpt, a.meta_description, a.body_html, (a.tags || []).join(','), JSON.stringify({ sources: [], faq: a.faq || [] }), t, t, t); n++;
+    });
+  }
   return n;
 }
 function seedNotice() {
