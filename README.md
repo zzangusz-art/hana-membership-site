@@ -19,6 +19,8 @@ npm run smoke          # 런타임 스모크 테스트(임시 포트·임시 DB)
 
 ## 배포 (Railway)
 
+**일상 배포는 `deploy.bat` 더블클릭** — 스모크 테스트 → git 커밋·푸시 → `railway up` → healthz 커밋 확인까지 자동. 최초 1회는 `deploy-railway.bat`(프로젝트 생성·볼륨·환경변수).
+
 1. GitHub 저장소 연결 → Railway 새 프로젝트(Nixpacks 자동 인식, Node 22).
 2. **Volume 추가 → 마운트 경로 `/data`** (없으면 재배포마다 DB 초기화).
 3. 환경변수: `DATA_DIR=/data`, `JWT_SECRET`, `ADMIN_ID`, `ADMIN_PW`, `SITE_URL=https://www.hanamarket.co.kr`(실제 도메인), 선택 `ANTHROPIC_API_KEY`(또는 OPENAI/GEMINI), `INBLOG_API_KEY`, `NAVER_SITE_VERIFICATION`, `GOOGLE_SITE_VERIFICATION`, `GA_MEASUREMENT_ID`.

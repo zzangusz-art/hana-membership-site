@@ -72,7 +72,7 @@ app.get('/og/:kind/:slug.png', async (req, res) => {
   const file = await og.render(`${kind}-${slug}`, data);
   res.set('Cache-Control', 'public, max-age=86400'); res.type('png').sendFile(file);
 });
-app.get('/healthz', (req, res) => res.json({ ok: true, app: '하나회원권거래소', version: require('./package.json').version, commit: (process.env.RAILWAY_GIT_COMMIT_SHA || '').slice(0, 7) || null, siteUrl: settings.siteUrl(), chrome: require('./lib/screenshot').available(), volume: !!process.env.DATA_DIR, dataDir: DATA_DIR, prices: db.prepare('SELECT COUNT(*) c FROM prices').get().c, posts: db.prepare("SELECT COUNT(*) c FROM posts WHERE status='published'").get().c, time: new Date().toISOString() }));
+app.get('/healthz', (req, res) => res.json({ ok: true, app: '하나회원권거래소', version: require('./package.json').version, commit: (() => { try { return fs.readFileSync(path.join(__dirname, '.deploy-stamp'), 'utf8').trim().split(' ')[0]; } catch (_) { return (process.env.RAILWAY_GIT_COMMIT_SHA || '').slice(0, 7) || null; } })(), deployedAt: (() => { try { return fs.readFileSync(path.join(__dirname, '.deploy-stamp'), 'utf8').trim().split(' ')[1] || null; } catch (_) { return null; } })(), siteUrl: settings.siteUrl(), chrome: require('./lib/screenshot').available(), volume: !!process.env.DATA_DIR, dataDir: DATA_DIR, prices: db.prepare('SELECT COUNT(*) c FROM prices').get().c, posts: db.prepare("SELECT COUNT(*) c FROM posts WHERE status='published'").get().c, time: new Date().toISOString() }));
 
 // SEO 파일
 app.get('/sitemap.xml', (req, res) => res.type('application/xml').send(seo.sitemap()));
