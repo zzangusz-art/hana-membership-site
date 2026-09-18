@@ -47,9 +47,10 @@
       "name": "기흥컨트리클럽",
       "price_name": "기흥",
       "region": "수도권",
-      "address": "경기도 용인시 기흥구",
-      "holes": 27,
-      "type": "회원제"
+      "address": "경기도 화성시 동탄",
+      "holes": 36,
+      "type": "회원제",
+      "verified": 1
     },
     {
       "name": "남촌컨트리클럽",
@@ -65,9 +66,11 @@
       "name": "뉴서울컨트리클럽",
       "price_name": "뉴서울",
       "region": "수도권",
-      "address": "경기도 광주시",
+      "address": "경기도 광주시 삼동",
       "holes": 36,
-      "type": "회원제"
+      "type": "회원제",
+      "verified": 1,
+      "opened": "1987"
     },
     {
       "name": "뉴코리아컨트리클럽",
@@ -121,9 +124,10 @@
       "name": "레이크우드컨트리클럽",
       "price_name": "레이크우드 분담금",
       "region": "수도권",
-      "address": "경기도 양주시",
+      "address": "경기도 양주시 만송동",
       "holes": 36,
-      "type": "회원제"
+      "type": "회원제",
+      "verified": 1
     },
     {
       "name": "리베라컨트리클럽",
@@ -351,9 +355,11 @@
       "name": "은화삼컨트리클럽",
       "price_name": "은화삼",
       "region": "수도권",
-      "address": "경기도 용인시",
+      "address": "경기도 용인시 처인구",
       "holes": 18,
-      "type": "회원제"
+      "type": "회원제",
+      "verified": 1,
+      "opened": "1993"
     },
     {
       "name": "인천국제컨트리클럽",
@@ -450,9 +456,10 @@
       "name": "태광컨트리클럽",
       "price_name": "태광",
       "region": "수도권",
-      "address": "경기도 용인시",
+      "address": "경기도 용인시 기흥구",
       "holes": 27,
-      "type": "회원제"
+      "type": "회원제",
+      "verified": 1
     },
     {
       "name": "통도파인이스트",
@@ -490,9 +497,11 @@
       "name": "한성컨트리클럽",
       "price_name": "한성",
       "region": "수도권",
-      "address": "경기도 용인시",
+      "address": "경기도 용인시 기흥구",
       "holes": 27,
-      "type": "회원제"
+      "type": "회원제",
+      "verified": 1,
+      "opened": "1984"
     },
     {
       "name": "한양컨트리클럽",

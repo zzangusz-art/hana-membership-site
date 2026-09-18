@@ -54,13 +54,13 @@ router.get('/', (req, res) => {
 
   const body = `
 <section class="hero">
-  <div class="hero-bg" aria-hidden="true"><span class="orb o1"></span><span class="orb o2"></span><span class="grid"></span></div>
+  <div class="hero-bg" aria-hidden="true"><span class="orb o1" data-depth="0.05"></span><span class="orb o2" data-depth="0.09"></span><span class="grid"></span><span class="hero-spot"></span></div>
   <div class="wrap hero-inner">
     <p class="eyebrow">2004년부터 · 골프·콘도·피트니스 회원권 전문 거래소</p>
     <h1>골프회원권 시세, <span class="hl">매주 갱신</span>되는 실거래 기준으로<br>확인하고 안전하게 거래하세요</h1>
     <p class="lead">하나회원권거래소는 2004년 설립된 회원권 매매 중개·컨설팅 전문기업입니다. 골프회원권 ${g.total}종목의 시세를 매주 실거래와 호가로 갱신하고, 상담부터 계약·명의개서·등록 완료 후 부킹 문의까지 한 담당자가 끝까지 지원합니다.</p>
-    <form class="hero-search" action="/market/golf" method="get" role="search"><label class="sr" for="q">종목 검색</label><input id="q" name="q" type="search" placeholder="골프장·회원권명 검색 (예: 아시아나, 남촌, 신원)" autocomplete="off" list="club-list"><datalist id="club-list">${all.slice(0, 120).map(r => `<option value="${attr(r.name)}">`).join('')}</datalist><button class="btn btn-primary" type="submit">시세 확인</button></form>
-    <div class="hero-actions"><a class="btn btn-green" href="/apply">매매 신청</a><a class="btn btn-ghost" href="tel:${attr(s.phone)}">📞 ${esc(s.phone)} 24시간 상담</a></div>
+    <form class="hero-search tilt" data-tilt="6" action="/market/golf" method="get" role="search"><label class="sr" for="q">종목 검색</label><input id="q" name="q" type="search" placeholder="골프장·회원권명 검색 (예: 아시아나, 남촌, 신원)" autocomplete="off" list="club-list"><datalist id="club-list">${all.slice(0, 120).map(r => `<option value="${attr(r.name)}">`).join('')}</datalist><button class="btn btn-primary" type="submit">시세 확인</button></form>
+    <div class="hero-actions"><a class="btn btn-green magnet" href="/apply">매매 신청</a><a class="btn btn-ghost magnet" href="tel:${attr(s.phone)}">📞 ${esc(s.phone)} 24시간 상담</a></div>
     <ul class="counters">
       <li><b data-count="${years}">0</b><span>년 업력</span></li>
       <li><b data-count="${g.total}">0</b><span>골프 시세 종목</span></li>
@@ -76,9 +76,9 @@ router.get('/', (req, res) => {
     <div class="sec-head"><div><p class="eyebrow">시세 하이라이트</p><h2>이번 주 골프회원권 시세는 어떻게 움직였나요?</h2></div><a class="link" href="/market/golf">전체 시세표 →</a></div>
     <p class="bluf">${updated} 기준 집계 ${g.total}종목 중 <b class="up">상승 ${g.up}</b> · <b class="down">하락 ${g.down}</b> · 보합 ${g.flat}. 평균 시세 ${fmtMan(g.avg)}${g.topUp[0] ? `, 상승률 1위 ${esc(g.topUp[0].name)} (+${g.topUp[0].pct}%)` : ''}${g.topDown[0] ? `, 하락률 1위 ${esc(g.topDown[0].name)} (${g.topDown[0].pct}%)` : ''}.</p>
     <div class="hl-grid">
-      <div class="hl-card reveal"><h3>상승률 TOP 5</h3><ol>${g.topUp.map(r => `<li><a href="/market/golf?q=${encodeURIComponent(r.name)}">${esc(r.name)}</a><span>${fmtNum(r.today)}</span>${chg(r)}</li>`).join('') || '<li>변동 없음</li>'}</ol></div>
-      <div class="hl-card reveal"><h3>하락률 TOP 5</h3><ol>${g.topDown.map(r => `<li><a href="/market/golf?q=${encodeURIComponent(r.name)}">${esc(r.name)}</a><span>${fmtNum(r.today)}</span>${chg(r)}</li>`).join('') || '<li>변동 없음</li>'}</ol></div>
-      <div class="hl-card reveal"><h3>최고가 종목</h3><ol>${g.max.map(r => `<li><a href="/market/golf?q=${encodeURIComponent(r.name)}">${esc(r.name)}</a><span>${fmtMan(r.today)}</span>${chg(r)}</li>`).join('')}</ol></div>
+      <div class="hl-card reveal tilt" data-tilt="4"><h3>상승률 TOP 5</h3><ol>${g.topUp.map(r => `<li><a href="/market/golf?q=${encodeURIComponent(r.name)}">${esc(r.name)}</a><span>${fmtNum(r.today)}</span>${chg(r)}</li>`).join('') || '<li>변동 없음</li>'}</ol></div>
+      <div class="hl-card reveal tilt" data-tilt="4"><h3>하락률 TOP 5</h3><ol>${g.topDown.map(r => `<li><a href="/market/golf?q=${encodeURIComponent(r.name)}">${esc(r.name)}</a><span>${fmtNum(r.today)}</span>${chg(r)}</li>`).join('') || '<li>변동 없음</li>'}</ol></div>
+      <div class="hl-card reveal tilt" data-tilt="4"><h3>최고가 종목</h3><ol>${g.max.map(r => `<li><a href="/market/golf?q=${encodeURIComponent(r.name)}">${esc(r.name)}</a><span>${fmtMan(r.today)}</span>${chg(r)}</li>`).join('')}</ol></div>
     </div>
     <div class="quick-table reveal">
       <div class="qt-controls"><input type="search" id="qtFilter" placeholder="종목명으로 바로 찾기" aria-label="시세 필터"><div class="chips" id="qtRegions"><button class="chip active" data-region="">전체</button>${Object.keys(g.regions).map(r => `<button class="chip" data-region="${attr(r)}">${esc(r)}</button>`).join('')}</div></div>

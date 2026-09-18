@@ -58,7 +58,7 @@ app.use((req, res, next) => {
   next();
 });
 app.use(analytics.middleware);
-app.get('/healthz', (req, res) => res.json({ ok: true, app: '하나회원권거래소', dataDir: DATA_DIR, prices: db.prepare('SELECT COUNT(*) c FROM prices').get().c, posts: db.prepare("SELECT COUNT(*) c FROM posts WHERE status='published'").get().c, time: new Date().toISOString() }));
+app.get('/healthz', (req, res) => res.json({ ok: true, app: '하나회원권거래소', version: require('./package.json').version, commit: (process.env.RAILWAY_GIT_COMMIT_SHA || '').slice(0, 7) || null, siteUrl: settings.siteUrl(), chrome: require('./lib/screenshot').available(), volume: !!process.env.DATA_DIR, dataDir: DATA_DIR, prices: db.prepare('SELECT COUNT(*) c FROM prices').get().c, posts: db.prepare("SELECT COUNT(*) c FROM posts WHERE status='published'").get().c, time: new Date().toISOString() }));
 
 // SEO 파일
 app.get('/sitemap.xml', (req, res) => res.type('application/xml').send(seo.sitemap()));
