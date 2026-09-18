@@ -18,6 +18,7 @@ const report = require('../lib/report');
 const audit = require('../lib/audit');
 const analytics = require('../lib/analytics');
 const shot = require('../lib/screenshot');
+const og = require('../lib/og');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -118,6 +119,7 @@ router.post('/posts', (req, res) => {
     const old = db.prepare('SELECT * FROM posts WHERE id=?').get(b.id); if (!old) return res.status(404).json({ error: 'not found' });
     db.prepare('UPDATE posts SET kind=?,type=?,title=?,slug=?,excerpt=?,meta_description=?,body_html=?,tags=?,author=?,status=?,published_at=?,updated_at=? WHERE id=?')
       .run(kind, b.type || old.type, b.title, b.slug || old.slug, b.excerpt || '', b.meta_description || '', sanitizeHtml(b.body_html), b.tags || '', b.author || old.author, status, status === 'published' ? (old.published_at || ts) : old.published_at, ts, b.id);
+    og.invalidate(`post-${b.slug || old.slug}`);
     return res.json({ ok: true, id: b.id });
   }
   let slug = slugify(b.slug || b.title, `${kind}-${ts.toString(36)}`); let n = 1; const base = slug; while (db.prepare('SELECT 1 FROM posts WHERE slug=?').get(slug)) slug = `${base}-${++n}`;

@@ -57,7 +57,21 @@ app.use((req, res, next) => {
     if (host && host !== canon && host !== 'localhost' && host !== '127.0.0.1') res.setHeader('X-Robots-Tag', 'noindex, nofollow'); } catch (_) { /* no-op */ }
   next();
 });
+app.use((req, res, next) => { layout.setRequestOrigin(`${req.protocol}://${req.get('host')}`); next(); });
 app.use(analytics.middleware);
+
+// 동적 OG 썸네일: /og/post/<slug>.png · /og/club/<slug>.png · /og/page/<key>.png (7일 캐시, 크롬 없으면 기본 og.png)
+const og = require('./lib/og');
+const OG_PAGES = { 'market-golf': { kicker: '골프회원권 시세표 · 매주 갱신', title: '전국 골프회원권 시세 한눈에', sub: '금일·전일 시세, 등락률, 지역 필터, 90일 추이' }, 'market-condo': { kicker: '콘도회원권 시세표', title: '콘도·리조트 회원권 시세', sub: '공유제·회원제 조건과 함께 확인하세요' }, 'market-corporate': { kicker: '법인회원권 시세표', title: '법인 골프회원권 시세', sub: '등록 인원·무기명 조건 상담' }, 'market-fitness': { kicker: '피트니스회원권 시세표', title: '호텔 피트니스 회원권 시세', sub: '개인·부부 회원권' }, golf: { kicker: '골프장별 회원권 안내', title: '골프장마다 시세·입회 조건·적합한 매수자', sub: '수도권·영남·강원·충청·제주' }, faq: { kicker: 'FAQ', title: '회원권 거래, 이것이 궁금합니다', sub: '시세·수수료·명의개서·법인·세금' }, blog: { kicker: '시세 리포트 · 가이드', title: '매일 발행하는 회원권 시세 리포트와 거래 가이드', sub: '' }, apply: { kicker: '매매 신청', title: '회원권 매수·매도 상담, 당일 연락', sub: '24시간 전화 상담 02-583-0583' }, about: { kicker: '회사소개', title: '2004년부터 이어온 회원권 전문 거래소', sub: '서울 강남 압구정 · 분양 대행 20여 건' } };
+app.get('/og/:kind/:slug.png', async (req, res) => {
+  const { kind, slug } = req.params; let data = null;
+  if (kind === 'post') { const p = db.prepare("SELECT title, excerpt, type FROM posts WHERE slug=? AND status='published'").get(slug); if (p) data = { kicker: { club: '골프장 소개', report: '주간 시세 리포트', guide: '거래 가이드', trend: '시장 동향' }[p.type] || '시세 리포트·가이드', title: p.title, sub: (p.excerpt || '').slice(0, 70), badge: p.type === 'report' ? '시세 리포트' : '' }; }
+  else if (kind === 'club') { const c = db.prepare("SELECT name, region, address, price_name FROM clubs WHERE slug=? AND status='published'").get(slug); if (c) { const pr = c.price_name ? require('./lib/prices').byName('golf', c.price_name) : null; data = { kicker: `골프장 소개 · ${c.region || ''} ${c.address || ''}`.trim(), title: `${c.name} 회원권 시세·입회 조건·매수 가이드`, sub: pr ? `현재 시세 ${require('./lib/util').fmtMan(pr.today)} · 매주 갱신` : '', badge: pr ? require('./lib/util').fmtMan(pr.today) : '' }; } }
+  else if (kind === 'page' && OG_PAGES[slug]) data = OG_PAGES[slug];
+  if (!data) return res.status(404).end();
+  const file = await og.render(`${kind}-${slug}`, data);
+  res.set('Cache-Control', 'public, max-age=86400'); res.type('png').sendFile(file);
+});
 app.get('/healthz', (req, res) => res.json({ ok: true, app: '하나회원권거래소', version: require('./package.json').version, commit: (process.env.RAILWAY_GIT_COMMIT_SHA || '').slice(0, 7) || null, siteUrl: settings.siteUrl(), chrome: require('./lib/screenshot').available(), volume: !!process.env.DATA_DIR, dataDir: DATA_DIR, prices: db.prepare('SELECT COUNT(*) c FROM prices').get().c, posts: db.prepare("SELECT COUNT(*) c FROM posts WHERE status='published'").get().c, time: new Date().toISOString() }));
 
 // SEO 파일

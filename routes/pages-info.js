@@ -88,7 +88,7 @@ router.get('/guide/process', (req, res) => {
 // ── FAQ ──
 router.get('/faq', (req, res) => {
   const body = `<section class="page-head"><div class="wrap"><p class="eyebrow">FAQ</p><h1>회원권 거래 자주 묻는 질문</h1><p class="bluf">시세 결정 요인, 수수료, 명의개서 절차, 법인·무기명 회원권, 세금 등 실제 상담에서 가장 많이 받는 질문에 직답으로 정리했습니다.</p></div></section><section class="section"><div class="wrap narrow">${faqHtml(FAQ, '')}<p class="cta">원하는 답이 없다면 ${esc(settings.cfg('phone'))} 또는 <a href="/apply">매매 신청</a>으로 문의해 주세요.</p></div></section>`;
-  res.send(page({ title: '회원권 거래 FAQ — 시세·수수료·명의개서·법인·세금 질문 답변', description: '골프회원권 시세 결정 요인, 매매 수수료, 명의개서 절차, 법인 회원권 취득세, 무기명 회원권 장단점, 양도소득세, 콘도 회원권 차이 등 자주 묻는 질문 답변.', path: '/faq', body, breadcrumbs: [{ name: '자주 묻는 질문', href: '/faq' }], jsonld: [faqLd(FAQ)] }));
+  res.send(page({ title: '회원권 거래 FAQ — 시세·수수료·명의개서·법인·세금 질문 답변', description: '골프회원권 시세 결정 요인, 매매 수수료, 명의개서 절차, 법인 회원권 취득세, 무기명 회원권 장단점, 양도소득세, 콘도 회원권 차이 등 자주 묻는 질문 답변.', path: '/faq', body, breadcrumbs: [{ name: '자주 묻는 질문', href: '/faq' }], ogImage: '/og/page/faq.png', jsonld: [faqLd(FAQ)] }));
 });
 
 // ── 전용관 ──
@@ -133,7 +133,7 @@ router.get('/apply', (req, res) => {
   </form>
   <aside class="club-side"><div class="side-card"><h3>접수 후 절차</h3><ol class="side-steps"><li>담당 상담사 배정 · 당일 연락</li><li>시세·매물·조건 안내</li><li>계약·정산 → 명의개서 대행</li><li>등록 완료 · 이용 지원</li></ol></div><div class="side-card"><h3>바로 통화</h3><p>24시간 전화 상담</p><a class="btn btn-primary block" href="tel:${attr(s.phone)}">${esc(s.phone)}</a><p class="note">팩스 ${esc(s.fax)} · ${esc(s.email)}</p></div></aside>
 </div></section>`;
-  res.send(page({ title: '회원권 매매 신청 — 매수·매도 상담 접수 (당일 연락)', description: `골프·콘도·피트니스·법인 회원권 매수·매도 신청. 희망 종목과 예산을 남기면 담당 상담사가 당일 연락. 24시간 전화 상담 ${s.phone}.`, path: '/apply', body, breadcrumbs: [{ name: '매매 신청', href: '/apply' }] }));
+  res.send(page({ title: '회원권 매매 신청 — 매수·매도 상담 접수 (당일 연락)', description: `골프·콘도·피트니스·법인 회원권 매수·매도 신청. 희망 종목과 예산을 남기면 담당 상담사가 당일 연락. 24시간 전화 상담 ${s.phone}.`, path: '/apply', body, breadcrumbs: [{ name: '매매 신청', href: '/apply' }], ogImage: '/og/page/apply.png' }));
 });
 
 // ── 회사소개 ──
@@ -146,7 +146,7 @@ router.get('/about', (req, res) => {
 <h2>왜 하나회원권거래소를 선택하나요?</h2><ul><li><strong>정확한 시세</strong>: 골프 ${g.total}종목 시세를 매주 실거래·호가로 갱신하고 홈페이지에 공개합니다.</li><li><strong>분양 실적</strong>: 블루버드·서원밸리·엘리시안 강촌·리베라·레이크힐스·프리스틴밸리·크리스탈밸리·썬밸리·서울드래곤시티 등 골프장·리조트·피트니스 분양 대행.</li><li><strong>파트너십</strong>: 한국골프회원권경영인협회, 네오위즈, 미래신용정보, 동양생명, 삼양, 포스코ICT, 한글과컴퓨터, 서울드래곤시티 등과 협력.</li><li><strong>책임 담당제</strong>: 상담·계약·명의개서·등록 후 이용 문의까지 담당자 1인이 끝까지 지원.</li></ul>
 <h2>회사 정보</h2><table class="spec"><tbody><tr><th>상호</th><td>${esc(s.legal_name)} (${esc(s.en_name)})</td></tr><tr><th>대표이사</th><td>${esc(s.ceo)}</td></tr><tr><th>설립</th><td>2004년</td></tr><tr><th>사업자등록번호</th><td>${esc(s.biz_no)}</td></tr><tr><th>통신판매업신고</th><td>${esc(s.telecom_no)}</td></tr><tr><th>주소</th><td>${esc(s.address)}</td></tr><tr><th>전화 / 팩스</th><td>${esc(s.phone)} / ${esc(s.fax)}</td></tr><tr><th>이메일</th><td>${esc(s.email)}</td></tr><tr><th>업종</th><td>골프·콘도·피트니스 회원권 매매 중개, 해외 골프투어</td></tr><tr><th>공식 채널</th><td><a href="${attr(s.youtube)}" target="_blank" rel="noopener">YouTube @hanamarket</a></td></tr></tbody></table>
 </article></div><aside class="club-side"><div class="side-card"><h3>바로가기</h3><ul class="side-list"><li><a href="/about/history">연혁·실적</a></li><li><a href="/about/location">찾아오시는 길</a></li><li><a href="/about/careers">채용 안내</a></li><li><a href="/market/golf">골프회원권 시세</a></li></ul></div></aside></div></section>`;
-  res.send(page({ title: `회사소개 — ${s.legal_name} (2004년 설립, 골프·콘도·피트니스 회원권 전문)`, description: `${s.legal_name}는 2004년 설립된 회원권 매매 중개·컨설팅 전문기업. 대표이사 ${s.ceo}, 서울 강남 압구정 본사, 국내 최상위권 거래량과 20여 건 분양 대행 실적. 하나금융과 무관한 독립 기업.`, path: '/about', body, breadcrumbs: [{ name: '회사소개', href: '/about' }], jsonld: [{ '@context': 'https://schema.org', '@type': 'AboutPage', name: '회사소개', url: site() + '/about', mainEntity: { '@id': site() + '/#org' } }] }));
+  res.send(page({ title: `회사소개 — ${s.legal_name} (2004년 설립, 골프·콘도·피트니스 회원권 전문)`, description: `${s.legal_name}는 2004년 설립된 회원권 매매 중개·컨설팅 전문기업. 대표이사 ${s.ceo}, 서울 강남 압구정 본사, 국내 최상위권 거래량과 20여 건 분양 대행 실적. 하나금융과 무관한 독립 기업.`, path: '/about', body, breadcrumbs: [{ name: '회사소개', href: '/about' }], ogImage: '/og/page/about.png', jsonld: [{ '@context': 'https://schema.org', '@type': 'AboutPage', name: '회사소개', url: site() + '/about', mainEntity: { '@id': site() + '/#org' } }] }));
 });
 router.get('/about/history', (req, res) => {
   const hist = [['2004', '에이원회원권거래소 설립'], ['2006', '블루버드 컨트리클럽 분양 · 서원밸리 컨트리클럽 특별 분양 · 엘리시안 강촌리조트 분양'], ['2008', '비전회원권거래소 합병 · 칸리조트 분양 · 가산노블리제 컨트리클럽 분양 · 파인리즈 컨트리클럽 분양'], ['2010', '리베라 컨트리클럽 무기명 회원권 분양 · 레이크힐스 컨트리클럽 무기명 회원권 분양 · 반얀트리 휘트니스 분양'], ['2011', '블루버드 컨트리클럽 무기명 회원권 분양'], ['2014', '하나회원권거래소로 사명 변경 · 프리스틴밸리 골프클럽 분양 · 엘리시안 강촌리조트 분양 · 크리스탈밸리 컨트리클럽 분양 · 썬밸리 컨트리클럽 분양 · 비에이비스타 컨트리클럽 분양'], ['2015', '세라지오 컨트리클럽 분양'], ['2016', '레이크힐스 리조트 분양 · 더 스타휴 분양'], ['2019', '서울드래곤시티 휘트니스 분양 · 서울드래곤시티 시티클럽 분양 · 서울드래곤시티 호텔 멤버십 분양'], ['2022', '레저 분야 마케팅 선두주자로 다양한 실무경험 수행']];
