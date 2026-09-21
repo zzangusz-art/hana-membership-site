@@ -23,9 +23,11 @@
       "name": "가야컨트리클럽",
       "price_name": "가야 우대",
       "region": "영남",
-      "address": "경상남도 김해시",
-      "holes": 36,
-      "type": "회원제"
+      "address": "경상남도 김해시 삼안동",
+      "holes": 45,
+      "type": "회원제",
+      "verified": 1,
+      "opened": "1988"
     },
     {
       "name": "경주신라컨트리클럽",
@@ -100,17 +102,20 @@
       "name": "동부산컨트리클럽",
       "price_name": "동부산VIP",
       "region": "영남",
-      "address": "부산광역시 기장군",
+      "address": "경상남도 양산시 매곡동",
       "holes": 27,
-      "type": "회원제"
+      "type": "회원제",
+      "verified": 1,
+      "opened": "1998"
     },
     {
       "name": "드비치골프클럽",
       "price_name": "드비치",
-      "region": "수도권",
-      "address": "경기도 양주시",
-      "holes": 27,
-      "type": "회원제"
+      "region": "영남",
+      "address": "경상남도 거제시 장목면",
+      "holes": 18,
+      "type": "회원제",
+      "verified": 0
     },
     {
       "name": "라데나골프클럽",
@@ -240,9 +245,10 @@
       "name": "스카이밸리컨트리클럽",
       "price_name": "스카이밸리(3500)",
       "region": "수도권",
-      "address": "경기도 여주시",
+      "address": "경기도 여주시 북내면",
       "holes": 36,
-      "type": "회원제"
+      "type": "회원제",
+      "verified": 1
     },
     {
       "name": "신원컨트리클럽",
@@ -267,17 +273,20 @@
       "name": "아시아드컨트리클럽",
       "price_name": "아시아드(20000)",
       "region": "영남",
-      "address": "부산광역시 기장군",
-      "holes": 36,
-      "type": "회원제"
+      "address": "부산광역시 기장군 일광읍",
+      "holes": 27,
+      "type": "회원제",
+      "verified": 1,
+      "opened": "2002"
     },
     {
       "name": "에이원컨트리클럽",
       "price_name": "에이원(15000)",
-      "region": "수도권",
-      "address": "경기도 포천시",
+      "region": "영남",
+      "address": "경상남도 양산시 매곡동",
       "holes": 27,
-      "type": "회원제"
+      "type": "회원제",
+      "verified": 1
     },
     {
       "name": "엘리시안강촌컨트리클럽",
