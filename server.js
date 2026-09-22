@@ -49,6 +49,17 @@ app.use(cookieParser());
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const STAMP = (() => { try { return String(Math.max(...['css/site.css', 'js/site.js', 'admin/admin.js', 'admin/admin.css'].map(f => fs.statSync(path.join(PUBLIC_DIR, f)).mtimeMs))).slice(-8); } catch (_) { return String(Date.now()).slice(-8); } })();
 layout.setStamp(STAMP);
+// 구 도메인(hanamark.co.kr 등) 별칭 호스트로 들어오면 정식 도메인으로 301 (경로 유지 → 아래 REDIRECTS가 구 URL을 다시 매핑).
+// Railway에 구 도메인을 커스텀 도메인으로 붙이고 DNS만 가리키면 호스팅 업체 리다이렉트 없이 동작. REDIRECT_HOSTS=호스트,호스트 로 변경 가능.
+const REDIRECT_HOSTS = new Set(String(process.env.REDIRECT_HOSTS || 'hanamark.co.kr,www.hanamark.co.kr').split(',').map(s => s.trim().toLowerCase()).filter(Boolean));
+app.use((req, res, next) => {
+  try {
+    const host = String(req.hostname || '').toLowerCase();
+    if (REDIRECT_HOSTS.has(host) && host !== new URL(settings.siteUrl()).hostname) return res.redirect(301, settings.siteUrl() + req.originalUrl);
+  } catch (_) { /* no-op */ }
+  next();
+});
+
 app.use(express.static(PUBLIC_DIR, { maxAge: '7d', index: false, setHeaders: (res, p) => { if (/\.html$/.test(p)) res.setHeader('Cache-Control', 'no-cache'); } }));
 
 // 임시 도메인(Railway *.up.railway.app 등)으로 접속되면 검색엔진 색인 금지 — 정식 도메인 연결 전 중복 색인 방지

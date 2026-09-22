@@ -18,8 +18,15 @@ function seedPrices() {
   prices.upsertRows(rows, kstDate());
   return rows.length;
 }
+// 이미 시드된 DB(운영 볼륨)에도 웹 검증 결과를 반영: 시드가 verified=1인 골프장 중 DB에서 아직 미검증인 행만 주소·홀수·개장·지역을 갱신
+function syncVerifiedClubs() {
+  const upd = db.prepare('UPDATE clubs SET region=?, address=?, holes=?, opened=?, verified=1, updated_at=? WHERE name=? AND verified=0');
+  let n = 0; const ts = now();
+  for (const c of J('clubs.json').clubs) { if (c.verified && upd.run(c.region || '', c.address || '', c.holes || null, c.opened || '', ts, c.name).changes) n++; }
+  return n;
+}
 function seedClubs() {
-  if (db.prepare('SELECT COUNT(*) c FROM clubs').get().c) return 0;
+  if (db.prepare('SELECT COUNT(*) c FROM clubs').get().c) return syncVerifiedClubs();
   const ts = now(); let n = 0;
   const ins = db.prepare('INSERT OR IGNORE INTO clubs (slug,name,region,address,holes,opened,type,price_name,status,verified,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
   for (const c of J('clubs.json').clubs) { ins.run(koSlug(c.name), c.name, c.region || '', c.address || '', c.holes || null, c.opened || '', c.type || '회원제', c.price_name || '', 'published', c.verified ? 1 : 0, ts, ts); n++; }

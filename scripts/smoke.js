@@ -40,6 +40,9 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
   r = await get('/rss.xml'); ok(r.text.includes('<rss') && r.text.includes('<item>'), 'rss.xml');
   r = await get('/market/01'); ok(r.status === 200 || r.status === 301, '구 URL 리다이렉트 /market/01');
   r = await fetch(BASE + '/company/03', { redirect: 'manual' }); ok(r.status === 301 && r.headers.get('location') === '/about/location', '구 URL 301 /company/03 → /about/location');
+  // fetch는 Host 헤더를 못 바꾸므로 http.request로 구 도메인 호스트를 흉내낸다
+  r = await new Promise((resolve, reject) => { require('http').request({ host: '127.0.0.1', port: process.env.PORT, path: '/company/03?x=1', headers: { Host: 'www.hanamark.co.kr' } }, (res) => { res.resume(); resolve({ status: res.statusCode, location: res.headers.location || '' }); }).on('error', reject).end(); });
+  ok(r.status === 301 && /^https:\/\/[^/]+\/company\/03\?x=1$/.test(r.location), '구 도메인 별칭 호스트 301 (경로·쿼리 유지)', r.location);
   r = await get('/no-such-page'); ok(r.status === 404 && r.text.includes('noindex'), '404 페이지 noindex');
   // 공개 API
   r = await get('/api/prices/golf'); const j = JSON.parse(r.text); ok(j.count > 50 && j.items[0].name, 'API /api/prices/golf', `${j.count}종목`);
