@@ -105,7 +105,7 @@
   // 홈 빅배너 슬라이더: 자동 6초·호버/포커스 시 정지·화살표·탭 연동·스와이프·←→키·Ken Burns
   const hs = $('#heroSlides');
   if (hs) {
-    const slides = $$('.slide', hs), tabs = $$('.hero-tab'), wrapEl = hs.closest('.hero-slider'); const DUR = 6000; let cur = 0, timer = null, hover = false;
+    const slides = $$('.slide', hs), tabs = $$('.hero-tab, .sl-dot'), wrapEl = hs.closest('.hero-slider'); const DUR = 6000; let cur = 0, timer = null, hover = false;
     const go = (i) => { cur = (i + slides.length) % slides.length; slides.forEach((s, k) => { s.classList.toggle('active', k === cur); s.setAttribute('aria-hidden', String(k !== cur)); }); tabs.forEach((t, k) => { t.classList.toggle('active', k === cur); t.setAttribute('aria-selected', String(k === cur)); const p = t.querySelector('.ht-prog'); if (p) { p.style.animation = 'none'; void p.offsetWidth; p.style.animation = ''; } }); };
     const start = () => { stop(); if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; timer = setInterval(() => { if (!hover) go(cur + 1); }, DUR); };
     const stop = () => { clearInterval(timer); timer = null; };
