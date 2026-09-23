@@ -32,6 +32,23 @@ function seedClubs() {
   for (const c of J('clubs.json').clubs) { ins.run(koSlug(c.name), c.name, c.region || '', c.address || '', c.holes || null, c.opened || '', c.type || '회원제', c.price_name || '', 'published', c.verified ? 1 : 0, ts, ts); n++; }
   return n;
 }
+// 구 사이트 매물·전용관 이관본(listings.json) — src_id 기준으로 없는 것만 추가. 상세 정보표는 info_json, 설명은 desc_html, 대표 이미지는 image.
+function seedListings() {
+  const f = path.join(SEED, 'listings.json'); if (!fs.existsSync(f)) return 0;
+  const items = J('listings.json').items || []; const ts = now(); let n = 0;
+  const has = db.prepare('SELECT 1 FROM listings WHERE src_id=?');
+  const ins = db.prepare('INSERT INTO listings (category,title,name,region,price,kind,body,status,featured,image,images,info_json,desc_html,src_id,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+  // 구 사이트 순서(최신이 앞) 유지: 뒤에서부터 넣어 id가 커질수록 최신
+  const upd = db.prepare('UPDATE listings SET images=?, info_json=?, desc_html=?, image=?, body=?, price=COALESCE(?, price) WHERE src_id=?');
+  for (const it of [...items].reverse()) {
+    const _exists = !!has.get(it.src_id);
+    const price = (() => { const r = (it.info || []).find(([k]) => /매매가|분양가/.test(k)); const m = r && String(r[1]).replace(/,/g, '').match(/(\d+)\s*만원/); return m ? Number(m[1]) : null; })();
+    const body = (it.info || []).filter(([k, v]) => v && !/부대비용|매매가|분양가|골프장 소개|회원 혜택|^기타$/.test(k) && v !== it.title).map(([k, v]) => `${k}: ${v}`).join(' / ').slice(0, 300);
+    if (_exists) { upd.run(JSON.stringify(it.images || []), JSON.stringify(it.info || []), it.desc_html || '', (it.images || [])[0] || '', body, price, it.src_id); continue; }
+    ins.run(it.category, it.title, it.title.replace(/\s*(회원권|분양)?\s*(안내|분양안내|모집안내)$/, '').trim(), '', price, it.kind || '', body, 'open', 0, (it.images || [])[0] || '', JSON.stringify(it.images || []), JSON.stringify(it.info || []), it.desc_html || '', it.src_id, ts - n, ts - n); n++;
+  }
+  return n;
+}
 function seedTopics(force) {
   if (!force && db.prepare('SELECT COUNT(*) c FROM topic_pool').get().c) return 0;
   const ins = db.prepare('INSERT INTO topic_pool (type,topic,hint,weight,active) VALUES (?,?,?,1,1)'); let n = 0;
@@ -78,7 +95,7 @@ function seedVideos() {
 }
 
 function seedIfEmpty(force = false) {
-  const r = { prices: seedPrices(), clubs: seedClubs(), topics: seedTopics(force), plan: seedPlan(force), articles: seedArticles(), notice: seedNotice(), videos: seedVideos() };
+  const r = { prices: seedPrices(), clubs: seedClubs(), topics: seedTopics(force), plan: seedPlan(force), articles: seedArticles(), notice: seedNotice(), videos: seedVideos(), listings: seedListings() };
   if (Object.values(r).some(Boolean)) console.log('[seed]', JSON.stringify(r));
   return r;
 }

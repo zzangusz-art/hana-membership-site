@@ -168,6 +168,10 @@ CREATE TABLE IF NOT EXISTS videos (
   published TEXT, sort INTEGER DEFAULT 0, created_at INTEGER NOT NULL
 );
 `);
+// 스키마 보강 — 이미 만들어진 DB(운영 볼륨)에 새 컬럼 추가 (없을 때만)
+function ensureColumn(table, col, decl) { const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(c => c.name); if (!cols.includes(col)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${decl}`); }
+ensureColumn('listings', 'image', 'TEXT'); ensureColumn('listings', 'images', 'TEXT'); ensureColumn('listings', 'info_json', 'TEXT'); ensureColumn('listings', 'desc_html', 'TEXT'); ensureColumn('listings', 'src_id', 'TEXT');
+
 
 // ── settings helpers ──
 const getStmt = db.prepare('SELECT value FROM settings WHERE key=?');

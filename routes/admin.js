@@ -98,8 +98,8 @@ router.delete('/clubs/:id', (req, res) => { db.prepare('DELETE FROM clubs WHERE 
 router.get('/listings', (req, res) => res.json(db.prepare('SELECT * FROM listings ORDER BY featured DESC, id DESC').all()));
 router.post('/listings', (req, res) => {
   const b = req.body || {}; if (!b.title || !b.category) return res.status(400).json({ error: '제목·구분 필요' }); const ts = now();
-  if (b.id) { db.prepare('UPDATE listings SET category=?,title=?,name=?,region=?,price=?,kind=?,body=?,status=?,featured=?,updated_at=? WHERE id=?').run(b.category, b.title, b.name || '', b.region || '', b.price ? Number(b.price) : null, b.kind || '', b.body || '', b.status || 'open', b.featured ? 1 : 0, ts, b.id); return res.json({ ok: true, id: b.id }); }
-  const info = db.prepare('INSERT INTO listings (category,title,name,region,price,kind,body,status,featured,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(b.category, b.title, b.name || '', b.region || '', b.price ? Number(b.price) : null, b.kind || '', b.body || '', b.status || 'open', b.featured ? 1 : 0, ts, ts);
+  if (b.id) { db.prepare('UPDATE listings SET category=?,title=?,name=?,region=?,price=?,kind=?,body=?,status=?,featured=?,image=?,updated_at=? WHERE id=?').run(b.category, b.title, b.name || '', b.region || '', b.price ? Number(b.price) : null, b.kind || '', b.body || '', b.status || 'open', b.featured ? 1 : 0, b.image || '', ts, b.id); return res.json({ ok: true, id: b.id }); }
+  const info = db.prepare('INSERT INTO listings (category,title,name,region,price,kind,body,status,featured,image,images,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)').run(b.category, b.title, b.name || '', b.region || '', b.price ? Number(b.price) : null, b.kind || '', b.body || '', b.status || 'open', b.featured ? 1 : 0, b.image || '', JSON.stringify(b.image ? [b.image] : []), ts, ts);
   res.json({ ok: true, id: info.lastInsertRowid });
 });
 router.delete('/listings/:id', (req, res) => { db.prepare('DELETE FROM listings WHERE id=?').run(req.params.id); res.json({ ok: true }); });

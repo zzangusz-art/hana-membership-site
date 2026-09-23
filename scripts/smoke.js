@@ -32,6 +32,8 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
   let r = await get('/golf/' + encodeURIComponent(club.slug)); ok(r.status === 200 && r.text.includes('"GolfCourse"') && r.text.includes('"Product"'), 'GET /golf/:slug (GolfCourse·Product 스키마)');
   const post = db.prepare("SELECT slug FROM posts WHERE kind='blog' AND status='published' LIMIT 1").get();
   r = await get('/blog/' + post.slug); ok(r.status === 200 && r.text.includes('"Article"') && r.text.includes('"FAQPage"'), 'GET /blog/:slug (Article·FAQPage 스키마)');
+  const lst = db.prepare("SELECT id FROM listings WHERE status='open' AND image<>'' LIMIT 1").get();
+  if (lst) { r = await get('/listings/' + lst.id); ok(r.status === 200 && r.text.includes('"Product"') && r.text.includes('prd-fig'), 'GET /listings/:id (Product 스키마·이미지)'); }
   // SEO 파일
   r = await get('/sitemap.xml'); const locs = (r.text.match(/<loc>/g) || []).length; ok(r.status === 200 && locs >= 60, 'sitemap.xml', `${locs} URL`);
   r = await get('/robots.txt'); ok(r.text.includes('Sitemap:') && r.text.includes('GPTBot') && r.text.includes('Disallow: /admin'), 'robots.txt');

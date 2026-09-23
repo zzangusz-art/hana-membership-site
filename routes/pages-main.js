@@ -126,7 +126,7 @@ router.get('/', (req, res) => {
   </div>
 </section>
 
-${featured.length ? `<section class="section listings-hl"><div class="wrap"><div class="sec-head"><div><p class="eyebrow">추천 매물</p><h2>지금 나온 회원권 매물</h2></div><a class="link" href="/listings">전체 매물 →</a></div><div class="lst-grid">${featured.map(l => `<a class="lst reveal" href="/listings#l${l.id}"><span class="tag">${esc(l.kind || '매물')}</span><h3>${esc(l.title)}</h3><p>${esc(l.region || '')} ${l.price ? '· ' + fmtMan(l.price) : ''}</p></a>`).join('')}</div></div></section>` : ''}
+${featured.length ? `<section class="section listings-hl"><div class="wrap"><div class="sec-head"><div><p class="eyebrow">추천 매물</p><h2>지금 나온 회원권 매물</h2></div><a class="link" href="/listings">전체 매물 →</a></div><div class="lst-grid">${featured.map(l => `<a class="lst reveal${l.image ? ' has-img' : ''}" href="/listings/${l.id}">${l.image ? `<span class="lst-img"><img src="${attr(l.image)}" alt="" loading="lazy" width="600" height="600"></span>` : ''}<span class="tag">${esc(l.kind || '매물')}</span><h3>${esc(l.title)}</h3><p>${esc(l.region || '')} ${l.price ? '· ' + fmtMan(l.price) : ''}</p></a>`).join('')}</div></div></section>` : ''}
 
 <section class="section posts">
   <div class="wrap">
