@@ -102,6 +102,22 @@
       tl2.addEventListener('mouseout', (e) => { const el = e.target.closest('.tl2-card'); if (el) el.style.transform = ''; });
     }
   }
+  // 홈 빅배너 슬라이더: 자동 6초·호버/포커스 시 정지·화살표·탭 연동·스와이프·←→키·Ken Burns
+  const hs = $('#heroSlides');
+  if (hs) {
+    const slides = $$('.slide', hs), tabs = $$('.hero-tab'), wrapEl = hs.closest('.hero-slider'); const DUR = 6000; let cur = 0, timer = null, hover = false;
+    const go = (i) => { cur = (i + slides.length) % slides.length; slides.forEach((s, k) => { s.classList.toggle('active', k === cur); s.setAttribute('aria-hidden', String(k !== cur)); }); tabs.forEach((t, k) => { t.classList.toggle('active', k === cur); t.setAttribute('aria-selected', String(k === cur)); const p = t.querySelector('.ht-prog'); if (p) { p.style.animation = 'none'; void p.offsetWidth; p.style.animation = ''; } }); };
+    const start = () => { stop(); if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; timer = setInterval(() => { if (!hover) go(cur + 1); }, DUR); };
+    const stop = () => { clearInterval(timer); timer = null; };
+    tabs.forEach((t, i) => { t.addEventListener('click', (e) => { if (e.target.closest('.ht-more')) return; go(i); start(); }); });
+    const prev = $('#heroPrev'), next = $('#heroNext'); prev && prev.addEventListener('click', () => { go(cur - 1); start(); }); next && next.addEventListener('click', () => { go(cur + 1); start(); });
+    wrapEl.addEventListener('mouseenter', () => { hover = true; wrapEl.classList.add('paused'); }); wrapEl.addEventListener('mouseleave', () => { hover = false; wrapEl.classList.remove('paused'); });
+    wrapEl.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') { go(cur + 1); start(); } if (e.key === 'ArrowLeft') { go(cur - 1); start(); } });
+    let sx = null; hs.addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; }, { passive: true }); hs.addEventListener('touchend', (e) => { if (sx === null) return; const dx = e.changedTouches[0].clientX - sx; sx = null; if (Math.abs(dx) > 40) { go(dx < 0 ? cur + 1 : cur - 1); start(); } }, { passive: true });
+    document.addEventListener('visibilitychange', () => { document.hidden ? stop() : start(); });
+    wrapEl.style.setProperty('--dur', DUR + 'ms'); go(0); start();
+  }
+
   // 골프장 지도: 시·도 클릭 → 목록·카드 필터(다시 누르면 전체), 호버 툴팁(골프장 수), 칩 연동, ?sido= 초기값
   const km = $('.kmap');
   if (km) {

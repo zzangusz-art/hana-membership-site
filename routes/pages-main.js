@@ -49,19 +49,27 @@ router.get('/', (req, res) => {
   const featured = db.prepare("SELECT * FROM listings WHERE status='open' ORDER BY featured DESC, id DESC LIMIT 4").all();
   const years = new Date().getFullYear() - 2004;
   const ticker = all.slice().sort(() => 0.5 - Math.random()).slice(0, 28);
+  const SLIDES = [
+    { key: 'golf', icon: '⛳', kicker: '골프회원권 · 매주 갱신 시세', tab: '프리미엄 골프 라이프', title: '프리미엄 <span class="hl">골프 라이프</span>', sub: '당신의 품격 있는 라이프스타일을 위한 특별한 멤버십', lead: `전국 골프회원권 ${g.total}종목의 시세를 매주 실거래와 호가로 갱신합니다. 매수·매도 상담부터 계약·명의개서까지 한 담당자가 끝까지 지원합니다.`, href: '/market/golf', img: '/img/hero/golf.jpg', bg: '/img/hero/golf-bg.jpg' },
+    { key: 'condo', icon: '🏔️', kicker: '콘도·리조트 회원권', tab: '휴식과 힐링의 콘도', title: '휴식과 힐링의 <span class="hl">콘도</span>', sub: '당신의 품격 있는 라이프스타일을 위한 특별한 멤버십', lead: '공유제·회원제 조건과 성수기 배정, 관리비까지 비교해 가족 휴가와 법인 복지에 맞는 콘도 회원권을 안내합니다.', href: '/market/condo', img: '/img/hero/condo.jpg', bg: '/img/hero/condo-bg.jpg' },
+    { key: 'fitness', icon: '🏋️', kicker: '피트니스 회원권', tab: '건강한 피트니스 라이프', title: '건강한 <span class="hl">피트니스 라이프</span>', sub: '당신의 품격 있는 라이프스타일을 위한 특별한 멤버십', lead: '호텔 피트니스 개인·부부 회원권의 시세와 양도 조건을 확인하고 매매 신청 한 번으로 상담을 받으세요.', href: '/market/fitness', img: '/img/hero/fitness.jpg', bg: '/img/hero/fitness-bg.jpg' },
+  ];
   const tickerHtml = ticker.map(r => `<span class="tk"><b>${esc(r.name)}</b> ${fmtNum(r.today)} ${chg(r)}</span>`).join('');
   const faqs = FAQ.slice(0, 6);
 
   const body = `
-<section class="hero">
-  <div class="hero-bg" aria-hidden="true"><span class="orb o1" data-depth="0.05"></span><span class="orb o2" data-depth="0.09"></span><span class="grid"></span><span class="hero-spot"></span></div>
-  <div class="wrap hero-inner">
-    <p class="eyebrow">2004년부터 · 골프·콘도·피트니스 회원권 전문 거래소</p>
-    <h1>골프회원권 시세, <span class="hl">매주 갱신</span>되는 실거래 기준으로<br>확인하고 안전하게 거래하세요</h1>
-    <p class="lead">하나회원권거래소는 2004년 설립된 회원권 매매 중개·컨설팅 전문기업입니다. 골프회원권 ${g.total}종목의 시세를 매주 실거래와 호가로 갱신하고, 상담부터 계약·명의개서·등록 완료 후 부킹 문의까지 한 담당자가 끝까지 지원합니다.</p>
-    <form class="hero-search tilt" data-tilt="6" action="/market/golf" method="get" role="search"><label class="sr" for="q">종목 검색</label><input id="q" name="q" type="search" placeholder="골프장·회원권명 검색 (예: 아시아나, 남촌, 신원)" autocomplete="off" list="club-list"><datalist id="club-list">${all.slice(0, 120).map(r => `<option value="${attr(r.name)}">`).join('')}</datalist><button class="btn btn-primary" type="submit">시세 확인</button></form>
-    <div class="hero-actions"><a class="btn btn-green magnet" href="/apply">매매 신청</a><a class="btn btn-ghost magnet" href="tel:${attr(s.phone)}">📞 ${esc(s.phone)} 24시간 상담</a></div>
+<section class="hero hero-slider" aria-roledescription="carousel" aria-label="하나회원권거래소 대표 상품">
+  <div class="hero-bg" aria-hidden="true"><span class="hero-spot"></span></div>
+  <div class="slides" id="heroSlides">
+    ${SLIDES.map((sl, i) => `<article class="slide${i === 0 ? ' active' : ''}" data-i="${i}" role="group" aria-roledescription="slide" aria-label="${i + 1} / ${SLIDES.length}: ${attr(sl.title)}"${i ? ' aria-hidden="true"' : ''}><div class="slide-bg" style="background-image:url('${sl.bg}')"></div><div class="slide-shade"></div>
+      <div class="wrap slide-inner"><div class="slide-photo" aria-hidden="true"><img src="${sl.img}" alt="" width="640" height="716" ${i ? 'loading="lazy"' : ''}></div><div class="slide-copy"><p class="eyebrow">${esc(sl.kicker)}</p>${i === 0 ? '<h1>' : '<h2 class="h1">'}${sl.title}${i === 0 ? '</h1>' : '</h2>'}<p class="slide-sub">${esc(sl.sub)}</p><p class="lead">${sl.lead}</p>
+      <div class="hero-actions"><a class="btn btn-light magnet" href="${sl.href}">자세히 보기</a><a class="btn btn-green magnet" href="/apply">매매 신청</a><a class="btn btn-ghost magnet" href="tel:${attr(s.phone)}">📞 ${esc(s.phone)}</a></div></div></div></article>`).join('')}
+    <button type="button" class="sl-arrow prev" id="heroPrev" aria-label="이전 배너">‹</button><button type="button" class="sl-arrow next" id="heroNext" aria-label="다음 배너">›</button>
   </div>
+  <div class="wrap hero-tabs" role="tablist" aria-label="상품 선택">
+    ${SLIDES.map((sl, i) => `<button type="button" class="hero-tab${i === 0 ? ' active' : ''}" role="tab" aria-selected="${i === 0}" data-i="${i}" id="heroTab${i}"><span class="ht-ico" aria-hidden="true">${sl.icon}</span><span class="ht-txt"><b>${esc(sl.tab)}</b><small>${esc(sl.sub)}</small></span><a class="ht-more" href="${sl.href}">자세히 보기 →</a><i class="ht-prog" aria-hidden="true"></i></button>`).join('')}
+  </div>
+  <form class="hero-search tilt" data-tilt="4" action="/market/golf" method="get" role="search"><label class="sr" for="q">종목 검색</label><input id="q" name="q" type="search" placeholder="골프장·회원권명 검색 (예: 아시아나, 남촌, 신원)" autocomplete="off" list="club-list"><datalist id="club-list">${all.slice(0, 120).map(r => `<option value="${attr(r.name)}">`).join('')}</datalist><button class="btn btn-primary" type="submit">시세 확인</button></form>
   <div class="ticker" aria-label="오늘의 시세 흐름"><div class="ticker-track">${tickerHtml}${tickerHtml}</div></div>
 </section>
 
