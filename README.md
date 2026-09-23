@@ -23,7 +23,7 @@ npm run smoke          # 런타임 스모크 테스트(임시 포트·임시 DB)
 
 1. GitHub 저장소 연결 → Railway 새 프로젝트(Nixpacks 자동 인식, Node 22).
 2. **Volume 추가 → 마운트 경로 `/data`** (없으면 재배포마다 DB 초기화).
-3. 환경변수: `DATA_DIR=/data`, `JWT_SECRET`, `ADMIN_ID`, `ADMIN_PW`, `SITE_URL=https://www.hanamarket.co.kr`(실제 도메인), 선택 `ANTHROPIC_API_KEY`(또는 OPENAI/GEMINI), `INBLOG_API_KEY`, `NAVER_SITE_VERIFICATION`, `GOOGLE_SITE_VERIFICATION`, `GA_MEASUREMENT_ID`.
+3. 환경변수: `DATA_DIR=/data`, `JWT_SECRET`, `ADMIN_ID`, `ADMIN_PW`, `SITE_URL=https://hanamember.co.kr`(실제 도메인), 선택 `ANTHROPIC_API_KEY`(또는 OPENAI/GEMINI), `INBLOG_API_KEY`, `NAVER_SITE_VERIFICATION`, `GOOGLE_SITE_VERIFICATION`, `GA_MEASUREMENT_ID`.
 4. 도메인 연결 후 관리자 → 설정에서 사이트 URL 확인(canonical·sitemap·JSON-LD가 이 값을 씁니다).
 5. 구 사이트 URL(`/market/01`, `/company/03` 등)은 새 URL로 301 처리되어 검색 신호가 승계됩니다.
 

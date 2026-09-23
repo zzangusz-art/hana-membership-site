@@ -51,7 +51,7 @@ const STAMP = (() => { try { return String(Math.max(...['css/site.css', 'js/site
 layout.setStamp(STAMP);
 // 구 도메인(hanamark.co.kr 등) 별칭 호스트로 들어오면 정식 도메인으로 301 (경로 유지 → 아래 REDIRECTS가 구 URL을 다시 매핑).
 // Railway에 구 도메인을 커스텀 도메인으로 붙이고 DNS만 가리키면 호스팅 업체 리다이렉트 없이 동작. REDIRECT_HOSTS=호스트,호스트 로 변경 가능.
-const REDIRECT_HOSTS = new Set(String(process.env.REDIRECT_HOSTS || 'hanamark.co.kr,www.hanamark.co.kr').split(',').map(s => s.trim().toLowerCase()).filter(Boolean));
+const REDIRECT_HOSTS = new Set(String(process.env.REDIRECT_HOSTS || 'hanamark.co.kr,www.hanamark.co.kr,hanamarket.co.kr,www.hanamarket.co.kr,www.hanamember.co.kr').split(',').map(s => s.trim().toLowerCase()).filter(Boolean));
 app.use((req, res, next) => {
   try {
     const host = String(req.hostname || '').toLowerCase();

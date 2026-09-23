@@ -14,7 +14,7 @@ const mode = process.argv[2] || 'after';
 (async () => {
   if (!shot.available()) { console.error('크롬/크로미움을 찾지 못했습니다. PUPPETEER_EXECUTABLE_PATH를 설정하세요.'); process.exit(1); }
   if (mode === 'before') {
-    const base = process.argv[3] || 'https://www.hanamarket.co.kr';
+    const base = process.argv[3] || 'https://hanamember.co.kr';
     const outDir = path.join(__dirname, '..', 'data', 'seed', 'screenshots', 'before');
     const r = await shot.captureSet({ base, side: 'before', outDir });
     console.log(`before: ${r.files.length}장 → ${outDir}`); r.errors.forEach(e => console.error(' !', e));

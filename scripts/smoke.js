@@ -84,8 +84,8 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
   r = await A(`/reports/${rp.report.id}/docx`); ok(r.status === 200 && (await r.arrayBuffer()).byteLength > 3000, '리포트 DOCX 다운로드');
   r = await A('/plan'); const pl = await r.json(); ok(pl.weeks.length === 4 && pl.weeks[0].tasks.length >= 8, '4주 실행계획', `1주차 ${pl.weeks[0].tasks.length}항목`);
   r = await A('/inquiries'); ok((await r.json()).length >= 1, '문의 목록');
-  r = await A('/settings', { method: 'POST', body: JSON.stringify({ inblog_url: 'https://blog.hanamarket.co.kr' }) }); ok(r.status === 200, '설정 저장');
-  r = await get('/'); ok(r.text.includes('https://blog.hanamarket.co.kr'), '설정 반영(sameAs·푸터)');
+  r = await A('/settings', { method: 'POST', body: JSON.stringify({ inblog_url: 'https://blog.hanamember.co.kr' }) }); ok(r.status === 200, '설정 저장');
+  r = await get('/'); ok(r.text.includes('https://blog.hanamember.co.kr'), '설정 반영(sameAs·푸터)');
   console.log(fails ? `\n실패 ${fails}건` : '\n모든 스모크 테스트 통과');
   process.exit(fails ? 1 : 0);
 })().catch(e => { console.error('스모크 오류', e); process.exit(1); });
