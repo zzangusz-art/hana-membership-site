@@ -71,7 +71,8 @@ function seedArticles() {
     const m = f.match(/articles-(\d{4}-\d{2}-\d{2})/); const base = m ? Math.floor(new Date(m[1] + 'T09:00:00+09:00') / 1000) : now() - 86400;
     const arr = J(f);
     arr.forEach((a, i) => {
-      if (db.prepare('SELECT 1 FROM posts WHERE slug=?').get(a.slug)) return;
+      const ex = db.prepare('SELECT id, body_html FROM posts WHERE slug=?').get(a.slug);
+      if (ex) { if (ex.body_html !== a.body_html) db.prepare('UPDATE posts SET title=?, excerpt=?, meta_description=?, body_html=?, updated_at=? WHERE id=?').run(a.title, a.excerpt, a.meta_description, a.body_html, now(), ex.id); return; }
       const t = Math.min(now(), base + i * 3600);
       ins.run(a.type, a.slug, a.title, a.excerpt, a.meta_description, a.body_html, (a.tags || []).join(','), JSON.stringify({ sources: [], faq: a.faq || [] }), t, t, t); n++;
     });

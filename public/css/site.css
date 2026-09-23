@@ -262,3 +262,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(31,58,115,.25);bo
 @media (max-width:600px){.sl-dot{width:28px}.hero-slider .hero-search{margin-top:-24px}}
 .sl-dots{bottom:64px}
 @media (max-width:600px){.sl-dots{bottom:58px}}
+
+/* 서비스·안내 카드 아이콘: 이모지 대신 번호·라벨 */
+.svc-ic{display:inline-block;font-size:13px;font-weight:900;letter-spacing:.12em;color:var(--green-d);background:#eaf6dc;padding:6px 10px;border-radius:999px;line-height:1;margin-bottom:14px}
+.gc-ic{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--navy);background:#eef2f9;padding:6px 10px;border-radius:999px;line-height:1;margin-bottom:12px}
