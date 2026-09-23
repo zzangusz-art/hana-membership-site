@@ -180,15 +180,17 @@ const HISTORY = [
   { label: '2022~2025', years: [['2022', [['금호아시아나 웨하이 분양']]], ['2023', [['벨라 45 분양']]], ['2024', [['고흥 썬밸리 리조트 분양']]], ['2025', [['더헤븐CC 분양'], ['오크밸리 분양'], ['스마트스코어 선불카드 분양']]]] },
 ];
 router.get('/about/history', (req, res) => {
-  const all = HISTORY.flatMap(p => p.years.flatMap(([y, items]) => items.map(([t, k]) => ({ y, t, ms: k === 'ms' }))));
-  const sales = all.filter(x => !x.ms).length; const years = new Date().getFullYear() - 2004;
-  const panels = HISTORY.map((p, i) => { const multi = p.years.length > 1; const n = p.years.reduce((a, [, it]) => a + it.length, 0);
-    return `<div class="hist-panel${i === 0 ? ' active' : ''}" role="tabpanel" id="hp${i}" aria-labelledby="hb${i}"><div><h2>${p.label}</h2><p class="hp-sub">${p.years.map(([y]) => y).join(' · ')} · ${n}건</p></div><ul>${p.years.map(([y, items]) => items.map(([t, k]) => `<li${k === 'ms' ? ' class="ms"' : ''}>${multi ? `<span class="yr">${y}</span>` : ''}${esc(t)}</li>`).join('')).join('')}</ul></div>`; }).join('');
+  const all = HISTORY.flatMap((p, pi) => p.years.flatMap(([y, items]) => items.map(([t, k]) => ({ y, t, ms: k === 'ms', pi }))));
+  const sales = all.filter(x => !x.ms).length;
+  // 상단: 8개 기간을 한 화면에(4×2). 여러 연도가 묶인 기간은 연도 접두어 표시
+  const cells = HISTORY.map((p, i) => { const multi = p.years.length > 1;
+    return `<div class="hg-cell reveal" data-pi="${i}" role="button" tabindex="0" aria-label="${p.label} 실적 보기"><span class="hg-dot" aria-hidden="true"></span><h2>${p.label}</h2><ul>${p.years.map(([y, items]) => items.map(([t, k]) => `<li${k === 'ms' ? ' class="ms"' : ''}>${multi ? `<b>${y}</b>` : ''}<span>${esc(t)}</span></li>`).join('')).join('')}</ul></div>`; }).join('');
   const body = `<section class="hist-hero"><div class="wrap"><p class="eyebrow">하나회원권거래소 기업 분석</p><h1>꾸준한 성장을 보여온 <em>검증된 수익 창출 기업</em></h1><p class="lead">2004년 에이원회원권거래소로 출발해 2008년 비전회원권거래소 합병, 2014년 하나회원권거래소 출범까지. 골프장·리조트·피트니스 회원권 분양 대행 ${sales}건을 수행했습니다.</p>
-<ul class="counters"><li><b data-count="${years}">0</b><span>년째 운영 (2004~)</span></li><li><b data-count="${sales}">0</b><span>분양 대행 실적</span></li><li><b data-count="${all.filter(x => x.ms).length}">0</b><span>회사 이정표(설립·합병·사명 변경)</span></li></ul>
-<div class="hist-rail" role="tablist" aria-label="연혁 기간" tabindex="0"><span class="fill" aria-hidden="true"></span>${HISTORY.map((p, i) => `<button class="hr-btn${i === 0 ? ' active' : ''}" role="tab" id="hb${i}" aria-controls="hp${i}" aria-selected="${i === 0}">${p.label}</button>`).join('')}</div>
-<div class="hist-panels">${panels}</div><div class="hist-prog" aria-hidden="true"><i></i></div><div class="hist-ctl"><button type="button" id="histPrev" aria-label="이전 기간">‹</button><button type="button" id="histNext" aria-label="다음 기간">›</button></div></div></section>
-<section class="section"><div class="wrap narrow"><h2>연도별 전체 실적</h2><div class="timeline vertical">${all.map(x => `<div class="tl-item reveal${x.ms ? ' ms' : ''}"><b>${x.y}</b><span>${esc(x.t)}<i class="tl-tag${x.ms ? ' ms' : ''}">${x.ms ? '이정표' : '분양'}</i></span></div>`).join('')}</div><h2>파트너십</h2><ul class="checks">${['한국골프회원권경영인협회', '네오위즈 게임즈', '미래신용정보', '수호천사 동양생명', '삼양', '포스코 ICT', '한글과컴퓨터', '서울드래곤시티'].map(p => `<li>${p}</li>`).join('')}</ul></div></section>`;
+<div class="hist-grid" id="histGrid">${cells}</div><p class="hg-hint">카드를 누르면 아래 연표의 해당 시기로 이동합니다</p></div></section>
+<section class="section tl2-sec"><div class="wrap narrow"><div class="sec-head"><div><p class="eyebrow">연도별 전체 실적</p><h2>스크롤로 따라가는 ${all.length}개의 기록</h2></div><span class="tl2-count"><b id="tl2Idx">1</b> / ${all.length}</span></div>
+<div class="tl2" id="tl2"><div class="tl2-spine" aria-hidden="true"><i id="tl2Fill"></i></div><div class="tl2-year" id="tl2Year" aria-hidden="true">2004</div>
+${all.map((x, i) => `<article class="tl2-item${x.ms ? ' ms' : ''} ${i % 2 ? 'r' : 'l'}" data-year="${x.y}" data-pi="${x.pi}" data-i="${i}" tabindex="0"><span class="tl2-node" aria-hidden="true"></span><div class="tl2-card"><time>${x.y}</time><h3>${esc(x.t)}</h3><span class="tl-tag${x.ms ? ' ms' : ''}">${x.ms ? '이정표' : '분양 대행'}</span></div></article>`).join('')}
+</div><h2>파트너십</h2><ul class="checks">${['한국골프회원권경영인협회', '네오위즈 게임즈', '미래신용정보', '수호천사 동양생명', '삼양', '포스코 ICT', '한글과컴퓨터', '서울드래곤시티'].map(p => `<li>${p}</li>`).join('')}</ul></div></section>`;
   res.send(page({ title: `연혁·주요 실적 — 2004년 설립부터 분양 대행 ${sales}건까지`, description: `하나회원권거래소 연혁: 2004 에이원회원권거래소 설립, 2008 비전회원권거래소 합병, 2014 사명 변경. 블루버드·서원밸리·리베라·레이크힐스·프리스틴밸리·서울드래곤시티·오크밸리·더헤븐CC 등 분양 대행 ${sales}건(2004~2025)과 파트너십.`, path: '/about/history', body, breadcrumbs: [{ name: '회사소개', href: '/about' }, { name: '연혁·실적', href: '/about/history' }] }));
 });
 router.get('/about/location', (req, res) => {

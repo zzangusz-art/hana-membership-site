@@ -75,25 +75,30 @@
   // 유튜브 지연 로드
   $$('.yt').forEach(box => box.addEventListener('click', () => { const id = box.dataset.id; box.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0" title="YouTube" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`; }));
 
-  // 연혁: 기간 레일(클릭·←→키·이전/다음)·자동 순환(호버·수동 조작 시 정지)·세로 타임라인 스크롤 채움
-  const rail = $('.hist-rail');
-  if (rail) {
-    const btns = Array.from(rail.querySelectorAll('.hr-btn')), panels = $$('.hist-panel'), fill = rail.querySelector('.fill'), prog = $('.hist-prog'), hero = rail.closest('.hist-hero');
-    let cur = 0, timer = null, manual = false;
-    const show = (i) => { cur = (i + btns.length) % btns.length; btns.forEach((b, k) => { b.classList.toggle('active', k === cur); b.setAttribute('aria-selected', String(k === cur)); }); panels.forEach((p, k) => p.classList.toggle('active', k === cur)); if (fill) fill.style.width = `calc((100% - 16px) * ${cur / Math.max(1, btns.length - 1)})`; if (prog) { prog.classList.remove('run'); void prog.offsetWidth; if (timer) prog.classList.add('run'); } };
-    const start = () => { if (timer || manual || matchMedia('(prefers-reduced-motion: reduce)').matches) return; timer = setInterval(() => show(cur + 1), 4500); show(cur); };
-    const pause = () => { clearInterval(timer); timer = null; prog && prog.classList.remove('run'); };
-    const stop = () => { manual = true; pause(); };
-    btns.forEach((b, i) => b.addEventListener('click', () => { stop(); show(i); }));
-    const prev = $('#histPrev'), next = $('#histNext');
-    prev && prev.addEventListener('click', () => { stop(); show(cur - 1); }); next && next.addEventListener('click', () => { stop(); show(cur + 1); });
-    rail.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') { stop(); show(cur + 1); } if (e.key === 'ArrowLeft') { stop(); show(cur - 1); } });
-    hero && hero.addEventListener('mouseenter', pause); hero && hero.addEventListener('mouseleave', start);
-    show(0); start();
+  // 연혁 v2 — 상단 그리드 카드 클릭 → 연표 해당 시기로; 연표는 뷰포트 중앙에 가까운 카드가 포커스, 연도 배지가 따라오고 척추선이 채워짐
+  const tl2 = $('#tl2');
+  if (tl2) {
+    const items = $$('.tl2-item', tl2), fill = $('#tl2Fill'), yearEl = $('#tl2Year'), idxEl = $('#tl2Idx'), cells = $$('.hg-cell');
+    let focusI = -1;
+    const setFocus = (i) => { if (i === focusI) return; focusI = i; items.forEach((el, k) => el.classList.toggle('focus', k === i)); const it = items[i]; if (!it) return; if (yearEl && yearEl.textContent !== it.dataset.year) { yearEl.textContent = it.dataset.year; yearEl.classList.remove('pop'); void yearEl.offsetWidth; yearEl.classList.add('pop'); } if (idxEl) idxEl.textContent = i + 1; cells.forEach(c => c.classList.toggle('now', c.dataset.pi === it.dataset.pi)); };
+    const upd = () => {
+      const r = tl2.getBoundingClientRect(); const mid = innerHeight * .5;
+      const p = Math.max(0, Math.min(1, (mid - r.top) / r.height)); if (fill) fill.style.height = (p * 100).toFixed(2) + '%';
+      if (yearEl) { const y = Math.max(0, Math.min(r.height - 40, mid - r.top - 20)); yearEl.style.top = y + 'px'; }
+      let best = 0, bd = 1e9; items.forEach((el, k) => { const b = el.getBoundingClientRect(); const d = Math.abs(b.top + b.height / 2 - mid); if (d < bd) { bd = d; best = k; } });
+      setFocus(best);
+    };
+    const rio = 'IntersectionObserver' in window ? new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); rio.unobserve(e.target); } }), { threshold: .15 }) : null; items.forEach(el => rio ? rio.observe(el) : el.classList.add('in'));
+    addEventListener('scroll', upd, { passive: true }); addEventListener('resize', upd); upd();
+    // 카드 클릭/키보드 → 포커스 + 이동
+    items.forEach((el) => { el.addEventListener('click', () => { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }); el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); } }); });
+    cells.forEach((c) => { const go = () => { const first = items.find(el => el.dataset.pi === c.dataset.pi); if (!first) return; first.scrollIntoView({ behavior: 'smooth', block: 'center' }); first.classList.add('flash'); setTimeout(() => first.classList.remove('flash'), 1200); }; c.addEventListener('click', go); c.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } }); });
+    // 커서 따라 살짝 기울기(정밀 포인터만)
+    if (matchMedia('(pointer:fine)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      tl2.addEventListener('mousemove', (e) => { const el = e.target.closest('.tl2-card'); if (!el) return; const b = el.getBoundingClientRect(); const x = (e.clientX - b.left) / b.width - .5, y = (e.clientY - b.top) / b.height - .5; el.style.transform = `perspective(700px) rotateX(${(-y * 6).toFixed(2)}deg) rotateY(${(x * 8).toFixed(2)}deg) translateY(-3px)`; });
+      tl2.addEventListener('mouseout', (e) => { const el = e.target.closest('.tl2-card'); if (el) el.style.transform = ''; });
+    }
   }
-  const vt = $('.timeline.vertical');
-  if (vt) { const upd = () => { const r = vt.getBoundingClientRect(); const p = Math.max(0, Math.min(1, (innerHeight * .78 - r.top) / r.height)); vt.style.setProperty('--fill', (p * 100).toFixed(1) + '%'); }; addEventListener('scroll', upd, { passive: true }); addEventListener('resize', upd); upd(); }
-
   // 골프장 지도: 시·도 클릭 → 목록·카드 필터(다시 누르면 전체), 호버 툴팁(골프장 수), 칩 연동, ?sido= 초기값
   const km = $('.kmap');
   if (km) {
