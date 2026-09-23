@@ -1,82 +1,85 @@
 @echo off
-chcp 65001 >nul
 setlocal EnableDelayedExpansion
 cd /d "%~dp0"
+if "%~1"=="--check" (
+  echo [check] deploy.bat ÆÄ½Ì Á¤»ó
+  exit /b 0
+)
 echo ============================================================
-echo  í•˜ë‚˜íšŒì›ê¶Œê±°ëž˜ì†Œ í™ˆíŽ˜ì´ì§€ - ë°°í¬ ^(GitHub í‘¸ì‹œ + Railway ì—…ë¡œë“œ^)
+echo  ÇÏ³ªÈ¸¿ø±Ç°Å·¡¼Ò È¨ÆäÀÌÁö - ¹èÆ÷ ^(GitHub Çª½Ã + Railway ¾÷·Îµå^)
 echo ============================================================
 
 where railway >nul 2>&1
 if errorlevel 1 (
-  echo [X] Railway CLIê°€ ì—†ìŠµë‹ˆë‹¤. ì„¤ì¹˜: npm i -g @railway/cli
+  echo [X] Railway CLI°¡ ¾ø½À´Ï´Ù. ¼³Ä¡: npm i -g @railway/cli
   pause
   exit /b 1
 )
 
-echo [1/5] ìŠ¤ëª¨í¬ í…ŒìŠ¤íŠ¸
+echo [1/5] ½º¸ðÅ© Å×½ºÆ®
 call npm run smoke >"%TEMP%\hana-smoke.log" 2>&1
 if errorlevel 1 (
-  echo [X] ìŠ¤ëª¨í¬ í…ŒìŠ¤íŠ¸ ì‹¤íŒ¨. ë¡œê·¸: %TEMP%\hana-smoke.log
+  echo [X] ½º¸ðÅ© Å×½ºÆ® ½ÇÆÐ. ·Î±×: %TEMP%\hana-smoke.log
   pause
   exit /b 1
 )
-echo      í†µê³¼
+echo      Åë°ú
 
-echo [2/5] Git ì»¤ë°‹Â·í‘¸ì‹œ
+echo [2/5] Git Ä¿¹Ô¡¤Çª½Ã
 git add -A
 git diff --cached --quiet
 if errorlevel 1 (
-  set /p MSG=ì»¤ë°‹ ë©”ì‹œì§€ ^(Enter=ìžë™^):
+  set /p MSG=Ä¿¹Ô ¸Þ½ÃÁö ^(Enter=ÀÚµ¿^):
   if "!MSG!"=="" set MSG=deploy: %date% %time:~0,5%
   git commit -q -m "!MSG!"
 )
 set GIT_TERMINAL_PROMPT=0
 git push -q origin main
 if errorlevel 1 (
-  echo [!] GitHub í‘¸ì‹œ ì‹¤íŒ¨ ^(ìžê²©ì¦ëª… í™•ì¸^). Railway ì—…ë¡œë“œëŠ” ê³„ì†í•©ë‹ˆë‹¤.
+  echo [!] GitHub Çª½Ã ½ÇÆÐ ^(ÀÚ°ÝÁõ¸í È®ÀÎ^). Railway ¾÷·Îµå´Â °è¼ÓÇÕ´Ï´Ù.
 )
 for /f %%i in ('git rev-parse --short HEAD') do set SHA=%%i
-echo      ì»¤ë°‹ %SHA%
+echo      Ä¿¹Ô %SHA%
 
-echo [3/5] Railway ë¡œê·¸ì¸Â·í”„ë¡œì íŠ¸ ì—°ê²° í™•ì¸
+echo [3/5] Railway ·Î±×ÀÎ¡¤ÇÁ·ÎÁ§Æ® ¿¬°á È®ÀÎ
 railway whoami >nul 2>&1
 if errorlevel 1 (
-  echo      ë¸Œë¼ìš°ì €ì—ì„œ Railway ë¡œê·¸ì¸...
+  echo      ºê¶ó¿ìÀú¿¡¼­ Railway ·Î±×ÀÎ...
   railway login
   if errorlevel 1 (
-    echo [X] ë¡œê·¸ì¸ ì‹¤íŒ¨
+    echo [X] ·Î±×ÀÎ ½ÇÆÐ
     pause
     exit /b 1
   )
 )
 railway status >nul 2>&1
 if errorlevel 1 (
-  echo      í”„ë¡œì íŠ¸ê°€ ì—°ê²°ë¼ ìžˆì§€ ì•ŠìŠµë‹ˆë‹¤. ëª©ë¡ì—ì„œ hana-membership-site ë¥¼ ê³ ë¥´ì„¸ìš”.
+  echo      ÇÁ·ÎÁ§Æ®°¡ ¿¬°áµÅ ÀÖÁö ¾Ê½À´Ï´Ù. ¸ñ·Ï¿¡¼­ hana-membership-site ¸¦ °í¸£¼¼¿ä.
   railway link
   if errorlevel 1 (
-    echo [X] ì—°ê²° ì‹¤íŒ¨
+    echo [X] ¿¬°á ½ÇÆÐ
     pause
     exit /b 1
   )
 )
 
-echo [4/5] ë°°í¬ ë„ìž¥ ê¸°ë¡ í›„ ì—…ë¡œë“œ ^(ë¹Œë“œ 3~6ë¶„, chromium í¬í•¨^)
+echo [4/5] ¹èÆ÷ µµÀå ±â·Ï ÈÄ ¾÷·Îµå ^(ºôµå 3~6ºÐ, chromium Æ÷ÇÔ^)
 for /f %%t in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-ddTHH:mm:ss"') do set NOW=%%t
 > .deploy-stamp echo %SHA% %NOW%
 railway up --detach
 if errorlevel 1 (
-  echo [X] ì—…ë¡œë“œ ì‹¤íŒ¨
+  echo [X] ¾÷·Îµå ½ÇÆÐ
   pause
   exit /b 1
 )
 
-echo [5/5] ë°˜ì˜ í™•ì¸ ^(healthzì˜ commitì´ %SHA% ê°€ ë  ë•Œê¹Œì§€ ìµœëŒ€ 12ë¶„ ëŒ€ê¸°^)
+echo [5/5] ¹Ý¿µ È®ÀÎ ^(healthzÀÇ commitÀÌ %SHA% °¡ µÉ ¶§±îÁö ÃÖ´ë 12ºÐ ´ë±â^)
 set URL=https://hana-membership-site-production.up.railway.app
 set /a N=0
 :WAIT
 set /a N+=1
 if %N% GTR 36 (
-  echo [!] 12ë¶„ ë‚´ ë°˜ì˜ í™•ì¸ ì‹¤íŒ¨. Railway ëŒ€ì‹œë³´ë“œì—ì„œ ë¹Œë“œ ë¡œê·¸ë¥¼ í™•ì¸í•˜ì„¸ìš”: railway logs
+  echo [!] 12ºÐ ³» ¹Ý¿µ È®ÀÎ ½ÇÆÐ. Railway ´ë½Ãº¸µå¿¡¼­ ºôµå ·Î±×¸¦ È®ÀÎÇÏ¼¼¿ä: railway logs
   goto END
 )
 timeout /t 20 /nobreak >nul
@@ -87,10 +90,10 @@ if errorlevel 1 (
   goto WAIT
 )
 echo.
-echo [OK] ë°°í¬ ë°˜ì˜ ì™„ë£Œ: %URL%  ^(commit %SHA%^)
+echo [OK] ¹èÆ÷ ¹Ý¿µ ¿Ï·á: %URL%  ^(commit %SHA%^)
 echo !RES! | find "\"volume\":false" >nul
 if not errorlevel 1 (
-  echo [!] ê²½ê³ : ë³¼ë¥¨ì´ ë§ˆìš´íŠ¸ë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤. Railway ^> Service ^> Volumes ì—ì„œ /data ì¶”ê°€ + ë³€ìˆ˜ DATA_DIR=/data
+  echo [!] °æ°í: º¼·ýÀÌ ¸¶¿îÆ®µÇÁö ¾Ê¾Ò½À´Ï´Ù. Railway ^> Service ^> Volumes ¿¡¼­ /data Ãß°¡ + º¯¼ö DATA_DIR=/data
 )
 
 :END

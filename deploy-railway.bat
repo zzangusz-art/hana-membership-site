@@ -1,49 +1,48 @@
 @echo off
-chcp 65001 >nul
 cd /d "%~dp0"
 echo ============================================================
-echo  í•˜ë‚˜íšŒì›ê¶Œê±°ë˜ì†Œ í™ˆí˜ì´ì§€ - Railway ìµœì´ˆ ë°°í¬ ë„ìš°ë¯¸
-echo  1) railway login  2) í”„ë¡œì íŠ¸ ìƒì„±  3) ë³¼ë¥¨ /data  4) í™˜ê²½ë³€ìˆ˜  5) ë°°í¬
-echo  â€» ê²°ì œ ì¹´ë“œ ë“±ë¡ì€ Railway ì›¹ì—ì„œ ì§ì ‘ ì§„í–‰í•˜ì„¸ìš”.
+echo  ÇÏ³ªÈ¸¿ø±Ç°Å·¡¼Ò È¨ÆäÀÌÁö - Railway ÃÖÃÊ ¹èÆ÷ µµ¿ì¹Ì
+echo  1) railway login  2) ÇÁ·ÎÁ§Æ® »ı¼º  3) º¼·ı /data  4) È¯°æº¯¼ö  5) ¹èÆ÷
+echo  ¡Ø °áÁ¦ Ä«µå µî·ÏÀº Railway À¥¿¡¼­ Á÷Á¢ ÁøÇàÇÏ¼¼¿ä.
 echo ============================================================
 where railway >nul 2>&1
 if errorlevel 1 (
-  echo Railway CLIê°€ ì—†ìŠµë‹ˆë‹¤. ì„¤ì¹˜: npm i -g @railway/cli
+  echo Railway CLI°¡ ¾ø½À´Ï´Ù. ¼³Ä¡: npm i -g @railway/cli
   pause
   exit /b 1
 )
 railway whoami >nul 2>&1
 if errorlevel 1 (
-  echo [1/5] ë¸Œë¼ìš°ì €ì—ì„œ Railway ë¡œê·¸ì¸ ì°½ì´ ì—´ë¦½ë‹ˆë‹¤...
+  echo [1/5] ºê¶ó¿ìÀú¿¡¼­ Railway ·Î±×ÀÎ Ã¢ÀÌ ¿­¸³´Ï´Ù...
   railway login
   if errorlevel 1 (
-    echo ë¡œê·¸ì¸ ì‹¤íŒ¨. ë‹¤ì‹œ ì‹¤í–‰í•˜ì„¸ìš”.
+    echo ·Î±×ÀÎ ½ÇÆĞ. ´Ù½Ã ½ÇÇàÇÏ¼¼¿ä.
     pause
     exit /b 1
   )
 )
-echo [2/5] í”„ë¡œì íŠ¸ ì—°ê²° ^(ìƒˆ í”„ë¡œì íŠ¸ hana-membership-site ìƒì„± ë˜ëŠ” ê¸°ì¡´ ì„ íƒ^)
+echo [2/5] ÇÁ·ÎÁ§Æ® ¿¬°á ^(»õ ÇÁ·ÎÁ§Æ® hana-membership-site »ı¼º ¶Ç´Â ±âÁ¸ ¼±ÅÃ^)
 railway init
 if errorlevel 1 (
-  echo ì´ë¯¸ ì—°ê²°ë¼ ìˆìœ¼ë©´ ê³„ì† ì§„í–‰í•©ë‹ˆë‹¤.
+  echo ÀÌ¹Ì ¿¬°áµÅ ÀÖÀ¸¸é °è¼Ó ÁøÇàÇÕ´Ï´Ù.
 )
-echo [3/5] ì˜êµ¬ ë³¼ë¥¨ /data ì¶”ê°€ ^(ì—†ìœ¼ë©´ ì¬ë°°í¬ë§ˆë‹¤ DB ì´ˆê¸°í™”^)
+echo [3/5] ¿µ±¸ º¼·ı /data Ãß°¡ ^(¾øÀ¸¸é Àç¹èÆ÷¸¶´Ù DB ÃÊ±âÈ­^)
 railway volume add --mount-path /data
-echo [4/5] í™˜ê²½ë³€ìˆ˜ ì„¤ì •
-set /p SITEURL=ì •ì‹ ë„ë©”ì¸ ^(ì˜ˆ https://www.hanamarket.co.kr, ë¯¸ì •ì´ë©´ Enter^):
+echo [4/5] È¯°æº¯¼ö ¼³Á¤
+set /p SITEURL=Á¤½Ä µµ¸ŞÀÎ ^(¿¹ https://www.hanamarket.co.kr, ¹ÌÁ¤ÀÌ¸é Enter^):
 if "%SITEURL%"=="" set SITEURL=https://www.hanamarket.co.kr
-set /p ADMINPW=ê´€ë¦¬ì ë¹„ë°€ë²ˆí˜¸ ^(8ì ì´ìƒ, Enter=hana1234!^):
+set /p ADMINPW=°ü¸®ÀÚ ºñ¹Ğ¹øÈ£ ^(8ÀÚ ÀÌ»ó, Enter=hana1234!^):
 if "%ADMINPW%"=="" set ADMINPW=hana1234!
 for /f "delims=" %%i in ('powershell -NoProfile -Command "[guid]::NewGuid().ToString('N')+[guid]::NewGuid().ToString('N')"') do set JWT=%%i
 railway variables --set "DATA_DIR=/data" --set "SITE_URL=%SITEURL%" --set "ADMIN_ID=admin" --set "ADMIN_PW=%ADMINPW%" --set "JWT_SECRET=%JWT%" --set "NODE_ENV=production"
-set /p AKEY=Anthropic API í‚¤ ^(ìˆìœ¼ë©´ ì…ë ¥, ì—†ìœ¼ë©´ Enter - ë‚˜ì¤‘ì— ê´€ë¦¬ì ì„¤ì •ì—ì„œ ì…ë ¥ ê°€ëŠ¥^):
+set /p AKEY=Anthropic API Å° ^(ÀÖÀ¸¸é ÀÔ·Â, ¾øÀ¸¸é Enter - ³ªÁß¿¡ °ü¸®ÀÚ ¼³Á¤¿¡¼­ ÀÔ·Â °¡´É^):
 if not "%AKEY%"=="" railway variables --set "ANTHROPIC_API_KEY=%AKEY%"
-set /p IKEY=ì¸ë¸”ë¡œê·¸ API í‚¤ ^(ìˆìœ¼ë©´ ì…ë ¥, ì—†ìœ¼ë©´ Enter^):
+set /p IKEY=ÀÎºí·Î±× API Å° ^(ÀÖÀ¸¸é ÀÔ·Â, ¾øÀ¸¸é Enter^):
 if not "%IKEY%"=="" railway variables --set "INBLOG_API_KEY=%IKEY%"
-echo [5/5] ë°°í¬ ì‹œì‘ ^(ë¹Œë“œ 2~4ë¶„^)
+echo [5/5] ¹èÆ÷ ½ÃÀÛ ^(ºôµå 2~4ºĞ^)
 railway up --detach
 echo.
-echo ë°°í¬ê°€ ì‹œì‘ëìŠµë‹ˆë‹¤. Railway ëŒ€ì‹œë³´ë“œ ^> Settings ^> Networking ì—ì„œ ë„ë©”ì¸ì„ ìƒì„±/ì—°ê²°í•˜ì„¸ìš”.
-echo ì„ì‹œ ë„ë©”ì¸^(*.up.railway.app^)ì€ ìë™ìœ¼ë¡œ noindex ì²˜ë¦¬ë˜ì–´ ê²€ìƒ‰ì—”ì§„ì— ë…¸ì¶œë˜ì§€ ì•ŠìŠµë‹ˆë‹¤.
+echo ¹èÆ÷°¡ ½ÃÀÛµÆ½À´Ï´Ù. Railway ´ë½Ãº¸µå ^> Settings ^> Networking ¿¡¼­ µµ¸ŞÀÎÀ» »ı¼º/¿¬°áÇÏ¼¼¿ä.
+echo ÀÓ½Ã µµ¸ŞÀÎ^(*.up.railway.app^)Àº ÀÚµ¿À¸·Î noindex Ã³¸®µÇ¾î °Ë»ö¿£Áø¿¡ ³ëÃâµÇÁö ¾Ê½À´Ï´Ù.
 railway open
 pause
