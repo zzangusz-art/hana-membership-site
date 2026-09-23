@@ -40,6 +40,8 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
   r = await get('/llms.txt'); ok(r.text.startsWith('# (주)하나회원권거래소'), 'llms.txt');
   r = await get('/llms-full.txt'); ok(r.text.length > 5000, 'llms-full.txt', `${r.text.length}자`);
   r = await get('/rss.xml'); ok(r.text.includes('<rss') && r.text.includes('<item>'), 'rss.xml');
+  r = await get('/google4502547acc516217.html'); ok(r.status === 200 && r.text.includes('google-site-verification: google4502547acc516217.html'), '서치콘솔 HTML 파일 확인 경로');
+  r = await get('/'); ok(r.text.includes('name="google-site-verification" content="gReobVd00ntn5dSJ8yMwv0vMlBA9F6zw9oYUrvzKVZU"'), '서치콘솔 메타태그 출력');
   const inx = require('../lib/indexnow'); r = await get('/' + inx.key() + '.txt'); ok(r.status === 200 && r.text.trim() === inx.key(), 'IndexNow 키 파일');
   ok((await inx.submit(['/'])).skipped === true, 'IndexNow: 임시 도메인에선 전송 안 함(skipped)');
   r = await get('/market/01'); ok(r.status === 200 || r.status === 301, '구 URL 리다이렉트 /market/01');

@@ -88,6 +88,8 @@ app.get('/healthz', (req, res) => res.json({ ok: true, app: '하나회원권거�
 // SEO 파일
 app.get('/sitemap.xml', (req, res) => res.type('application/xml').send(seo.sitemap()));
 app.get('/robots.txt', (req, res) => res.type('text/plain').send(seo.robots()));
+// 구글 서치콘솔 HTML 파일 확인(메타태그와 병행) — 파일명은 설정 google_verification_file
+app.get(/^\/(google[a-f0-9]{16})\.html$/, (req, res, next) => { const f = settings.cfg('google_verification_file'); if (req.params[0] + '.html' !== f) return next(); res.type('text/html').send(`google-site-verification: ${f}`); });
 // IndexNow 키 파일(네이버·Bing 소유 확인용)
 const indexnow = require('./lib/indexnow');
 app.get(/^\/([a-f0-9]{32})\.txt$/, (req, res, next) => { if (req.params[0] !== indexnow.key()) return next(); res.type('text/plain').send(indexnow.key()); });
