@@ -75,6 +75,42 @@
   // 유튜브 지연 로드
   $$('.yt').forEach(box => box.addEventListener('click', () => { const id = box.dataset.id; box.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0" title="YouTube" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`; }));
 
+  // 연혁: 기간 레일(클릭·←→키·이전/다음)·자동 순환(호버·수동 조작 시 정지)·세로 타임라인 스크롤 채움
+  const rail = $('.hist-rail');
+  if (rail) {
+    const btns = Array.from(rail.querySelectorAll('.hr-btn')), panels = $$('.hist-panel'), fill = rail.querySelector('.fill'), prog = $('.hist-prog'), hero = rail.closest('.hist-hero');
+    let cur = 0, timer = null, manual = false;
+    const show = (i) => { cur = (i + btns.length) % btns.length; btns.forEach((b, k) => { b.classList.toggle('active', k === cur); b.setAttribute('aria-selected', String(k === cur)); }); panels.forEach((p, k) => p.classList.toggle('active', k === cur)); if (fill) fill.style.width = `calc((100% - 16px) * ${cur / Math.max(1, btns.length - 1)})`; if (prog) { prog.classList.remove('run'); void prog.offsetWidth; if (timer) prog.classList.add('run'); } };
+    const start = () => { if (timer || manual || matchMedia('(prefers-reduced-motion: reduce)').matches) return; timer = setInterval(() => show(cur + 1), 4500); show(cur); };
+    const pause = () => { clearInterval(timer); timer = null; prog && prog.classList.remove('run'); };
+    const stop = () => { manual = true; pause(); };
+    btns.forEach((b, i) => b.addEventListener('click', () => { stop(); show(i); }));
+    const prev = $('#histPrev'), next = $('#histNext');
+    prev && prev.addEventListener('click', () => { stop(); show(cur - 1); }); next && next.addEventListener('click', () => { stop(); show(cur + 1); });
+    rail.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') { stop(); show(cur + 1); } if (e.key === 'ArrowLeft') { stop(); show(cur - 1); } });
+    hero && hero.addEventListener('mouseenter', pause); hero && hero.addEventListener('mouseleave', start);
+    show(0); start();
+  }
+  const vt = $('.timeline.vertical');
+  if (vt) { const upd = () => { const r = vt.getBoundingClientRect(); const p = Math.max(0, Math.min(1, (innerHeight * .78 - r.top) / r.height)); vt.style.setProperty('--fill', (p * 100).toFixed(1) + '%'); }; addEventListener('scroll', upd, { passive: true }); addEventListener('resize', upd); upd(); }
+
+  // 골프장 지도: 시·도 클릭 → 목록·카드 필터(다시 누르면 전체), 호버 툴팁(골프장 수), 칩 연동, ?sido= 초기값
+  const km = $('.kmap');
+  if (km) {
+    const box = $('.kmap-box'), items = $$('#kmapUl li'), cards = $$('.club-grid .club-card'), chips = $$('.kmap-chips .chip'), title = $('#kmapTitle'), empty = $('#kmapEmpty');
+    let SHORT = {}; try { SHORT = JSON.parse(box.dataset.short || '{}'); } catch (_) { /* no-op */ }
+    const counts = {}; items.forEach(li => { const sd = li.dataset.sido; if (sd) counts[sd] = (counts[sd] || 0) + 1; });
+    const regions = Array.from(km.querySelectorAll('.km-r')); regions.forEach(p => { if (counts[p.dataset.region]) p.classList.add('has'); });
+    const tip = document.createElement('div'); tip.className = 'kmap-tip'; box.appendChild(tip);
+    let cur = '';
+    const apply = (sd) => { cur = sd; regions.forEach(p => p.classList.toggle('active', !!sd && p.dataset.region === sd)); chips.forEach(c => c.classList.toggle('active', (c.dataset.sido || '') === sd)); let n = 0; items.forEach(li => { const on = !sd || li.dataset.sido === sd; li.hidden = !on; if (on) n++; }); cards.forEach(c => { c.hidden = !!sd && c.dataset.sido !== sd; }); if (title) title.innerHTML = `${sd ? (SHORT[sd] || sd) + ' 골프장' : '전체 골프장'} <small>${n}</small>`; if (empty) empty.hidden = n > 0; };
+    km.addEventListener('click', (e) => { const p = e.target.closest('.km-r'); if (!p) return; const sd = p.dataset.region; apply(cur === sd ? '' : sd); if (innerWidth < 900) { const l = $('#kmapList'); l && l.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
+    km.addEventListener('mousemove', (e) => { const p = e.target.closest('.km-r'); if (!p) { tip.classList.remove('show'); return; } const r = box.getBoundingClientRect(); tip.textContent = `${SHORT[p.dataset.region] || p.dataset.region} ${counts[p.dataset.region] || 0}곳`; tip.style.left = (e.clientX - r.left) + 'px'; tip.style.top = (e.clientY - r.top) + 'px'; tip.classList.add('show'); });
+    km.addEventListener('mouseleave', () => tip.classList.remove('show'));
+    chips.forEach(c => c.addEventListener('click', () => apply(c.dataset.sido || '')));
+    const initial = new URLSearchParams(location.search).get('sido'); if (initial) apply(initial);
+  }
+
   // 매매신청 URL 파라미터 → 폼 프리필
   const params = new URLSearchParams(location.search); if (params.get('item')) { const i = $('input[name=item]'); if (i && !i.value) i.value = params.get('item'); }
 })();

@@ -220,6 +220,13 @@ router.get('/market/:category', (req, res, next) => {
 });
 
 // ── 골프장 목록 ──
+// 주소 → 시·도(지도 라벨). 주소가 없으면 '' (지도 밖 목록에만 표시)
+const kmap = require('../lib/korea-map');
+function sido(addr) {
+  const a = String(addr || '').trim();
+  const T = [['서울', '서울'], ['인천', '인천'], ['경기', '경기도'], ['강원', '강원도'], ['충청북도', '충청북도'], ['충북', '충청북도'], ['충청남도', '충청남도'], ['충남', '충청남도'], ['대전', '대전'], ['세종', '세종'], ['전라북도', '전라북도'], ['전북', '전라북도'], ['전라남도', '전라남도'], ['전남', '전라남도'], ['광주', '광주'], ['경상북도', '경상북도'], ['경북', '경상북도'], ['대구', '대구'], ['경상남도', '경상남도'], ['경남', '경상남도'], ['부산', '부산'], ['울산', '울산'], ['제주', '제주도']];
+  for (const [k, v] of T) if (a.startsWith(k)) return v; return '';
+}
 router.get('/golf', (req, res) => {
   const q = String(req.query.q || '').trim().slice(0, 40); const region = String(req.query.region || '').trim().slice(0, 10);
   let sql = "SELECT * FROM clubs WHERE status='published'"; const args = [];
@@ -230,11 +237,17 @@ router.get('/golf', (req, res) => {
   const regions = db.prepare("SELECT region, COUNT(*) c FROM clubs WHERE status='published' AND region<>'' GROUP BY region ORDER BY c DESC").all();
   const total = db.prepare("SELECT COUNT(*) c FROM clubs WHERE status='published'").get().c;
   const site = settings.siteUrl();
+  const sidoCount = {}; clubs.forEach(c => { const sd = sido(c.address); if (sd) sidoCount[sd] = (sidoCount[sd] || 0) + 1; });
+  const sidos = Object.entries(sidoCount).sort((a, b) => b[1] - a[1]);
   const body = `
 <section class="page-head"><div class="wrap"><p class="eyebrow">골프장 소개</p><h1>골프장별 회원권 안내 <small>${total}개 골프장</small></h1><p class="bluf">골프장마다 회원권 시세, 입회·명의개서 조건, 부킹 특징, 어떤 매수자에게 맞는지를 정리했습니다. 시세는 하나회원권거래소 시세표와 자동 연동되어 매주 갱신됩니다.</p>
 <form class="market-controls" method="get" action="/golf"><input type="search" name="q" value="${attr(q)}" placeholder="골프장명 검색"><div class="chips"><a class="chip${!region ? ' active' : ''}" href="/golf">전체</a>${regions.map(r => `<a class="chip${region === r.region ? ' active' : ''}" href="/golf?region=${encodeURIComponent(r.region)}">${esc(r.region)} ${r.c}</a>`).join('')}</div><button class="btn btn-primary" type="submit">검색</button></form></div></section>
-<section class="section"><div class="wrap">
-  <div class="club-grid">${clubs.map(c => `<a class="club-card reveal" href="/golf/${encodeURIComponent(c.slug)}"><div class="cc-top"><span class="tag">${esc(c.region || '')}</span>${c.body_html ? '' : '<span class="tag tag-soft">준비 중</span>'}</div><h2>${esc(c.name)}</h2><p class="cc-addr">${esc(c.address || '')}</p><div class="cc-price">${c.price ? `<b>${fmtMan(c.price.today)}</b>${chg(c.price)}` : '<span class="note">시세 상담 문의</span>'}</div></a>`).join('') || '<p>검색 결과가 없습니다.</p>'}</div>
+<section class="section kmap-sec"><div class="wrap"><div class="sec-head"><div><p class="eyebrow">지역별 골프장</p><h2>지도에서 지역을 눌러 골프장을 찾아보세요</h2></div><p class="note">지역을 누르면 목록이 바뀌고, 다시 누르면 전체로 돌아갑니다.</p></div>
+<div class="kmap-wrap"><div class="kmap-box" data-short='${JSON.stringify(kmap.SHORT).replace(/'/g, '&#39;')}'>${kmap.SVG}</div>
+<div class="kmap-side"><div class="chips kmap-chips"><button type="button" class="chip active" data-sido="">전체 ${clubs.length}</button>${sidos.map(([sd, n]) => `<button type="button" class="chip" data-sido="${attr(sd)}">${esc(kmap.SHORT[sd] || sd)} ${n}</button>`).join('')}</div>
+<div class="kmap-list" id="kmapList"><h3 id="kmapTitle">전체 골프장 <small>${clubs.length}</small></h3><ul id="kmapUl">${clubs.map(c => `<li data-sido="${attr(sido(c.address))}"><a href="/golf/${encodeURIComponent(c.slug)}"><b>${esc(c.name)}</b><span>${esc((c.address || '').split(' ').slice(0, 2).join(' ') || c.region || '')}${c.holes && c.verified ? ` · ${c.holes}홀` : ''}</span>${c.price ? `<em>${fmtMan(c.price.today)}</em>` : ''}</a></li>`).join('')}</ul><p class="kmap-empty" id="kmapEmpty" hidden>이 지역에 등록된 골프장 소개가 아직 없습니다. 전국 회원제 골프장 회원권을 중개하니 <a href="/apply">매매 신청</a>으로 문의해 주세요.</p></div></div></div></div></section>
+<section class="section"><div class="wrap"><h2 class="sr-h">골프장 상세 카드</h2>
+  <div class="club-grid">${clubs.map(c => `<a class="club-card reveal" href="/golf/${encodeURIComponent(c.slug)}" data-sido="${attr(sido(c.address))}"><div class="cc-top"><span class="tag">${esc(c.region || '')}</span>${c.body_html ? '' : '<span class="tag tag-soft">준비 중</span>'}</div><h2>${esc(c.name)}</h2><p class="cc-addr">${esc(c.address || '')}</p><div class="cc-price">${c.price ? `<b>${fmtMan(c.price.today)}</b>${chg(c.price)}` : '<span class="note">시세 상담 문의</span>'}</div></a>`).join('') || '<p>검색 결과가 없습니다.</p>'}</div>
 </div></section>
 <section class="section explain"><div class="wrap narrow"><h2>골프장 소개 페이지는 무엇을 담고 있나요?</h2><p>각 페이지는 ① 시세·지역·규모를 담은 고정 정보표, ② 상담 경험을 바탕으로 한 "누구에게 맞는 회원권인가" 해설, ③ 실제 상담에서 자주 받는 질문 답변으로 구성됩니다. 골프장 정책(회원수·입회금·부킹 제도)이 바뀌면 내용을 갱신합니다.</p><h2>원하는 골프장이 없다면?</h2><p>표시된 골프장 외에도 전국 회원제 골프장 회원권을 중개합니다. <a href="/apply">매매 신청</a> 또는 ${esc(settings.cfg('phone'))}으로 문의하시면 시세와 매물을 안내해 드립니다.</p></div></section>`;
   res.send(page({ title: `골프장별 회원권 안내 — 시세·입회 조건·적합한 매수자 (${total}개 골프장)`, description: `전국 ${total}개 골프장 회원권 시세와 입회·명의개서 조건, 부킹 특징, 적합한 매수자 유형을 골프장별로 정리. 수도권·영남·강원·충청·제주 필터.`, path: '/golf', body, breadcrumbs: [{ name: '골프장 소개', href: '/golf' }], ogImage: '/og/page/golf.png', jsonld: [{ '@context': 'https://schema.org', '@type': 'ItemList', name: '골프장별 회원권 안내', numberOfItems: clubs.length, itemListElement: clubs.slice(0, 100).map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, url: `${site}/golf/${encodeURIComponent(c.slug)}` })) }] }));
@@ -268,7 +281,7 @@ router.get('/golf/:slug', (req, res, next) => {
     <div class="side-card"><h3>매매 상담</h3><p>${esc(c.name)} 회원권 매수·매도 호가와 매물을 확인해 드립니다.</p><a class="btn btn-green block" href="/apply?item=${encodeURIComponent(c.name)}">매매 신청</a><a class="btn btn-ghost block" href="tel:${attr(s.phone)}">${esc(s.phone)}</a></div>
     ${related.length ? `<div class="side-card"><h3>같은 권역 골프장</h3><ul class="side-list">${related.map(r => `<li><a href="/golf/${encodeURIComponent(r.slug)}">${esc(r.name)}</a>${r.price ? `<span>${fmtNum(r.price.today)}</span>` : ''}</li>`).join('')}</ul></div>` : ''}
     ${posts.length ? `<div class="side-card"><h3>관련 글</h3><ul class="side-list">${posts.map(x => `<li><a href="/blog/${attr(x.slug)}">${esc(x.title)}</a></li>`).join('')}</ul></div>` : ''}
-    <div class="side-card author"><h3>안내</h3><p><b>${esc(s.legal_name)}</b> 회원권 상담팀<br>2004년부터 회원권 매매 중개 · 분양 대행 20여 건<br><a href="/about">회사소개</a></p></div>
+    <div class="side-card author"><h3>안내</h3><p><b>${esc(s.legal_name)}</b> 회원권 상담팀<br>2004년부터 회원권 매매 중개 · 분양 대행 28건<br><a href="/about">회사소개</a></p></div>
   </aside>
 </div></section>`;
   const ld = [{ '@context': 'https://schema.org', '@type': 'GolfCourse', name: c.name, url: `${site}/golf/${encodeURIComponent(c.slug)}`, address: c.address ? { '@type': 'PostalAddress', streetAddress: c.address, addressCountry: 'KR' } : undefined, description: summary },

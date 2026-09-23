@@ -148,11 +148,28 @@ router.get('/about', (req, res) => {
 </article></div><aside class="club-side"><div class="side-card"><h3>바로가기</h3><ul class="side-list"><li><a href="/about/history">연혁·실적</a></li><li><a href="/about/location">찾아오시는 길</a></li><li><a href="/about/careers">채용 안내</a></li><li><a href="/market/golf">골프회원권 시세</a></li></ul></div></aside></div></section>`;
   res.send(page({ title: `회사소개 — ${s.legal_name} (2004년 설립, 골프·콘도·피트니스 회원권 전문)`, description: `${s.legal_name}는 2004년 설립된 회원권 매매 중개·컨설팅 전문기업. 대표이사 ${s.ceo}, 서울 강남 압구정 본사, 국내 최상위권 거래량과 20여 건 분양 대행 실적. 하나금융과 무관한 독립 기업.`, path: '/about', body, breadcrumbs: [{ name: '회사소개', href: '/about' }], ogImage: '/og/page/about.png', jsonld: [{ '@context': 'https://schema.org', '@type': 'AboutPage', name: '회사소개', url: site() + '/about', mainEntity: { '@id': site() + '/#org' } }] }));
 });
+// 연혁 데이터 — 회사 제공 '기업 분석' 타임라인(2026-09-23 첨부 이미지) 그대로. ms = 회사 이정표(설립·합병·사명 변경)
+const HISTORY = [
+  { label: '2004', years: [['2004', [['에이원회원권거래소 설립', 'ms']]]] },
+  { label: '2006', years: [['2006', [['블루버드 컨트리클럽 분양'], ['서원밸리 컨트리클럽 특별분양'], ['엘리시안 강촌리조트 분양']]]] },
+  { label: '2008', years: [['2008', [['비전회원권거래소 합병', 'ms'], ['칸리조트 분양'], ['가산노블리세 컨트리클럽 분양'], ['파인리즈 컨트리클럽 분양']]]] },
+  { label: '2010~2011', years: [['2010', [['리베라 컨트리클럽 무기명 회원권 분양'], ['레이크힐스 컨트리클럽 무기명 회원권 분양'], ['반얀트리 휘트니스 분양']]], ['2011', [['블루버드 컨트리클럽 무기명 회원권 분양']]]] },
+  { label: '2014', years: [['2014', [['하나회원권거래소 사명 변경', 'ms'], ['프리스틴밸리 골프클럽 분양'], ['엘리시안 강촌리조트 분양'], ['크리스탈밸리 컨트리클럽 분양'], ['썬밸리 컨트리클럽 분양'], ['비에이비스타 컨트리클럽 분양']]]] },
+  { label: '2015~2017', years: [['2015', [['세라지오 컨트리클럽 분양']]], ['2016', [['레이크힐스 리조트 분양'], ['더 스타휴 분양']]], ['2017', [['서울드래곤시티 휘트니스 분양']]]] },
+  { label: '2019~2021', years: [['2019', [['서울드래곤시티 시티즌쉽 분양']]], ['2020', [['서울드래곤시티 호텔멤버쉽 분양']]], ['2021', [['오크밸리리조트 멤버쉽 분양']]]] },
+  { label: '2022~2025', years: [['2022', [['금호아시아나 웨하이 분양']]], ['2023', [['벨라 45 분양']]], ['2024', [['고흥 썬밸리 리조트 분양']]], ['2025', [['더헤븐CC 분양'], ['오크밸리 분양'], ['스마트스코어 선불카드 분양']]]] },
+];
 router.get('/about/history', (req, res) => {
-  const hist = [['2004', '에이원회원권거래소 설립'], ['2006', '블루버드 컨트리클럽 분양 · 서원밸리 컨트리클럽 특별 분양 · 엘리시안 강촌리조트 분양'], ['2008', '비전회원권거래소 합병 · 칸리조트 분양 · 가산노블리제 컨트리클럽 분양 · 파인리즈 컨트리클럽 분양'], ['2010', '리베라 컨트리클럽 무기명 회원권 분양 · 레이크힐스 컨트리클럽 무기명 회원권 분양 · 반얀트리 휘트니스 분양'], ['2011', '블루버드 컨트리클럽 무기명 회원권 분양'], ['2014', '하나회원권거래소로 사명 변경 · 프리스틴밸리 골프클럽 분양 · 엘리시안 강촌리조트 분양 · 크리스탈밸리 컨트리클럽 분양 · 썬밸리 컨트리클럽 분양 · 비에이비스타 컨트리클럽 분양'], ['2015', '세라지오 컨트리클럽 분양'], ['2016', '레이크힐스 리조트 분양 · 더 스타휴 분양'], ['2019', '서울드래곤시티 휘트니스 분양 · 서울드래곤시티 시티클럽 분양 · 서울드래곤시티 호텔 멤버십 분양'], ['2022', '레저 분야 마케팅 선두주자로 다양한 실무경험 수행']];
-  const body = `<section class="page-head"><div class="wrap"><p class="eyebrow">회사소개</p><h1>연혁·주요 실적</h1><p class="bluf">2004년 에이원회원권거래소로 출발해 2008년 비전회원권거래소 합병, 2014년 하나회원권거래소 출범까지, 골프장·리조트·피트니스 회원권 분양 대행 20여 건을 수행했습니다.</p></div></section>
-<section class="section"><div class="wrap narrow"><h2>연도별 주요 실적은 무엇인가요?</h2><div class="timeline vertical">${hist.map(([y, t]) => `<div class="tl-item reveal"><b>${y}</b><span>${esc(t)}</span></div>`).join('')}</div><h2>파트너십</h2><ul class="checks">${['한국골프회원권경영인협회', '네오위즈 게임즈', '미래신용정보', '수호천사 동양생명', '삼양', '포스코 ICT', '한글과컴퓨터', '서울드래곤시티'].map(p => `<li>${p}</li>`).join('')}</ul></div></section>`;
-  res.send(page({ title: '연혁·주요 실적 — 2004년 설립부터 20여 건 회원권 분양 대행까지', description: '하나회원권거래소 연혁: 2004 에이원회원권거래소 설립, 2008 비전회원권거래소 합병, 2014 사명 변경. 블루버드·서원밸리·리베라·레이크힐스·프리스틴밸리·서울드래곤시티 등 분양 실적과 파트너십.', path: '/about/history', body, breadcrumbs: [{ name: '회사소개', href: '/about' }, { name: '연혁·실적', href: '/about/history' }] }));
+  const all = HISTORY.flatMap(p => p.years.flatMap(([y, items]) => items.map(([t, k]) => ({ y, t, ms: k === 'ms' }))));
+  const sales = all.filter(x => !x.ms).length; const years = new Date().getFullYear() - 2004;
+  const panels = HISTORY.map((p, i) => { const multi = p.years.length > 1; const n = p.years.reduce((a, [, it]) => a + it.length, 0);
+    return `<div class="hist-panel${i === 0 ? ' active' : ''}" role="tabpanel" id="hp${i}" aria-labelledby="hb${i}"><div><h2>${p.label}</h2><p class="hp-sub">${p.years.map(([y]) => y).join(' · ')} · ${n}건</p></div><ul>${p.years.map(([y, items]) => items.map(([t, k]) => `<li${k === 'ms' ? ' class="ms"' : ''}>${multi ? `<span class="yr">${y}</span>` : ''}${esc(t)}</li>`).join('')).join('')}</ul></div>`; }).join('');
+  const body = `<section class="hist-hero"><div class="wrap"><p class="eyebrow">하나회원권거래소 기업 분석</p><h1>꾸준한 성장을 보여온 <em>검증된 수익 창출 기업</em></h1><p class="lead">2004년 에이원회원권거래소로 출발해 2008년 비전회원권거래소 합병, 2014년 하나회원권거래소 출범까지. 골프장·리조트·피트니스 회원권 분양 대행 ${sales}건을 수행했습니다.</p>
+<ul class="counters"><li><b data-count="${years}">0</b><span>년째 운영 (2004~)</span></li><li><b data-count="${sales}">0</b><span>분양 대행 실적</span></li><li><b data-count="${all.filter(x => x.ms).length}">0</b><span>회사 이정표(설립·합병·사명 변경)</span></li></ul>
+<div class="hist-rail" role="tablist" aria-label="연혁 기간" tabindex="0"><span class="fill" aria-hidden="true"></span>${HISTORY.map((p, i) => `<button class="hr-btn${i === 0 ? ' active' : ''}" role="tab" id="hb${i}" aria-controls="hp${i}" aria-selected="${i === 0}">${p.label}</button>`).join('')}</div>
+<div class="hist-panels">${panels}</div><div class="hist-prog" aria-hidden="true"><i></i></div><div class="hist-ctl"><button type="button" id="histPrev" aria-label="이전 기간">‹</button><button type="button" id="histNext" aria-label="다음 기간">›</button></div></div></section>
+<section class="section"><div class="wrap narrow"><h2>연도별 전체 실적</h2><div class="timeline vertical">${all.map(x => `<div class="tl-item reveal${x.ms ? ' ms' : ''}"><b>${x.y}</b><span>${esc(x.t)}<i class="tl-tag${x.ms ? ' ms' : ''}">${x.ms ? '이정표' : '분양'}</i></span></div>`).join('')}</div><h2>파트너십</h2><ul class="checks">${['한국골프회원권경영인협회', '네오위즈 게임즈', '미래신용정보', '수호천사 동양생명', '삼양', '포스코 ICT', '한글과컴퓨터', '서울드래곤시티'].map(p => `<li>${p}</li>`).join('')}</ul></div></section>`;
+  res.send(page({ title: `연혁·주요 실적 — 2004년 설립부터 분양 대행 ${sales}건까지`, description: `하나회원권거래소 연혁: 2004 에이원회원권거래소 설립, 2008 비전회원권거래소 합병, 2014 사명 변경. 블루버드·서원밸리·리베라·레이크힐스·프리스틴밸리·서울드래곤시티·오크밸리·더헤븐CC 등 분양 대행 ${sales}건(2004~2025)과 파트너십.`, path: '/about/history', body, breadcrumbs: [{ name: '회사소개', href: '/about' }, { name: '연혁·실적', href: '/about/history' }] }));
 });
 router.get('/about/location', (req, res) => {
   const s = settings.all();
