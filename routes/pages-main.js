@@ -61,12 +61,6 @@ router.get('/', (req, res) => {
     <p class="lead">하나회원권거래소는 2004년 설립된 회원권 매매 중개·컨설팅 전문기업입니다. 골프회원권 ${g.total}종목의 시세를 매주 실거래와 호가로 갱신하고, 상담부터 계약·명의개서·등록 완료 후 부킹 문의까지 한 담당자가 끝까지 지원합니다.</p>
     <form class="hero-search tilt" data-tilt="6" action="/market/golf" method="get" role="search"><label class="sr" for="q">종목 검색</label><input id="q" name="q" type="search" placeholder="골프장·회원권명 검색 (예: 아시아나, 남촌, 신원)" autocomplete="off" list="club-list"><datalist id="club-list">${all.slice(0, 120).map(r => `<option value="${attr(r.name)}">`).join('')}</datalist><button class="btn btn-primary" type="submit">시세 확인</button></form>
     <div class="hero-actions"><a class="btn btn-green magnet" href="/apply">매매 신청</a><a class="btn btn-ghost magnet" href="tel:${attr(s.phone)}">📞 ${esc(s.phone)} 24시간 상담</a></div>
-    <ul class="counters">
-      <li><b data-count="${years}">0</b><span>년 업력</span></li>
-      <li><b data-count="${g.total}">0</b><span>골프 시세 종목</span></li>
-      <li><b data-count="${clubCount}">0</b><span>골프장 소개</span></li>
-      <li><b data-count="24">0</b><span>시간 상담</span></li>
-    </ul>
   </div>
   <div class="ticker" aria-label="오늘의 시세 흐름"><div class="ticker-track">${tickerHtml}${tickerHtml}</div></div>
 </section>
