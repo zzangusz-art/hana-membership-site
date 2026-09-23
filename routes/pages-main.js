@@ -50,7 +50,7 @@ router.get('/', (req, res) => {
   const years = new Date().getFullYear() - 2004;
   const ticker = all.slice().sort(() => 0.5 - Math.random()).slice(0, 28);
   const SLIDES = [
-    { key: 'golf', icon: '⛳', kicker: '골프회원권 · 매주 갱신 시세', tab: '프리미엄 골프 라이프', title: '프리미엄 <span class="hl">골프 라이프</span>', sub: `골프회원권 ${g.total}종목 시세, 매주 월요일 갱신`, lead: '매도자가 부르는 값과 실제 계약된 값은 다릅니다. 시세표는 그 둘을 같이 보고 만듭니다. 상담한 담당자가 계약과 명의개서 접수까지 그대로 맡습니다.', href: '/market/golf', img: '/img/hero/golf.jpg', bg: '/img/hero/golf-bg.jpg' },
+    { key: 'golf', icon: '⛳', kicker: '프리미엄 골프 라이프 · 2004년부터', tab: '프리미엄 골프 라이프', title: '골프회원권 <span class="hl">시세 조회·구매·매입</span>, 한 곳에서', sub: `골프회원권 ${g.total}종목 시세, 매주 월요일 갱신`, lead: '매도자가 부르는 값과 실제 계약된 값은 다릅니다. 시세표는 그 둘을 같이 보고 만듭니다. 골프장 회원권 거래는 상담한 담당자가 계약과 명의개서 접수까지 그대로 맡습니다.', href: '/market/golf', img: '/img/hero/golf.jpg', bg: '/img/hero/golf-bg.jpg' },
     { key: 'condo', icon: '🏔️', kicker: '콘도·리조트 회원권', tab: '휴식과 힐링의 콘도', title: '휴식과 힐링의 <span class="hl">콘도</span>', sub: '공유제인지 회원제인지부터 확인하세요', lead: '등기가 되는 공유제와 입회금을 맡기는 회원제는 세금도, 되팔 때도 다릅니다. 가족 휴가용인지 법인 복지용인지 말씀해 주시면 맞는 쪽을 골라 드립니다.', href: '/market/condo', img: '/img/hero/condo.jpg', bg: '/img/hero/condo-bg.jpg' },
     { key: 'fitness', icon: '🏋️', kicker: '피트니스 회원권', tab: '건강한 피트니스 라이프', title: '건강한 <span class="hl">피트니스 라이프</span>', sub: '호텔 피트니스 개인·부부 회원권', lead: '호텔마다 양도 승인 기간과 연회비가 다릅니다. 시세표에서 확인하시고 매매 신청을 남기시면 당일 연락드립니다.', href: '/market/fitness', img: '/img/hero/fitness.jpg', bg: '/img/hero/fitness-bg.jpg' },
   ];
@@ -164,8 +164,8 @@ ${featured.length ? `<section class="section listings-hl"><div class="wrap"><div
 <section class="partners"><div class="wrap"><p class="eyebrow center">함께한 파트너</p><div class="marquee"><div class="marquee-track">${['한국골프회원권경영인협회', 'NEOWIZ', '미래신용정보', '동양생명', 'samyang', 'POSCO ICT', '한글과컴퓨터', 'SEOUL DRAGON CITY', '한국골프회원권경영인협회', 'NEOWIZ', '미래신용정보', '동양생명', 'samyang', 'POSCO ICT', '한글과컴퓨터', 'SEOUL DRAGON CITY'].map(p => `<span>${p}</span>`).join('')}</div></div></div></section>`;
 
   res.send(page({
-    title: `하나회원권거래소 | 골프회원권 시세·매매 전문 거래소 (2004년 설립)`,
-    description: `골프회원권 ${g.total}종목 시세를 매주 실거래 기준으로 갱신. 콘도·피트니스·법인·무기명 회원권 매매, 명의개서 대행, 신규 분양, 해외 골프투어. 서울 강남 압구정, 24시간 상담 ${s.phone}.`,
+    title: `하나회원권거래소 | 골프회원권 시세 조회·구매·매입, 회원권 거래 전문 (2004년~)`,
+    description: `골프회원권 시세 조회와 구매·매입·판매, 콘도·피트니스 회원권 거래. 2004년부터 회원권 거래 전문, 24시간 상담 ${s.phone}.`,
     path: '/', body, bodyClass: 'home',
     jsonld: [faqLd(faqs), datasetLd('golf', all, g.lastUpdated)],
     dateModified: g.lastUpdated ? isoFromTs(g.lastUpdated) : undefined,
@@ -174,7 +174,7 @@ ${featured.length ? `<section class="section listings-hl"><div class="wrap"><div
 
 // ── 시세표 ──
 const MARKET_META = {
-  golf: { h1: '골프회원권 시세표', intro: (n) => `전국 회원제 골프장 ${n}종목의 회원권 시세입니다. 실거래와 매도·매수 호가를 반영해 매주 월요일 갱신하며, 표의 가격은 만원 단위 회원권 시세(명의개서료·수수료 별도)입니다.`, desc: (n, d) => `골프회원권 시세표, ${n}종목 금일·전일 시세와 등락률, 지역별 필터, 90일 추이. ${d} 갱신. 하나회원권거래소 실거래 기준.` },
+  golf: { h1: '골프회원권 시세 조회', intro: (n) => `전국 회원제 골프장 ${n}종목의 회원권 시세입니다. 실거래와 매도·매수 호가를 반영해 매주 월요일 갱신하며, 표의 가격은 만원 단위 회원권 시세(명의개서료·수수료 별도)입니다.`, desc: (n, d) => `골프회원권 시세 조회: ${n}종목 금일·전일 시세와 시세 변동, 지역별 필터, 90일 추이. ${d} 갱신, 실거래 기준.` },
   corporate: { h1: '법인회원권 시세표', intro: (n) => `법인 명의로 등록·이용하는 골프회원권 ${n}종목의 시세입니다. 법인 회원권은 지정 등록자 수·무기명 여부에 따라 같은 골프장이라도 개인 회원권과 가격이 다릅니다.`, desc: (n, d) => `법인 골프회원권 시세표, ${n}종목 금일·전일 시세와 등락률. ${d} 갱신. 법인 명의 등록·취득세·무기명 조건 상담.` },
   condo: { h1: '콘도회원권 시세표', intro: (n) => `전국 콘도·리조트 회원권 ${n}종목의 시세입니다. 공유제(등기)·회원제(입회금) 여부, 성수기 이용일수, 객실 타입에 따라 가격이 달라지므로 매수 전 이용 조건을 함께 확인하세요.`, desc: (n, d) => `콘도회원권 시세표, 소노(대명)·한화·용평 등 리조트 회원권 ${n}종목 금일·전일 시세. ${d} 갱신. 하나회원권거래소.` },
   fitness: { h1: '피트니스회원권 시세표', intro: (n) => `호텔 피트니스(헬스) 개인·부부 회원권 ${n}종목의 시세입니다. 호텔 피트니스 회원권은 연회비·부대시설 이용 범위가 가격에 반영됩니다.`, desc: (n, d) => `피트니스회원권 시세표, 그랜드인터컨티넨탈·노보텔·롯데 등 호텔 헬스 회원권 ${n}종목 시세. ${d} 갱신.` },
@@ -215,7 +215,7 @@ router.get('/market/:category', (req, res, next) => {
   <p>한 주 등락만 보지 마시고 <a href="/blog?type=report">주간 시세 리포트</a>에서 4주 흐름과 <a href="/golf">골프장별 입회 조건</a>을 같이 보세요. 지금 나온 매물과 호가는 ${esc(settings.cfg('phone'))}으로 물어보시는 게 가장 정확합니다.</p>
   ${faqHtml([{ q: '시세는 언제 갱신되나요?', a: '매주 월요일 오전 실거래·호가를 반영해 갱신합니다. 급변 시 주중에도 수시 반영합니다.' }, { q: '표의 가격에 수수료가 포함되나요?', a: '아니요. 회원권 자체 시세이며 거래소 수수료와 골프장 명의개서료는 별도입니다.' }, { q: '표에 없는 종목도 거래할 수 있나요?', a: '네. 표는 주요 종목이며 그 외 종목은 상담 시 시세를 안내해 드립니다.' }])}
 </div></section>`;
-  res.send(page({ title: `${meta.h1} ${updated} 갱신: ${all.length}종목 금일·전일 시세 | 하나회원권거래소`, description: meta.desc(all.length, updated), path: `/market/${cat}`, body, breadcrumbs: [{ name: '회원권 시세', href: '/market/golf' }, { name: label, href: `/market/${cat}` }], jsonld: [datasetLd(cat, all, st.lastUpdated), faqLd([{ q: '시세는 언제 갱신되나요?', a: '매주 월요일 오전 실거래·호가를 반영해 갱신합니다.' }, { q: '표의 가격에 수수료가 포함되나요?', a: '회원권 자체 시세이며 거래소 수수료와 골프장 명의개서료는 별도입니다.' }])], dateModified: st.lastUpdated ? isoFromTs(st.lastUpdated) : undefined, bodyClass: 'market-page', ogImage: `/og/page/market-${cat}.png` }));
+  res.send(page({ title: `${meta.h1} ${updated} 갱신: ${all.length}종목 금일·전일 시세와 시세 변동 | 하나회원권거래소`, description: meta.desc(all.length, updated), path: `/market/${cat}`, body, breadcrumbs: [{ name: '회원권 시세', href: '/market/golf' }, { name: label, href: `/market/${cat}` }], jsonld: [datasetLd(cat, all, st.lastUpdated), faqLd([{ q: '시세는 언제 갱신되나요?', a: '매주 월요일 오전 실거래·호가를 반영해 갱신합니다.' }, { q: '표의 가격에 수수료가 포함되나요?', a: '회원권 자체 시세이며 거래소 수수료와 골프장 명의개서료는 별도입니다.' }])], dateModified: st.lastUpdated ? isoFromTs(st.lastUpdated) : undefined, bodyClass: 'market-page', ogImage: `/og/page/market-${cat}.png` }));
 });
 
 // ── 골프장 목록 ──
@@ -239,7 +239,7 @@ router.get('/golf', (req, res) => {
   const sidoCount = {}; clubs.forEach(c => { const sd = sido(c.address); if (sd) sidoCount[sd] = (sidoCount[sd] || 0) + 1; });
   const sidos = Object.entries(sidoCount).sort((a, b) => b[1] - a[1]);
   const body = `
-<section class="page-head"><div class="wrap"><p class="eyebrow">골프장 소개</p><h1>골프장별 회원권 안내 <small>${total}개 골프장</small></h1><p class="bluf">골프장마다 회원권 시세, 입회·명의개서 조건, 부킹 특징, 어떤 매수자에게 맞는지를 정리했습니다. 시세는 하나회원권거래소 시세표와 자동 연동되어 매주 갱신됩니다.</p>
+<section class="page-head"><div class="wrap"><p class="eyebrow">골프장 소개</p><h1>골프장 회원권 거래·입회권 안내 <small>${total}개 골프장</small></h1><p class="bluf">골프장마다 회원권 시세, 입회권·명의개서 조건, 회원권 혜택과 부킹 특징, 어떤 분께 맞는지를 정리했습니다. 시세는 시세표와 연동되어 매주 갱신됩니다.</p>
 <form class="market-controls" method="get" action="/golf"><input type="search" name="q" value="${attr(q)}" placeholder="골프장명 검색"><div class="chips"><a class="chip${!region ? ' active' : ''}" href="/golf">전체</a>${regions.map(r => `<a class="chip${region === r.region ? ' active' : ''}" href="/golf?region=${encodeURIComponent(r.region)}">${esc(r.region)} ${r.c}</a>`).join('')}</div><button class="btn btn-primary" type="submit">검색</button></form></div></section>
 <section class="section kmap-sec"><div class="wrap"><div class="sec-head"><div><p class="eyebrow">지역별 골프장</p><h2>지도에서 지역을 눌러 골프장을 찾아보세요</h2></div><p class="note">지역을 누르면 목록이 바뀌고, 다시 누르면 전체로 돌아갑니다.</p></div>
 <div class="kmap-wrap"><div class="kmap-box" data-short='${JSON.stringify(kmap.SHORT).replace(/'/g, '&#39;')}'>${kmap.SVG}</div>
@@ -249,7 +249,7 @@ router.get('/golf', (req, res) => {
   <div class="club-grid">${clubs.map(c => `<a class="club-card reveal" href="/golf/${encodeURIComponent(c.slug)}" data-sido="${attr(sido(c.address))}"><div class="cc-top"><span class="tag">${esc(c.region || '')}</span>${c.body_html ? '' : '<span class="tag tag-soft">준비 중</span>'}</div><h2>${esc(c.name)}</h2><p class="cc-addr">${esc(c.address || '')}</p><div class="cc-price">${c.price ? `<b>${fmtMan(c.price.today)}</b>${chg(c.price)}` : '<span class="note">시세 상담 문의</span>'}</div></a>`).join('') || '<p>검색 결과가 없습니다.</p>'}</div>
 </div></section>
 <section class="section explain"><div class="wrap narrow"><h2>골프장 소개 페이지에 있는 것</h2><p>시세·지역·규모 표, 어떤 분께 맞는 회원권인지 상담 경험으로 쓴 해설, 상담에서 자주 받는 질문의 답이 있습니다. 골프장이 회원 수나 입회금, 부킹 제도를 바꾸면 내용을 고칩니다.</p><h2>원하는 골프장이 없다면?</h2><p>표시된 골프장 외에도 전국 회원제 골프장 회원권을 중개합니다. <a href="/apply">매매 신청</a> 또는 ${esc(settings.cfg('phone'))}으로 문의하시면 시세와 매물을 안내해 드립니다.</p></div></section>`;
-  res.send(page({ title: `골프장별 회원권 안내: 시세·입회 조건·적합한 매수자 (${total}개 골프장)`, description: `전국 ${total}개 골프장 회원권 시세와 입회·명의개서 조건, 부킹 특징, 적합한 매수자 유형을 골프장별로 정리. 수도권·영남·강원·충청·제주 필터.`, path: '/golf', body, breadcrumbs: [{ name: '골프장 소개', href: '/golf' }], ogImage: '/og/page/golf.png', jsonld: [{ '@context': 'https://schema.org', '@type': 'ItemList', name: '골프장별 회원권 안내', numberOfItems: clubs.length, itemListElement: clubs.slice(0, 100).map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, url: `${site}/golf/${encodeURIComponent(c.slug)}` })) }] }));
+  res.send(page({ title: `골프장 회원권 거래·입회권 안내: 골프장별 시세·혜택·추천 (${total}개 골프장)`, description: `전국 ${total}개 골프장 회원권 시세와 입회권·명의개서 조건, 회원권 혜택, 어떤 분께 맞는지 골프장별 추천. 지역 지도 검색.`, path: '/golf', body, breadcrumbs: [{ name: '골프장 소개', href: '/golf' }], ogImage: '/og/page/golf.png', jsonld: [{ '@context': 'https://schema.org', '@type': 'ItemList', name: '골프장별 회원권 안내', numberOfItems: clubs.length, itemListElement: clubs.slice(0, 100).map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, url: `${site}/golf/${encodeURIComponent(c.slug)}` })) }] }));
 });
 
 // ── 골프장 상세 ──

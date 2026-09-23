@@ -48,10 +48,14 @@ router.get('/guide/golf', (req, res) => {
 <ul><li><strong>예약 우선권</strong>: 주말·성수기 부킹을 회원 우선 배정으로 확보합니다.</li><li><strong>비용 절감</strong>: 회원 그린피는 비회원 대비 크게 낮아 자주 이용할수록 유리합니다.</li><li><strong>자산 가치</strong>: 시세가 형성돼 있어 필요 시 양도로 회수할 수 있고, 골프장 정책에 따라 시세 상승 여지도 있습니다.</li><li><strong>동반자 혜택</strong>: 회원 동반 시 동반자 그린피 할인이 적용되는 골프장이 많습니다.</li></ul>
 <h2>매수 전에 반드시 확인할 것은?</h2>
 <ol><li><strong>입회금 반환 조건</strong>: 거치 기간과 반환 절차, 반환 지연 이력.</li><li><strong>명의개서료와 심사 기간</strong>: 골프장별로 수십만~수백만 원, 심사 1~2주.</li><li><strong>회원 수 대비 홀 수</strong>: 회원이 많을수록 부킹 경쟁이 심합니다.</li><li><strong>주말 부킹 방식</strong>: 추첨제·선착순·지정일 배정 등.</li><li><strong>연회비·관리비</strong>와 <strong>양도 제한 기간</strong> 유무.</li></ol>
+<h2>골프회원권 싸게 사는 법은?</h2>
+<ol><li><strong>비수기에 사고 성수기 초입에 판다</strong>: 한겨울·장마철에 매수 문의가 줄어 호가가 내려갑니다. 3~4월, 9~10월 직전이 매도에 유리합니다.</li><li><strong>같은 골프장의 다른 종목을 본다</strong>: 정회원권이 부담되면 주중 회원권, 법인이면 무기명 대신 지정 등록 법인권이 더 쌀 수 있습니다.</li><li><strong>총액으로 비교한다</strong>: 회원권 가격에 명의개서료·수수료·취득세를 더한 총액으로 골프장 간 비교합니다. 시세가 낮아도 명의개서료가 큰 곳이 있습니다.</li><li><strong>급매·법인 정리 매물을 기다린다</strong>: 결산기와 연말에 법인이 정리하는 매물이 나옵니다. 희망 종목과 예산을 미리 남겨 두면 매물이 나올 때 바로 연락받습니다.</li><li><strong>호가와 실거래가를 구분한다</strong>: 시세표 금일가는 기준값이고 실제 계약가는 그 아래위에서 정해집니다. 매도호가만 보고 판단하지 마세요.</li></ol>
+<h2>입회권과 회원권은 무엇이 다른가요?</h2>
+<p>실무에서는 같은 뜻으로 쓰지만, 엄밀히 <strong>입회권</strong>은 골프장에 입회할 수 있는 권리(분양 시 부여되는 입회 자격)이고 <strong>회원권</strong>은 입회금을 내고 등록을 마친 회원의 권리입니다. 골프장 입회권 거래라고 하면 보통 분양권 또는 아직 명의개서 전인 회원권을 말하므로, 계약 전에 <em>골프장 등록이 끝난 상태인지</em>, <em>입회금 반환 조건이 승계되는지</em>를 확인해야 합니다.</p>
 <h2>매수·매도 절차는 어떻게 되나요?</h2>
 <p><a href="/guide/process">거래 절차·수수료 안내</a>에서 단계별 절차와 서류를 확인하실 수 있습니다. 요약하면 상담 → 시세·매물 확인 → 계약·정산 → 골프장 명의개서 접수 → 심사·등록 완료 순이며, 전 과정을 하나회원권거래소가 대행합니다.</p>
 <p class="cta">지금 시세를 보려면 <a href="/market/golf">골프회원권 시세표</a>, 골프장별 조건은 <a href="/golf">골프장 소개</a>를 참고하세요.</p>`;
-  res.send(page({ title: '골프회원권 안내: 종류·혜택·매수 전 확인사항·절차', description: `골프회원권의 정의와 정회원·주중·법인·무기명·분담금 회원권의 차이, 회원권 혜택, 매수 전 확인할 5가지, 거래 절차를 정리. ${g.total}종목 시세 매주 갱신.`, path: '/guide/golf', body: guideShell({ eyebrow: '회원권 안내', h1: '골프회원권 안내', bluf: '골프회원권은 회원제 골프장의 우선 예약권과 회원 그린피 혜택을 받는 양도 가능한 권리입니다. 종류별 차이와 매수 전 확인사항, 절차를 한 페이지에 정리했습니다.', sections, faqs, side: sideStats() }), breadcrumbs: [{ name: '회원권 안내', href: '/guide/golf' }, { name: '골프회원권 안내', href: '/guide/golf' }], jsonld: articleLd({ title: '골프회원권 안내', desc: '골프회원권 종류·혜택·확인사항·절차', url: '/guide/golf', faqs }) }));
+  res.send(page({ title: '골프회원권 구매 가이드: 싸게 사는 법·입회권·회원권 혜택·추천', description: `골프회원권 구매 전 확인할 것, 싸게 사는 법, 입회권과 회원권의 차이, 회원권 혜택, 종류별 추천과 거래 절차를 한 페이지에 정리.`, path: '/guide/golf', body: guideShell({ eyebrow: '회원권 안내', h1: '골프회원권 안내', bluf: '골프회원권은 회원제 골프장의 우선 예약권과 회원 그린피 혜택을 받는 양도 가능한 권리입니다. 종류별 차이와 매수 전 확인사항, 절차를 한 페이지에 정리했습니다.', sections, faqs, side: sideStats() }), breadcrumbs: [{ name: '회원권 안내', href: '/guide/golf' }, { name: '골프회원권 안내', href: '/guide/golf' }], jsonld: articleLd({ title: '골프회원권 안내', desc: '골프회원권 종류·혜택·확인사항·절차', url: '/guide/golf', faqs }) }));
 });
 
 // ── 콘도회원권 안내 ──
@@ -82,13 +86,13 @@ router.get('/guide/process', (req, res) => {
 <h2>준비 서류는 무엇인가요?</h2><table><thead><tr><th>구분</th><th>개인</th><th>법인</th></tr></thead><tbody><tr><td>매도자</td><td>회원증, 신분증, 인감증명서, 양도서류(골프장 양식)</td><td>법인인감증명서, 사업자등록증, 법인등기부등본, 양도서류</td></tr><tr><td>매수자</td><td>신분증, 입회신청서, 사진, 명의개서료</td><td>사업자등록증, 법인등기부등본, 법인인감, 지정등록자 신분증·사진</td></tr></tbody></table><p class="note">골프장별로 추가 서류(주민등록등본·가족관계증명서 등)를 요구할 수 있으며, 접수 전 최신 목록을 안내해 드립니다.</p>
 <h2>비용은 어떻게 구성되나요?</h2><ul><li><strong>회원권 대금</strong>: 시세표의 금액(만원 단위).</li><li><strong>거래소 수수료</strong>: 매도·매수 각각, 거래 금액 구간별 정해진 요율. 상담 시 사전 고지.</li><li><strong>명의개서료</strong>: 골프장에 납부. 골프장별 상이(수십만~수백만 원).</li><li><strong>세금</strong>: 법인 취득 시 취득세, 개인·법인 양도차익 발생 시 양도소득세·법인세. 세무사 확인 권장.</li></ul>
 <h2>거래 안전은 어떻게 보장되나요?</h2><p>하나회원권거래소는 2004년부터 회원권 매매를 중개해 온 등록 사업자(사업자등록번호 ${esc(settings.cfg('biz_no'))}, 통신판매업 ${esc(settings.cfg('telecom_no'))})로, 계약서·정산 내역서를 발급하고 명의개서 완료까지 담당자가 책임집니다. 회원권 실소유 여부와 압류·가압류 유무를 사전 확인한 뒤 계약을 진행합니다.</p>`;
-  res.send(page({ title: '회원권 거래 절차·수수료·준비 서류: 상담부터 명의개서 완료까지', description: '골프·콘도·피트니스 회원권 매매 5단계 절차, 개인·법인별 준비 서류, 수수료·명의개서료·세금 구성, 거래 안전 장치를 정리했습니다.', path: '/guide/process', body: guideShell({ eyebrow: '회원권 안내', h1: '거래 절차·수수료 안내', bluf: '회원권 매매는 상담 → 매물 매칭 → 계약·정산 → 명의개서 접수 → 심사·등록 완료 5단계로 진행되며, 비용은 회원권 대금 + 거래소 수수료 + 골프장 명의개서료(+세금)로 구성됩니다.', sections, faqs, side: sideStats() }), breadcrumbs: [{ name: '회원권 안내', href: '/guide/golf' }, { name: '거래 절차·수수료', href: '/guide/process' }], jsonld: [...articleLd({ title: '회원권 거래 절차·수수료', desc: '5단계 절차와 비용 구성', url: '/guide/process', faqs }), { '@context': 'https://schema.org', '@type': 'HowTo', name: '회원권 매매 절차', step: ['상담·시세 확인', '매물 매칭', '계약·정산', '명의개서 접수', '심사·등록 완료'].map((n, i) => ({ '@type': 'HowToStep', position: i + 1, name: n })) }] }));
+  res.send(page({ title: '회원권 매입·판매 방법과 수수료: 거래 절차·준비 서류·명의개서', description: '회원권 매입·판매 방법 5단계, 개인·법인 준비 서류, 수수료·명의개서료·세금 구성, 거래 안전 장치를 정리했습니다.', path: '/guide/process', body: guideShell({ eyebrow: '회원권 안내', h1: '거래 절차·수수료 안내', bluf: '회원권 매매는 상담 → 매물 매칭 → 계약·정산 → 명의개서 접수 → 심사·등록 완료 5단계로 진행되며, 비용은 회원권 대금 + 거래소 수수료 + 골프장 명의개서료(+세금)로 구성됩니다.', sections, faqs, side: sideStats() }), breadcrumbs: [{ name: '회원권 안내', href: '/guide/golf' }, { name: '거래 절차·수수료', href: '/guide/process' }], jsonld: [...articleLd({ title: '회원권 거래 절차·수수료', desc: '5단계 절차와 비용 구성', url: '/guide/process', faqs }), { '@context': 'https://schema.org', '@type': 'HowTo', name: '회원권 매매 절차', step: ['상담·시세 확인', '매물 매칭', '계약·정산', '명의개서 접수', '심사·등록 완료'].map((n, i) => ({ '@type': 'HowToStep', position: i + 1, name: n })) }] }));
 });
 
 // ── FAQ ──
 router.get('/faq', (req, res) => {
   const body = `<section class="page-head"><div class="wrap"><p class="eyebrow">FAQ</p><h1>회원권 거래 자주 묻는 질문</h1><p class="bluf">시세, 수수료, 명의개서, 법인·무기명 회원권, 세금. 전화 상담에서 가장 많이 받는 질문을 짧게 답했습니다.</p></div></section><section class="section"><div class="wrap narrow">${faqHtml(FAQ, '')}<p class="cta">원하는 답이 없다면 ${esc(settings.cfg('phone'))} 또는 <a href="/apply">매매 신청</a>으로 문의해 주세요.</p></div></section>`;
-  res.send(page({ title: '회원권 거래 FAQ: 시세·수수료·명의개서·법인·세금 질문 답변', description: '골프회원권 시세 결정 요인, 매매 수수료, 명의개서 절차, 법인 회원권 취득세, 무기명 회원권 장단점, 양도소득세, 콘도 회원권 차이 등 자주 묻는 질문 답변.', path: '/faq', body, breadcrumbs: [{ name: '자주 묻는 질문', href: '/faq' }], ogImage: '/og/page/faq.png', jsonld: [faqLd(FAQ)] }));
+  res.send(page({ title: '회원권 거래 FAQ: 시세 변동·구매·판매 방법·입회권·혜택·세금', description: '골프회원권 시세 변동 이유, 싸게 사는 법, 판매 방법, 입회권, 회원권 혜택, 수수료·세금까지 상담에서 자주 받는 질문의 답.', path: '/faq', body, breadcrumbs: [{ name: '자주 묻는 질문', href: '/faq' }], ogImage: '/og/page/faq.png', jsonld: [faqLd(FAQ)] }));
 });
 
 // ── 전용관 ──
@@ -114,7 +118,7 @@ router.get('/listings', (req, res) => {
   const body = `<section class="page-head"><div class="wrap"><p class="eyebrow">회원권 매물</p><h1>회원권 매물 <small>${rows.length}건</small></h1><p class="bluf">매도·매수 의뢰가 들어온 골프·콘도·피트니스 회원권 매물과 신규 분양, 해외 골프투어 상품입니다. 매물은 실시간으로 바뀌므로 관심 종목은 상담으로 확인하세요.</p><div class="tabs"><a class="tab${!cat ? ' active' : ''}" href="/listings">전체</a>${Object.entries(LCAT).map(([k, v]) => `<a class="tab${cat === k ? ' active' : ''}" href="/listings?category=${k}">${v}</a>`).join('')}</div></div></section>
 <section class="section"><div class="wrap">${rows.length ? `<div class="lst-grid">${rows.map(l => `<div class="lst reveal${l.image ? ' has-img' : ''}" id="l${l.id}">${l.image ? `<a class="lst-img" href="/listings/${l.id}"><img src="${attr(l.image)}" alt="${attr(l.title)}" loading="lazy" width="600" height="600"></a>` : ''}<span class="tag">${esc(l.kind || LCAT[l.category] || '')}</span><h3><a href="/listings/${l.id}">${esc(l.title)}</a></h3><p>${esc(LCAT[l.category] || '')} ${l.region ? '· ' + esc(l.region) : ''}${l.price ? ' · ' + fmtMan(l.price) : ''}</p>${l.body ? `<p class="lst-body">${esc(truncate(l.body, 120))}</p>` : ''}<div class="lst-btns"><a class="btn btn-ghost" href="/listings/${l.id}">상세</a><a class="btn btn-primary" href="/apply?item=${encodeURIComponent(l.name || l.title)}">문의</a></div></div>`).join('')}</div>` : '<p class="note">등록된 매물이 없습니다. 원하시는 조건을 <a href="/apply">매매 신청</a>으로 남겨 주세요.</p>'}
 <div class="narrow" style="margin-top:32px"><h2>매물에 없는 종목은 어떻게 하나요?</h2><p>표시된 매물은 일부이며, 대부분의 거래는 상담을 통해 매수·매도 호가를 맞춰 성사됩니다. 희망 종목·예산을 남기시면 담당자가 시장의 매물을 찾아 연락드립니다.</p></div></div></section>`;
-  res.send(page({ title: `회원권 매물 ${cat ? LCAT[cat] + ' ' : ''}${rows.length}건, 골프·콘도·피트니스·분양·해외투어`, description: `하나회원권거래소 회원권 매물 ${rows.length}건. 골프·콘도·피트니스 회원권 매도·매수 의뢰, 신규 분양, 해외 골프투어 상품.`, path: '/listings', body, breadcrumbs: [{ name: '매물·전용관', href: '/listings' }] }));
+  res.send(page({ title: `회원권 중고 거래 매물 ${cat ? LCAT[cat] + ' ' : ''}${rows.length}건: 골프·콘도·피트니스 매입·판매·분양`, description: `회원권 중고 거래 매물 ${rows.length}건. 골프·콘도·피트니스 회원권 매입·판매 의뢰, 신규 분양, 선불카드·무기명 전용관.`, path: '/listings', body, breadcrumbs: [{ name: '매물·전용관', href: '/listings' }] }));
 });
 
 // 매물 상세, 구 사이트 상품 페이지(이미지 포스터 + 정보표 + 설명) 이관
@@ -153,7 +157,7 @@ router.get('/apply', (req, res) => {
   </form>
   <aside class="club-side"><div class="side-card"><h3>접수 후 절차</h3><ol class="side-steps"><li>담당 상담사 배정 · 당일 연락</li><li>시세·매물·조건 안내</li><li>계약·정산 → 명의개서 대행</li><li>등록 완료 · 이용 지원</li></ol></div><div class="side-card"><h3>바로 통화</h3><p>24시간 전화 상담</p><a class="btn btn-primary block" href="tel:${attr(s.phone)}">${esc(s.phone)}</a><p class="note">팩스 ${esc(s.fax)} · ${esc(s.email)}</p></div></aside>
 </div></section>`;
-  res.send(page({ title: '회원권 매매 신청: 매수·매도 상담 접수 (당일 연락)', description: `골프·콘도·피트니스·법인 회원권 매수·매도 신청. 희망 종목과 예산을 남기면 담당 상담사가 당일 연락. 24시간 전화 상담 ${s.phone}.`, path: '/apply', body, breadcrumbs: [{ name: '매매 신청', href: '/apply' }], ogImage: '/og/page/apply.png' }));
+  res.send(page({ title: '골프회원권 구매·판매 신청: 회원권 매입 상담 접수 (당일 연락)', description: `골프·콘도·피트니스 회원권 구매·판매·매입 신청. 종목과 예산을 남기면 담당자가 당일 연락. 24시간 전화 ${s.phone}.`, path: '/apply', body, breadcrumbs: [{ name: '매매 신청', href: '/apply' }], ogImage: '/og/page/apply.png' }));
 });
 
 // ── 회사소개 ──
