@@ -19,6 +19,7 @@ const audit = require('../lib/audit');
 const analytics = require('../lib/analytics');
 const shot = require('../lib/screenshot');
 const og = require('../lib/og');
+const indexnow = require('../lib/indexnow');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -120,6 +121,7 @@ router.post('/posts', (req, res) => {
     db.prepare('UPDATE posts SET kind=?,type=?,title=?,slug=?,excerpt=?,meta_description=?,body_html=?,tags=?,author=?,status=?,published_at=?,updated_at=? WHERE id=?')
       .run(kind, b.type || old.type, b.title, b.slug || old.slug, b.excerpt || '', b.meta_description || '', sanitizeHtml(b.body_html), b.tags || '', b.author || old.author, status, status === 'published' ? (old.published_at || ts) : old.published_at, ts, b.id);
     og.invalidate(`post-${b.slug || old.slug}`);
+    if (status === 'published') indexnow.submit([`/${kind === 'blog' ? 'blog' : kind}/${b.slug || old.slug}`]).catch(() => {});
     return res.json({ ok: true, id: b.id });
   }
   let slug = slugify(b.slug || b.title, `${kind}-${ts.toString(36)}`); let n = 1; const base = slug; while (db.prepare('SELECT 1 FROM posts WHERE slug=?').get(slug)) slug = `${base}-${++n}`;
@@ -133,8 +135,12 @@ router.post('/posts/:id/publish', async (req, res) => {
   db.prepare('UPDATE posts SET status=?, published_at=?, updated_at=? WHERE id=?').run(pub ? 'published' : 'draft', pub ? (p.published_at || ts) : p.published_at, ts, p.id);
   let ib = { skipped: true };
   if (p.kind === 'blog') { const full = db.prepare('SELECT * FROM posts WHERE id=?').get(p.id); try { const j = JSON.parse(full.source_urls || '[]'); full.faq_json = JSON.stringify(j.faq || []); } catch (_) { full.faq_json = '[]'; } ib = await pushToInblog(full); if (!pub && full.inblog_id && inblog.enabled()) { try { await inblog.unpublish(full.inblog_id); db.prepare("UPDATE posts SET inblog_status='draft' WHERE id=?").run(p.id); } catch (_) { /* no-op */ } } }
+  if (pub) indexnow.submit([`/${p.kind === 'blog' ? 'blog' : p.kind}/${p.slug}`]).catch(() => {});
   res.json({ ok: true, inblog: ib });
 });
+router.get('/indexnow', async (req, res) => res.json(await indexnow.status()));
+router.post('/indexnow/submit-all', async (req, res) => { try { res.json(await indexnow.submitAll({ force: !!req.body?.force })); } catch (e) { res.status(500).json({ error: e.message }); } });
+router.post('/indexnow/submit', async (req, res) => { try { res.json(await indexnow.submit(Array.isArray(req.body?.urls) ? req.body.urls : [], { force: !!req.body?.force })); } catch (e) { res.status(500).json({ error: e.message }); } });
 router.post('/posts/:id/inblog', async (req, res) => { const p = db.prepare('SELECT * FROM posts WHERE id=?').get(req.params.id); if (!p) return res.status(404).json({ error: 'not found' }); try { const j = JSON.parse(p.source_urls || '[]'); p.faq_json = JSON.stringify(j.faq || []); } catch (_) { p.faq_json = '[]'; } res.json(await pushToInblog(p)); });
 router.delete('/posts/:id', (req, res) => { db.prepare('DELETE FROM posts WHERE id=?').run(req.params.id); res.json({ ok: true }); });
 
@@ -175,7 +181,7 @@ router.get('/screenshots/file', (req, res) => { const f = path.resolve(String(re
 router.post('/screenshots/upload', upload.array('files', 40), (req, res) => { const dir = path.join(shot.SHOT_DIR, kstDate()); fs.mkdirSync(dir, { recursive: true }); let n = 0; for (const f of req.files || []) { const name = Buffer.from(f.originalname, 'latin1').toString('utf8').replace(/[^\w.가-힣-]/g, '_'); if (!/\.(png|jpe?g)$/i.test(name)) continue; fs.writeFileSync(path.join(dir, name), f.buffer); n++; } res.json({ ok: true, saved: n, dir }); });
 
 // ── 설정 ──
-const SETTING_KEYS = ['site_url', 'site_name', 'legal_name', 'slogan', 'phone', 'fax', 'email', 'address', 'ceo', 'privacy_officer', 'youtube', 'naver_blog', 'instagram', 'kakao_channel', 'inblog_url', 'naver_verification', 'google_verification', 'ga_id', 'gen_times', 'auto_generate', 'auto_publish', 'inblog_push', 'llm_provider', 'kickoff_date', 'inblog_api_key', ...Object.values(providers.KEY_SETTING), ...Object.values(providers.BASEURL_SETTING), 'model_anthropic', 'model_openai', 'model_gemini', 'model_openai-compatible'];
+const SETTING_KEYS = ['site_url', 'site_name', 'legal_name', 'slogan', 'phone', 'fax', 'email', 'address', 'ceo', 'privacy_officer', 'youtube', 'naver_blog', 'instagram', 'kakao_channel', 'inblog_url', 'naver_verification', 'google_verification', 'indexnow_enabled', 'ga_id', 'gen_times', 'auto_generate', 'auto_publish', 'inblog_push', 'llm_provider', 'kickoff_date', 'inblog_api_key', ...Object.values(providers.KEY_SETTING), ...Object.values(providers.BASEURL_SETTING), 'model_anthropic', 'model_openai', 'model_gemini', 'model_openai-compatible'];
 router.get('/settings', (req, res) => { const o = settings.all(); for (const k of SETTING_KEYS) if (!(k in o)) o[k] = getSetting(k, ''); for (const k of Object.keys(o)) if (/api_key/.test(k)) o[k] = o[k] ? '••••' + String(o[k]).slice(-4) : ''; o._env = { anthropic: !!process.env.ANTHROPIC_API_KEY, openai: !!process.env.OPENAI_API_KEY, gemini: !!process.env.GEMINI_API_KEY, inblog: !!process.env.INBLOG_API_KEY }; res.json(o); });
 router.post('/settings', (req, res) => { const b = req.body || {}; for (const k of SETTING_KEYS) if (k in b) { if (/api_key/.test(k) && String(b[k]).startsWith('••••')) continue; setSetting(k, b[k]); } res.json({ ok: true }); });
 

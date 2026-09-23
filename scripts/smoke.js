@@ -40,6 +40,8 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
   r = await get('/llms.txt'); ok(r.text.startsWith('# (주)하나회원권거래소'), 'llms.txt');
   r = await get('/llms-full.txt'); ok(r.text.length > 5000, 'llms-full.txt', `${r.text.length}자`);
   r = await get('/rss.xml'); ok(r.text.includes('<rss') && r.text.includes('<item>'), 'rss.xml');
+  const inx = require('../lib/indexnow'); r = await get('/' + inx.key() + '.txt'); ok(r.status === 200 && r.text.trim() === inx.key(), 'IndexNow 키 파일');
+  ok((await inx.submit(['/'])).skipped === true, 'IndexNow: 임시 도메인에선 전송 안 함(skipped)');
   r = await get('/market/01'); ok(r.status === 200 || r.status === 301, '구 URL 리다이렉트 /market/01');
   r = await fetch(BASE + '/company/03', { redirect: 'manual' }); ok(r.status === 301 && r.headers.get('location') === '/about/location', '구 URL 301 /company/03 → /about/location');
   // fetch는 Host 헤더를 못 바꾸므로 http.request로 구 도메인 호스트를 흉내낸다

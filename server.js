@@ -88,6 +88,9 @@ app.get('/healthz', (req, res) => res.json({ ok: true, app: '하나회원권거�
 // SEO 파일
 app.get('/sitemap.xml', (req, res) => res.type('application/xml').send(seo.sitemap()));
 app.get('/robots.txt', (req, res) => res.type('text/plain').send(seo.robots()));
+// IndexNow 키 파일(네이버·Bing 소유 확인용)
+const indexnow = require('./lib/indexnow');
+app.get(/^\/([a-f0-9]{32})\.txt$/, (req, res, next) => { if (req.params[0] !== indexnow.key()) return next(); res.type('text/plain').send(indexnow.key()); });
 app.get('/llms.txt', (req, res) => res.type('text/plain; charset=utf-8').send(seo.llms()));
 app.get('/llms-full.txt', (req, res) => res.type('text/plain; charset=utf-8').send(seo.llmsFull()));
 app.get('/rss.xml', (req, res) => res.type('application/rss+xml').send(seo.rss()));
