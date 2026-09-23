@@ -78,16 +78,19 @@
   // 연혁 v2 — 상단 그리드 카드 클릭 → 연표 해당 시기로; 연표는 뷰포트 중앙에 가까운 카드가 포커스, 연도 배지가 따라오고 척추선이 채워짐
   const tl2 = $('#tl2');
   if (tl2) {
-    const items = $$('.tl2-item', tl2), fill = $('#tl2Fill'), yearEl = $('#tl2Year'), idxEl = $('#tl2Idx'), cells = $$('.hg-cell');
+    const items = $$('.tl2-item', tl2), fill = $('#tl2Fill'), yearEl = $('#tl2Year'), cells = $$('.hg-cell');
     let focusI = -1;
-    const setFocus = (i) => { if (i === focusI) return; focusI = i; items.forEach((el, k) => el.classList.toggle('focus', k === i)); const it = items[i]; if (!it) return; if (yearEl && yearEl.textContent !== it.dataset.year) { yearEl.textContent = it.dataset.year; yearEl.classList.remove('pop'); void yearEl.offsetWidth; yearEl.classList.add('pop'); } if (idxEl) idxEl.textContent = i + 1; cells.forEach(c => c.classList.toggle('now', c.dataset.pi === it.dataset.pi)); };
-    const upd = () => {
+    const setFocus = (i) => { if (i === focusI) return; focusI = i; items.forEach((el, k) => el.classList.toggle('focus', k === i)); const it = items[i]; if (!it) return; if (yearEl && yearEl.textContent !== it.dataset.year) { yearEl.textContent = it.dataset.year; yearEl.classList.remove('pop'); void yearEl.offsetWidth; yearEl.classList.add('pop'); } cells.forEach(c => c.classList.toggle('now', c.dataset.pi === it.dataset.pi)); };
+    // 스크롤 목표값은 즉시 계산하고, 배지 위치·척추선 채움은 rAF에서 서서히 따라가게(관성) 해 고급스럽게
+    let tFill = 0, tY = 0, cFill = 0, cY = 0, raf = null;
+    const measure = () => {
       const r = tl2.getBoundingClientRect(); const mid = innerHeight * .5;
-      const p = Math.max(0, Math.min(1, (mid - r.top) / r.height)); if (fill) fill.style.height = (p * 100).toFixed(2) + '%';
-      if (yearEl) { const y = Math.max(0, Math.min(r.height - 40, mid - r.top - 20)); yearEl.style.top = y + 'px'; }
+      tFill = Math.max(0, Math.min(1, (mid - r.top) / r.height)); tY = Math.max(0, Math.min(r.height - 40, mid - r.top - 20));
       let best = 0, bd = 1e9; items.forEach((el, k) => { const b = el.getBoundingClientRect(); const d = Math.abs(b.top + b.height / 2 - mid); if (d < bd) { bd = d; best = k; } });
-      setFocus(best);
+      setFocus(best); if (!raf) raf = requestAnimationFrame(tick);
     };
+    const tick = () => { cFill += (tFill - cFill) * .14; cY += (tY - cY) * .14; if (fill) fill.style.height = (cFill * 100).toFixed(2) + '%'; if (yearEl) yearEl.style.transform = `translate(-50%, ${cY.toFixed(1)}px)`; if (Math.abs(tFill - cFill) > .0005 || Math.abs(tY - cY) > .3) raf = requestAnimationFrame(tick); else raf = null; };
+    const upd = measure;
     const rio = 'IntersectionObserver' in window ? new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); rio.unobserve(e.target); } }), { threshold: .15 }) : null; items.forEach(el => rio ? rio.observe(el) : el.classList.add('in'));
     addEventListener('scroll', upd, { passive: true }); addEventListener('resize', upd); upd();
     // 카드 클릭/키보드 → 포커스 + 이동

@@ -218,3 +218,12 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(31,58,115,.25);bo
 @media (max-width:900px){.hist-grid{grid-template-columns:repeat(2,1fr);gap:0 20px}.hg-cell:nth-child(n+3){margin-top:14px}.hg-cell h2{font-size:28px}}
 @media (max-width:600px){.hist-grid{grid-template-columns:1fr}.hg-cell{margin-top:12px!important;padding:24px 4px 18px}.tl2{padding-left:0}.tl2-spine{left:12px}.tl2-year{left:12px;transform:none;font-size:13px;padding:5px 10px}.tl2-year.pop{animation:none}.tl2-item,.tl2-item.r{width:100%;margin-left:0;padding:8px 0 8px 40px;transform:translateX(24px)}.tl2-item.in{transform:none}.tl2-node,.tl2-item.r .tl2-node{left:5px;right:auto}.tl2-item.l::after,.tl2-item.r::after{left:20px;right:auto;width:16px}.tl2-sec .sec-head{flex-direction:column;align-items:flex-start}}
 @media (max-width:600px){.tl2-year{display:none}}
+
+/* 연혁 v2 — 스크롤 질감 보정 */
+.tl2-sec{padding-top:8px}.tl2{padding-top:24px}.tl2-year{top:0;transform:translate(-50%,0);transition:none;will-change:transform}.tl2-year.pop{animation:ypop2 .5s cubic-bezier(.22,1,.36,1)}@keyframes ypop2{0%{filter:brightness(1.6)}100%{filter:brightness(1)}}
+.tl2-spine i{transition:none}
+.tl2-item{opacity:0;transform:translate3d(-28px,28px,0);filter:blur(6px);transition:opacity .9s cubic-bezier(.22,1,.36,1),transform .9s cubic-bezier(.22,1,.36,1),filter .9s cubic-bezier(.22,1,.36,1)}.tl2-item.r{transform:translate3d(28px,28px,0)}.tl2-item.in{opacity:1;transform:none;filter:none}
+.tl2-card{transition:transform .7s cubic-bezier(.22,1,.36,1),box-shadow .7s cubic-bezier(.22,1,.36,1),border-color .5s,opacity .6s}.tl2-item.in:not(.focus) .tl2-card{opacity:.82}.tl2-item.focus .tl2-card{opacity:1}
+.tl2-node{transition:transform .6s cubic-bezier(.22,1,.36,1),background .4s,border-color .4s,box-shadow .6s}
+@media (max-width:600px){.tl2-item,.tl2-item.r{transform:translate3d(0,24px,0)}.tl2-item.in{transform:none}}
+@media (prefers-reduced-motion:reduce){.tl2-item{transition:none;filter:none;opacity:1;transform:none}}
