@@ -78,17 +78,21 @@
       "name": "뉴코리아컨트리클럽",
       "price_name": "뉴코리아",
       "region": "수도권",
-      "address": "경기도 고양시",
+      "address": "경기도 고양시 덕양구 신원2로 57",
       "holes": 18,
-      "type": "회원제"
+      "type": "회원제",
+      "opened": "1966",
+      "verified": 1
     },
     {
       "name": "대구컨트리클럽",
       "price_name": "대구",
       "region": "영남",
-      "address": "대구광역시",
-      "holes": 18,
-      "type": "회원제"
+      "address": "경상북도 경산시 진량읍 일연로 718-42",
+      "holes": 27,
+      "type": "회원제",
+      "opened": "1972",
+      "verified": 1
     },
     {
       "name": "동래베네스트골프클럽",
@@ -140,9 +144,11 @@
       "name": "리베라컨트리클럽",
       "price_name": "리베라",
       "region": "수도권",
-      "address": "경기도 안성시",
+      "address": "경기도 화성시 동탄면 중리길 183",
       "holes": 36,
-      "type": "회원제"
+      "type": "회원제",
+      "opened": "1972",
+      "verified": 1
     },
     {
       "name": "발리오스컨트리클럽",
@@ -174,9 +180,11 @@
       "name": "부곡컨트리클럽",
       "price_name": "부곡",
       "region": "영남",
-      "address": "경상남도 창녕군",
+      "address": "경상남도 창녕군 부곡면 온천로 445",
       "holes": 18,
-      "type": "회원제"
+      "type": "회원제",
+      "opened": "1991",
+      "verified": 1
     },
     {
       "name": "블루원보문골프클럽",
@@ -206,9 +214,11 @@
       "name": "서울컨트리클럽",
       "price_name": "서울 여자",
       "region": "수도권",
-      "address": "경기도 고양시 덕양구 원당동",
+      "address": "경기도 고양시 덕양구 고양대로1643번길 164",
       "holes": 18,
-      "type": "회원제"
+      "type": "회원제",
+      "opened": "1972",
+      "verified": 1
     },
     {
       "name": "선산컨트리클럽",
@@ -447,9 +457,10 @@
       "name": "캐슬렉스서울",
       "price_name": "캐슬렉스 일반",
       "region": "수도권",
-      "address": "서울특별시 강남구",
+      "address": "경기도 하남시 감이로 317",
       "holes": 18,
-      "type": "회원제"
+      "type": "회원제",
+      "verified": 1
     },
     {
       "name": "캐슬렉스제주",
@@ -532,9 +543,11 @@
       "name": "해운대컨트리클럽",
       "price_name": "해운대(16000)",
       "region": "영남",
-      "address": "부산광역시 기장군",
+      "address": "부산광역시 기장군 정관면 병산2로 265",
       "holes": 27,
-      "type": "회원제"
+      "type": "회원제",
+      "opened": "2005",
+      "verified": 1
     },
     {
       "name": "화산컨트리클럽",
