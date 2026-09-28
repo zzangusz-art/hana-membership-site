@@ -75,6 +75,18 @@ function seedClubsHanamarket() {
       existing.push({ id: null, name: it.name, old_id: it.old_id }); ins++;
     }
   }
+  // 이관 텍스트의 HTML 엔티티(&quot; &amp; &apos; &nbsp; 등) 해제 — 템플릿에서 다시 이스케이프되므로 원문은 평문이어야 함
+  const unesc1 = (t) => String(t || '').replace(/&quot;/g, '"').replace(/&apos;|&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;| /g, ' ').replace(/&amp;/g, '&').trim();
+  const unesc = (t) => unesc1(unesc1(t)); // 이중 인코딩(&amp;gt;) 대비 두 번
+  for (const r of db.prepare("SELECT id, name, address, summary, fit_for, booking, transfer, tables_json, phone, website FROM clubs WHERE source='hanamarket'").all()) {
+    const v = { name: unesc(r.name), address: unesc(r.address), summary: unesc(r.summary), fit_for: unesc(r.fit_for), booking: unesc(r.booking), transfer: unesc(r.transfer), tables_json: unesc(r.tables_json).replace(/\s+$/, '') || '[]', phone: unesc(r.phone), website: unesc(r.website) };
+    if (/^[\d\-()\s]+$/.test(v.website) && v.website) { if (!v.phone) v.phone = v.website; v.website = ''; }
+    if (Object.keys(v).some(k => (v[k] || '') !== (r[k] || ''))) db.prepare('UPDATE clubs SET name=?, address=?, summary=?, fit_for=?, booking=?, transfer=?, tables_json=?, phone=?, website=? WHERE id=?').run(v.name, v.address, v.summary, v.fit_for, v.booking, v.transfer, v.tables_json, v.phone, v.website, r.id);
+  }
+  for (const r of db.prepare("SELECT id, title, body, info_json FROM listings WHERE src_id IS NOT NULL").all()) {
+    const v = { title: unesc(r.title), body: unesc(r.body), info_json: unesc(r.info_json) };
+    if (Object.keys(v).some(k => (v[k] || '') !== (r[k] || ''))) db.prepare('UPDATE listings SET title=?, body=?, info_json=? WHERE id=?').run(v.title, v.body, v.info_json, r.id);
+  }
   // 주소 정리: 앞의 우편번호 "(363880) " 제거, 주소 칸에 URL이 들어간 경우 홈페이지로 이동
   for (const r of db.prepare("SELECT id, address, website FROM clubs WHERE address LIKE '(%' OR address LIKE 'http%'").all()) {
     let a = String(r.address || '').trim(); let w = r.website || '';
