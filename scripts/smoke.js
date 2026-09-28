@@ -46,6 +46,7 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
   const inx = require('../lib/indexnow'); r = await get('/' + inx.key() + '.txt'); ok(r.status === 200 && r.text.trim() === inx.key(), 'IndexNow 키 파일');
   ok((await inx.submit(['/'])).skipped === true, 'IndexNow: 임시 도메인에선 전송 안 함(skipped)');
   r = await get('/market/01'); ok(r.status === 200 || r.status === 301, '구 URL 리다이렉트 /market/01');
+  { const oc = db.prepare("SELECT old_id, slug FROM clubs WHERE old_id IS NOT NULL AND old_id<>'' LIMIT 1").get(); if (oc) { const rr = await fetch(BASE + '/golf/01_view/' + oc.old_id, { redirect: 'manual' }); ok(rr.status === 301 && decodeURIComponent(rr.headers.get('location') || '') === '/golf/' + oc.slug, '구 골프장 URL 301 → 상세'); } ok(db.prepare("SELECT COUNT(*) c FROM clubs WHERE status='published'").get().c >= 250, '골프장 이관 250+', String(db.prepare("SELECT COUNT(*) c FROM clubs").get().c)); }
   r = await fetch(BASE + '/company/03', { redirect: 'manual' }); ok(r.status === 301 && r.headers.get('location') === '/about/location', '구 URL 301 /company/03 → /about/location');
   // fetch는 Host 헤더를 못 바꾸므로 http.request로 구 도메인 호스트를 흉내낸다
   r = await new Promise((resolve, reject) => { require('http').request({ host: '127.0.0.1', port: process.env.PORT, path: '/company/03?x=1', headers: { Host: 'www.hanamark.co.kr' } }, (res) => { res.resume(); resolve({ status: res.statusCode, location: res.headers.location || '' }); }).on('error', reject).end(); });

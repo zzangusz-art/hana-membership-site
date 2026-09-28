@@ -49,6 +49,44 @@ function seedListings() {
   }
   return n;
 }
+// 구 사이트 골프장 안내(clubs-hanamarket.json, 고객사 데이터) 병합: 이름이 같은 기존 골프장은 보강, 없는 골프장은 신규 등록. old_id 기준 멱등.
+const SIDO_REGION = { '서울': '수도권', '인천': '수도권', '경기도': '수도권', '강원도': '강원', '충청북도': '충청', '충청남도': '충청', '대전': '충청', '세종': '충청', '경상북도': '영남', '경상남도': '영남', '대구': '영남', '부산': '영남', '울산': '영남', '전라북도': '호남', '전라남도': '호남', '광주': '호남', '제주도': '제주' };
+const normName = (n) => String(n || '').toLowerCase().replace(/(컨트리클럽|골프클럽|골프앤리조트|골프리조트|골프장|리조트|cc|gc|c\.c|g\.c|\s|\(.*?\))/g, '');
+function seedClubsHanamarket() {
+  const f = path.join(SEED, 'clubs-hanamarket.json'); if (!fs.existsSync(f)) return 0;
+  const items = J('clubs-hanamarket.json').clubs || []; const ts = now(); let ins = 0, upd = 0;
+  const byOld = db.prepare('SELECT id FROM clubs WHERE old_id=?');
+  const existing = db.prepare('SELECT id, name, address, holes, summary, fit_for, booking, transfer, verified, old_id FROM clubs').all();
+  const priceNames = db.prepare("SELECT name FROM prices WHERE category='golf'").all().map(r => r.name);
+  const findPrice = (name) => { const k = normName(name); return priceNames.find(p => normName(p) === k) || ''; };
+  const upStmt = db.prepare('UPDATE clubs SET sido=?, phone=?, website=?, members=?, logo=?, tables_json=?, old_id=?, source=?, address=CASE WHEN address IS NULL OR address=\'\' OR verified=0 THEN ? ELSE address END, holes=CASE WHEN holes IS NULL OR verified=0 THEN ? ELSE holes END, region=?, summary=CASE WHEN summary IS NULL OR summary=\'\' THEN ? ELSE summary END, fit_for=CASE WHEN fit_for IS NULL OR fit_for=\'\' THEN ? ELSE fit_for END, booking=CASE WHEN booking IS NULL OR booking=\'\' THEN ? ELSE booking END, transfer=CASE WHEN transfer IS NULL OR transfer=\'\' THEN ? ELSE transfer END, verified=CASE WHEN ?>0 THEN 1 ELSE verified END, updated_at=? WHERE id=?');
+  const insStmt = db.prepare('INSERT OR IGNORE INTO clubs (slug,name,region,address,holes,opened,type,price_name,status,verified,summary,fit_for,booking,transfer,sido,phone,website,members,logo,tables_json,old_id,source,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+  for (const it of items) {
+    const region = SIDO_REGION[it.sido] || ''; const addr = it.address || ''; const holes = it.holes || null;
+    const clientVerified = (addr || holes) ? 1 : 0; const tables = JSON.stringify(it.tables || []);
+    const hit = byOld.get(it.old_id) || existing.find(e => !e.old_id && normName(e.name) === normName(it.name));
+    if (hit) {
+      // 지도용 sido·연락처·로고·표는 항상 최신화, 주소·홀수는 미검증 행만 고객사 값으로 교체, 해설류는 비어 있을 때만 채움
+      upStmt.run(it.sido || '', it.phone || '', it.website || '', it.members || null, it.logo || '', tables, it.old_id, 'hanamarket', addr, holes, region, it.intro || '', it.membership_types || '', it.benefits || '', it.extra || '', clientVerified, ts, hit.id);
+      if (!hit.old_id) hit.old_id = it.old_id; upd++;
+    } else {
+      let slug = koSlug(it.name); let n = 1; const base = slug; while (db.prepare('SELECT 1 FROM clubs WHERE slug=?').get(slug)) slug = `${base}-${++n}`;
+      insStmt.run(slug, it.name, region, addr, holes, '', '회원제', findPrice(it.name), 'published', clientVerified, it.intro || '', it.membership_types || '', it.benefits || '', it.extra || '', it.sido || '', it.phone || '', it.website || '', it.members || null, it.logo || '', tables, it.old_id, 'hanamarket', ts, ts);
+      existing.push({ id: null, name: it.name, old_id: it.old_id }); ins++;
+    }
+  }
+  // 주소 정리: 앞의 우편번호 "(363880) " 제거, 주소 칸에 URL이 들어간 경우 홈페이지로 이동
+  for (const r of db.prepare("SELECT id, address, website FROM clubs WHERE address LIKE '(%' OR address LIKE 'http%'").all()) {
+    let a = String(r.address || '').trim(); let w = r.website || '';
+    if (/^https?:/i.test(a)) { if (!w) w = a; a = ''; }
+    a = a.replace(/^\(\d{5,6}\)\s*/, '').trim();
+    db.prepare('UPDATE clubs SET address=?, website=? WHERE id=?').run(a, w, r.id);
+  }
+  // 구 사이트에 없는 골프장은 주소 앞머리로 시·도 채움(지도 매핑용)
+  const SIDO_OF = [['서울', '서울'], ['인천', '인천'], ['경기', '경기도'], ['강원', '강원도'], ['충청북도', '충청북도'], ['충북', '충청북도'], ['충청남도', '충청남도'], ['충남', '충청남도'], ['대전', '대전'], ['세종', '세종'], ['전라북도', '전라북도'], ['전북', '전라북도'], ['전라남도', '전라남도'], ['전남', '전라남도'], ['광주', '광주'], ['경상북도', '경상북도'], ['경북', '경상북도'], ['대구', '대구'], ['경상남도', '경상남도'], ['경남', '경상남도'], ['부산', '부산'], ['울산', '울산'], ['제주', '제주도']];
+  for (const r of db.prepare("SELECT id, address FROM clubs WHERE sido IS NULL OR sido=''").all()) { const a = String(r.address || '').trim(); const hit = SIDO_OF.find(([k]) => a.startsWith(k)); if (hit) db.prepare('UPDATE clubs SET sido=? WHERE id=?').run(hit[1], r.id); }
+  return ins + upd;
+}
 function seedTopics(force) {
   if (!force && db.prepare('SELECT COUNT(*) c FROM topic_pool').get().c) return 0;
   const ins = db.prepare('INSERT INTO topic_pool (type,topic,hint,weight,active) VALUES (?,?,?,1,1)'); let n = 0;
@@ -96,7 +134,7 @@ function seedVideos() {
 }
 
 function seedIfEmpty(force = false) {
-  const r = { prices: seedPrices(), clubs: seedClubs(), topics: seedTopics(force), plan: seedPlan(force), articles: seedArticles(), notice: seedNotice(), videos: seedVideos(), listings: seedListings() };
+  const r = { prices: seedPrices(), clubs: seedClubs(), topics: seedTopics(force), plan: seedPlan(force), articles: seedArticles(), notice: seedNotice(), videos: seedVideos(), listings: seedListings(), clubsHanamarket: seedClubsHanamarket() };
   if (Object.values(r).some(Boolean)) console.log('[seed]', JSON.stringify(r));
   return r;
 }

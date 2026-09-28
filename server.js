@@ -101,6 +101,8 @@ app.get('/favicon.ico', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'img', 
 // 구 사이트 URL → 새 URL 301 (검색 신호 승계)
 const REDIRECTS = { '/market/01': '/market/golf', '/market/02': '/market/corporate', '/market/03': '/market/condo', '/market/04': '/market/fitness', '/membership/01': '/listings?category=golf', '/membership/02': '/listings?category=condo', '/membership/03': '/listings?category=fitness', '/membership/04': '/listings?category=sale', '/membership/05': '/listings?category=tour', '/building/01': '/exclusive/anonymous', '/building/02': '/exclusive/daemyung', '/building/03': '/exclusive/prepaid', '/golf/01': '/golf', '/golf/02': '/market/golf', '/resort/01': '/guide/condo', '/resort/02': '/market/condo', '/fitness/01': '/guide/fitness', '/fitness/02': '/market/fitness', '/application': '/apply', '/community/01': '/notice', '/community/02': '/news', '/community/03': '/faq', '/community/04': '/notice', '/company/01': '/about', '/company/02': '/about', '/company/03': '/about/location', '/company/04': '/about/careers' };
 app.use((req, res, next) => { const p = req.path.replace(/\/$/, ''); if (REDIRECTS[p]) return res.redirect(301, REDIRECTS[p]); next(); });
+app.get(/^\/golf\/01_view\/(\d+)\/?$/, (req, res) => { const c = db.prepare("SELECT slug FROM clubs WHERE old_id=? AND status='published'").get(req.params[0]); return res.redirect(301, c ? '/golf/' + encodeURIComponent(c.slug) : '/golf'); });
+app.get(/^\/golf\/02_view\/(\d+)\/?$/, (req, res) => res.redirect(301, '/market/golf'));
 
 // 공개 API
 app.use('/api', rateLimit({ windowMs: 60 * 1000, max: 240, standardHeaders: true, legacyHeaders: false }));
