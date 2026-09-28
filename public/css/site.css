@@ -285,3 +285,6 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(31,58,115,.25);bo
 .kmap-list li a{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.li-logo{width:40px;height:40px;object-fit:contain;border-radius:8px;border:1px solid var(--line);background:#fff;flex:0 0 40px}.kmap-list li a b{flex:1;min-width:0}.kmap-list li a span,.kmap-list li a em{flex-basis:100%}
 .club-logo{width:96px;height:96px;object-fit:contain;border-radius:16px;background:#fff;border:1px solid var(--line);margin-bottom:12px;display:block;box-shadow:var(--sh)}
 .prd-info-table{margin:8px 0 16px}.prd-info-table thead th{background:#f0f4fb;text-align:center}.prd-info-table td{text-align:center}
+/* 드롭다운이 화면 오른쪽 밖으로 나가지 않게: 끝쪽 메뉴는 오른쪽 정렬, JS가 넘치는 경우 .sub-right 부여 */
+.nav-item:nth-last-child(-n+2) .sub,.nav-item.sub-right .sub{left:auto;right:0}
+.header-v2 .nav-item .sub{max-width:calc(100vw - 32px)}

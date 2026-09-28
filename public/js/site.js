@@ -118,6 +118,9 @@
     wrapEl.style.setProperty('--dur', DUR + 'ms'); go(0); start();
   }
 
+  // 내비 드롭다운이 뷰포트 밖으로 나가면 오른쪽 정렬로 전환
+  $$('.nav-item').forEach(li => { const sub = li.querySelector('.sub'); if (!sub) return; li.addEventListener('mouseenter', () => { li.classList.remove('sub-right'); const r = sub.getBoundingClientRect(); if (r.right > innerWidth - 8) li.classList.add('sub-right'); }); });
+
   // 골프장 지도: 시·도 클릭 → 목록·카드 필터(다시 누르면 전체), 호버 툴팁(골프장 수), 칩 연동, ?sido= 초기값
   const km = $('.kmap');
   if (km) {
