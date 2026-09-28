@@ -115,6 +115,12 @@ router.get('/', (req, res) => {
   </div>
 </section>
 
+<section class="section pillars"><div class="wrap"><div class="sec-head center"><p class="eyebrow">회원권 기초</p><h2>골프회원권 · 무기명 골프회원권 · 콘도회원권</h2></div><div class="pillar-grid">
+<a class="pillar reveal" href="/guide/golf"><h3>골프회원권이란</h3><p>회원제 골프장에 입회금을 내고 얻는 회원 자격입니다. 주말 우선 예약과 회원 그린피 혜택이 있고, 골프장 승인을 거쳐 양도할 수 있어 그 가격이 시세가 됩니다. 정회원·주중·법인·무기명으로 나뉩니다.</p><span class="more">종류·시세·구매 방법 →</span></a>
+<a class="pillar reveal" href="/guide/anonymous"><h3>무기명 골프회원권이란</h3><p>특정인을 등록하지 않고 회원권이나 지정 카드를 가진 사람이면 누구나 회원 대우로 이용합니다. 명의개서 없이 이용자를 바꿀 수 있어 법인 접대와 모임에 맞고, 같은 골프장 기명보다 값이 높습니다.</p><span class="more">기명과 차이·가격·주말 이용 →</span></a>
+<a class="pillar reveal" href="/guide/condo"><h3>콘도회원권이란</h3><p>리조트 객실을 연간 정해진 일수만큼 회원가로 쓰는 권리입니다. 객실 지분을 등기하는 공유제와 입회금을 맡기는 회원제로 나뉘고, 이 차이가 가격과 세금, 되팔 때 방식을 가릅니다.</p><span class="more">공유제·회원제·시세 →</span></a>
+</div></div></section>
+
 <section class="section guides">
   <div class="wrap">
     <div class="sec-head center"><p class="eyebrow">회원권 안내</p><h2>종류별로 다른 점</h2></div>

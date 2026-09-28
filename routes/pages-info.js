@@ -20,8 +20,12 @@ function articleLd({ title, desc, url, faqs }) {
   if (faqs?.length) out.push(faqLd(faqs));
   return out;
 }
-function guideShell({ eyebrow, h1, bluf, sections, faqs, side }) {
-  return `<section class="page-head"><div class="wrap"><p class="eyebrow">${eyebrow}</p><h1>${h1}</h1><p class="bluf">${bluf}</p></div></section>
+const BYLINE = () => `<p class="byline">작성·검수 <b>하나회원권거래소 상담팀</b> · 2004년부터 회원권 매매 중개 · 최종 갱신 ${require('../lib/util').kstDate()}</p>`;
+const faqBy = (re) => FAQ.find(f => re.test(f.q));
+function definedTermLd(name, desc, url) { return { '@context': 'https://schema.org', '@type': 'DefinedTerm', name, description: desc, url: settings.siteUrl() + url, inDefinedTermSet: { '@type': 'DefinedTermSet', name: '회원권 용어', url: settings.siteUrl() + '/guide/golf' } }; }
+function speakableLd(url, name) { return { '@context': 'https://schema.org', '@type': 'WebPage', name, url: settings.siteUrl() + url, speakable: { '@type': 'SpeakableSpecification', cssSelector: ['.bluf', '.key-facts'] } }; }
+function guideShell({ eyebrow, h1, bluf, sections, faqs, side, keyFacts, byline }) {
+  return `<section class="page-head"><div class="wrap"><p class="eyebrow">${eyebrow}</p><h1>${h1}</h1><p class="bluf">${bluf}</p>${keyFacts?.length ? `<ul class="key-facts" aria-label="핵심 수치">${keyFacts.map(([k, v]) => `<li><span>${k}</span><b>${v}</b></li>`).join('')}</ul>` : ''}${byline ? BYLINE() : ''}</div></section>
 <section class="section"><div class="wrap club-grid2"><div class="club-main"><article class="prose">${sections}</article>${faqs?.length ? faqHtml(faqs) : ''}</div><aside class="club-side">${side || ''}<div class="side-card"><h3>상담 신청</h3><p>희망 종목과 예산을 남겨 주시면 당일 연락드립니다.</p><a class="btn btn-green block" href="/apply">매매 신청</a><a class="btn btn-ghost block" href="tel:${attr(settings.cfg('phone'))}">${esc(settings.cfg('phone'))}</a></div></aside></div></section>`;
 }
 function sideStats() {
@@ -32,7 +36,9 @@ function sideStats() {
 // ── 골프회원권 안내 ──
 router.get('/guide/golf', (req, res) => {
   const g = prices.stats('golf');
-  const faqs = [FAQ[0], FAQ[3], FAQ[4], FAQ[5]];
+  const faqs = [faqBy(/시세는 어떻게 결정/), faqBy(/싸게 사는 법/), faqBy(/수수료/), faqBy(/명의개서\(명의이전\) 절차/), faqBy(/회원권 혜택/)].filter(Boolean);
+  const fm = require('../lib/util').fmtMan; const gu = g.lastUpdated ? require('../lib/util').kstDate(new Date(g.lastUpdated * 1000)) : '';
+  const keyFacts = [['시세 종목', `${g.total}종목`], ['평균 시세', fm(g.avg)], ['이번 주', `상승 ${g.up} · 하락 ${g.down} · 보합 ${g.flat}`], ['갱신', gu || '매주 월요일']];
   const sections = `
 <h2>골프회원권이란 무엇인가요?</h2>
 <p>골프회원권은 회원제 골프장에 입회금을 예치하고 회원 자격을 얻어 <strong>우선 예약권과 회원 그린피 혜택</strong>을 받는 권리입니다. 회원권은 골프장의 승인을 거쳐 제3자에게 양도할 수 있어 시장에서 거래되며, 그 거래 가격이 "회원권 시세"입니다. 하나회원권거래소는 ${g.total}종목의 시세를 매주 갱신합니다.</p>
@@ -55,19 +61,21 @@ router.get('/guide/golf', (req, res) => {
 <h2>매수·매도 절차는 어떻게 되나요?</h2>
 <p><a href="/guide/process">거래 절차·수수료 안내</a>에서 단계별 절차와 서류를 확인하실 수 있습니다. 요약하면 상담 → 시세·매물 확인 → 계약·정산 → 골프장 명의개서 접수 → 심사·등록 완료 순이며, 전 과정을 하나회원권거래소가 대행합니다.</p>
 <p class="cta">지금 시세를 보려면 <a href="/market/golf">골프회원권 시세표</a>, 골프장별 조건은 <a href="/golf">골프장 소개</a>를 참고하세요.</p>`;
-  res.send(page({ title: '골프회원권 구매 가이드: 싸게 사는 법·입회권·회원권 혜택·추천', description: `골프회원권 구매 전 확인할 것, 싸게 사는 법, 입회권과 회원권의 차이, 회원권 혜택, 종류별 추천과 거래 절차를 한 페이지에 정리.`, path: '/guide/golf', body: guideShell({ eyebrow: '회원권 안내', h1: '골프회원권 안내', bluf: '골프회원권은 회원제 골프장의 우선 예약권과 회원 그린피 혜택을 받는 양도 가능한 권리입니다. 종류별 차이와 매수 전 확인사항, 절차를 한 페이지에 정리했습니다.', sections, faqs, side: sideStats() }), breadcrumbs: [{ name: '회원권 안내', href: '/guide/golf' }, { name: '골프회원권 안내', href: '/guide/golf' }], jsonld: articleLd({ title: '골프회원권 안내', desc: '골프회원권 종류·혜택·확인사항·절차', url: '/guide/golf', faqs }) }));
+  res.send(page({ title: '골프회원권이란? 종류·시세·구매·매도 가이드', description: `골프회원권의 뜻과 종류(정회원·주중·법인·무기명), 시세 결정 요인, 구매·매도 절차, 싸게 사는 법, 회원권 혜택을 한 페이지에 정리.`, path: '/guide/golf', body: guideShell({ eyebrow: '회원권 안내', h1: '골프회원권 안내: 뜻·종류·시세·구매 방법', bluf: `골프회원권은 회원제 골프장에 입회금을 내고 회원 자격을 얻어 <strong>주말 우선 예약과 회원 그린피</strong>를 받는, 골프장 승인을 거쳐 양도할 수 있는 권리입니다. 그 양도 가격이 회원권 시세이며 하나회원권거래소는 ${g.total}종목을 매주 월요일 갱신합니다. 종류(정회원·주중·법인·무기명)와 구매·매도 절차, 세금까지 이 페이지에서 설명합니다.`, sections, faqs, side: sideStats(), keyFacts, byline: true }), breadcrumbs: [{ name: '회원권 안내', href: '/guide/golf' }, { name: '골프회원권 안내', href: '/guide/golf' }], jsonld: [].concat(articleLd({ title: '골프회원권 안내', desc: '골프회원권 종류·혜택·확인사항·절차', url: '/guide/golf', faqs }), definedTermLd('골프회원권', '회원제 골프장에 입회금을 내고 얻는 회원 자격으로, 주말 우선 예약권과 회원 그린피 혜택이 있으며 골프장 승인을 거쳐 양도할 수 있는 권리', '/guide/golf'), speakableLd('/guide/golf', '골프회원권 안내')) }));
 });
 
 // ── 콘도회원권 안내 ──
 router.get('/guide/condo', (req, res) => {
-  const faqs = [FAQ[6], { q: '콘도 회원권 관리비는 매년 내나요?', a: '대부분의 리조트는 연간 관리비(연회비)를 부과합니다. 금액과 부과 방식은 리조트·객실 타입별로 다르므로 매수 전 확인이 필요합니다.' }, { q: '콘도 회원권도 양도소득세가 있나요?', a: '개인이 양도차익을 얻으면 골프회원권과 같이 양도소득세 대상입니다. 공유제(등기) 회원권은 부동산 지분 성격이라 취득세 등 세무 처리가 달라질 수 있으니 세무사 확인을 권장합니다.' }];
+  const cs = prices.stats('condo'); const fmc = require('../lib/util').fmtMan; const cu = cs.lastUpdated ? require('../lib/util').kstDate(new Date(cs.lastUpdated * 1000)) : '';
+  const keyFacts = [['시세 종목', `${cs.total}종목`], ['평균 시세', fmc(cs.avg)], ['권리 형태', '공유제(등기) · 회원제(입회금)'], ['갱신', cu || '매주 월요일']];
+  const faqs = [faqBy(/콘도 회원권 공유제|공유제와 회원제/) || faqBy(/콘도회원권이란/), { q: '콘도 회원권 관리비는 매년 내나요?', a: '대부분의 리조트는 연간 관리비(연회비)를 부과합니다. 금액과 부과 방식은 리조트·객실 타입별로 다르므로 매수 전 확인이 필요합니다.' }, { q: '콘도 회원권도 양도소득세가 있나요?', a: '개인이 양도차익을 얻으면 골프회원권과 같이 양도소득세 대상입니다. 공유제(등기) 회원권은 부동산 지분 성격이라 취득세 등 세무 처리가 달라질 수 있으니 세무사 확인을 권장합니다.' }];
   const sections = `
 <h2>콘도회원권이란 무엇인가요?</h2><p>콘도(리조트) 회원권은 리조트 객실을 <strong>연간 정해진 일수만큼 회원가로 이용</strong>할 수 있는 권리입니다. 가족 단위 휴가, 임직원 복지, 워크숍 숙소 확보 목적으로 활용되며, 골프장·스키장·워터파크를 함께 운영하는 리조트는 부대시설 할인도 받습니다.</p>
 <h2>공유제와 회원제는 무엇이 다른가요?</h2><table><thead><tr><th>구분</th><th>공유제(등기)</th><th>회원제(입회금)</th></tr></thead><tbody><tr><td>권리 형태</td><td>객실 지분 소유(등기)</td><td>입회금 예치 후 이용권</td></tr><tr><td>만기</td><td>없음(영구)</td><td>계약 기간 후 입회금 반환·연장</td></tr><tr><td>세금</td><td>취득세·재산세 등 부동산 성격</td><td>양도 시 양도소득세</td></tr><tr><td>가격</td><td>상대적으로 높음</td><td>상대적으로 낮음</td></tr></tbody></table>
 <h2>가격을 결정하는 요소는 무엇인가요?</h2><ul><li><strong>성수기 이용 일수</strong>와 예약 우선순위</li><li><strong>객실 타입</strong>(평형·룸 수)과 이용 가능한 체인 지점 수</li><li><strong>관리비</strong> 수준과 부대시설 혜택</li><li><strong>브랜드</strong>(소노·한화·용평·하이원 등)와 신규 분양 여부</li></ul>
 <h2>매수 전 확인할 것은?</h2><ol><li>연간 이용 일수 중 성수기 배정 일수</li><li>관리비 금액과 인상 이력</li><li>양도 시 명의개서료와 리조트 승인 절차</li><li>입회금 반환 조건(회원제)</li></ol>
 <p class="cta"><a href="/market/condo">콘도회원권 시세표</a>에서 종목별 시세를 확인하고, <a href="/exclusive/daemyung">대명리조트 전용관</a>에서 소노 계열 매물을 보실 수 있습니다.</p>`;
-  res.send(page({ title: '콘도회원권 안내: 공유제·회원제 차이, 가격 결정 요소, 매수 전 확인사항', description: '콘도(리조트) 회원권의 정의, 공유제와 회원제 비교표, 성수기 이용일수·관리비·객실 타입이 가격에 미치는 영향, 매수 전 체크리스트.', path: '/guide/condo', body: guideShell({ eyebrow: '회원권 안내', h1: '콘도회원권 안내', bluf: '콘도회원권은 리조트 객실을 연간 정해진 일수만큼 회원가로 이용하는 권리입니다. 공유제(등기)와 회원제(입회금)의 차이가 가격과 세금을 가릅니다.', sections, faqs }), breadcrumbs: [{ name: '회원권 안내', href: '/guide/golf' }, { name: '콘도회원권 안내', href: '/guide/condo' }], jsonld: articleLd({ title: '콘도회원권 안내', desc: '공유제·회원제 차이와 가격 요소', url: '/guide/condo', faqs }) }));
+  res.send(page({ title: '콘도회원권이란? 공유제·회원제 차이·시세·구매 가이드', description: '콘도회원권의 뜻, 공유제(등기)와 회원제(입회금) 비교, 시세를 정하는 성수기 일수·객실 타입·관리비, 구매 전 확인 4가지.', path: '/guide/condo', body: guideShell({ eyebrow: '회원권 안내', h1: '콘도회원권 안내: 뜻·공유제와 회원제·시세·구매 방법', bluf: `콘도회원권은 리조트 객실을 <strong>연간 정해진 일수만큼 회원가로 이용</strong>하는 권리입니다. 객실 지분을 등기하는 공유제와 입회금을 맡기는 회원제로 나뉘고, 이 차이가 가격·세금·되팔 때 방식을 가릅니다. 하나회원권거래소 시세표는 ${cs.total}종목을 매주 갱신합니다.`, sections, faqs, keyFacts, byline: true }), breadcrumbs: [{ name: '회원권 안내', href: '/guide/golf' }, { name: '콘도회원권 안내', href: '/guide/condo' }], jsonld: [].concat(articleLd({ title: '콘도회원권 안내', desc: '공유제·회원제 차이와 가격 요소', url: '/guide/condo', faqs }), definedTermLd('콘도회원권', '리조트 객실을 연간 정해진 일수만큼 회원가로 이용하는 권리. 객실 지분을 등기하는 공유제와 입회금을 예치하는 회원제로 나뉜다', '/guide/condo'), speakableLd('/guide/condo', '콘도회원권 안내')) }));
 });
 
 // ── 피트니스회원권 안내 ──
@@ -95,9 +103,38 @@ router.get('/faq', (req, res) => {
   res.send(page({ title: '회원권 거래 FAQ: 시세 변동·구매·판매 방법·입회권·혜택·세금', description: '골프회원권 시세 변동 이유, 싸게 사는 법, 판매 방법, 입회권, 회원권 혜택, 수수료·세금까지 상담에서 자주 받는 질문의 답.', path: '/faq', body, breadcrumbs: [{ name: '자주 묻는 질문', href: '/faq' }], ogImage: '/og/page/faq.png', jsonld: [faqLd(FAQ)] }));
 });
 
+// ── 무기명 골프회원권 안내 (메인 키워드 대표 페이지) ──
+router.get('/guide/anonymous', (req, res) => {
+  const fm = require('../lib/util').fmtMan; const co = prices.stats('corporate'); const cnt = db.prepare("SELECT COUNT(*) c FROM listings WHERE status='open' AND (kind='무기명' OR title LIKE '%무기명%')").get().c;
+  const keyFacts = [['무기명 매물', `${cnt}건`], ['법인회원권 시세', `${co.total}종목 · 평균 ${fm(co.avg)}`], ['이용 방식', '등록자 지정 없이 소지자 이용'], ['적합', '법인 접대 · 모임 · 이용자 잦은 교체']];
+  const faqs = [faqBy(/무기명 회원권이란/), { q: '무기명 골프회원권은 주말에도 쓸 수 있나요?', a: '골프장마다 다릅니다. 주중 전용 무기명, 주말 포함 무기명이 따로 있고 주말 이용 횟수를 월 단위로 제한하는 곳이 많습니다. 매수 전 해당 골프장의 무기명 이용 규정을 반드시 확인합니다.' }, { q: '무기명 회원권은 왜 기명보다 비싼가요?', a: '누가 가도 회원 대우를 받아 접대·모임에 쓰기 좋고, 골프장이 발행 수량을 제한하는 경우가 많아 희소성이 붙습니다. 같은 골프장 기명 회원권보다 높은 가격에 거래되는 것이 보통입니다.' }, { q: '개인도 무기명 회원권을 살 수 있나요?', a: '골프장 규정에 따라 개인 명의 등록이 가능한 곳과 법인만 받는 곳이 있습니다. 개인이 사는 경우도 상속·증여 없이 카드만 넘겨 쓰는 방식이라 가족 이용에 편리합니다.' }, { q: '무기명 회원권을 법인이 사면 세무 처리는요?', a: '법인 자산(회원권)으로 계상하고 취득세를 냅니다. 접대 목적 이용분은 접대비 한도 문제가 생길 수 있으므로 세무사와 상의해 처리합니다. 개별 사안은 전문가 확인이 필요합니다.' }].filter(Boolean);
+  const sections = `
+<h2>무기명 골프회원권이란 무엇인가요?</h2>
+<p>무기명 골프회원권은 <strong>특정인을 회원으로 등록하지 않고, 회원권(또는 골프장이 발급한 지정 카드)을 가진 사람이면 누구나 회원 자격으로 이용</strong>하는 골프회원권입니다. 기명 회원권은 등록된 본인(과 지정 가족·법인 등록자)만 회원 대우를 받지만, 무기명은 그날 카드를 들고 간 사람이 회원 대우를 받습니다. 그래서 이용자가 자주 바뀌는 법인 접대, 동호회·모임, 가족 여러 명이 번갈아 쓰는 경우에 맞습니다.</p>
+<h2>기명 회원권과 무엇이 다른가요?</h2>
+<table><thead><tr><th>구분</th><th>기명(정회원권)</th><th>무기명 회원권</th></tr></thead><tbody>
+<tr><td>이용자</td><td>등록된 본인·지정 가족·법인 등록자</td><td>회원권·지정 카드 소지자 누구나</td></tr>
+<tr><td>이용자 변경</td><td>명의개서(골프장 심사·수수료)</td><td>카드만 넘기면 됨</td></tr>
+<tr><td>가격</td><td>기준</td><td>같은 골프장 기명보다 높은 편</td></tr>
+<tr><td>주말 이용</td><td>회원 우선 예약</td><td>골프장별 제한(주중 전용·주말 횟수 제한 등)</td></tr>
+<tr><td>주 매수자</td><td>개인 골퍼</td><td>법인·모임·가족 공동 이용</td></tr>
+</tbody></table>
+<h2>어떤 분께 맞나요?</h2>
+<ul><li><strong>접대가 잦은 법인</strong>: 임원·거래처가 바뀌어도 명의개서 없이 씁니다.</li><li><strong>동호회·모임</strong>: 회원 한 명 명의로 사서 돌아가며 씁니다.</li><li><strong>가족 여러 명</strong>: 가족 회원 등록 제한이 있는 골프장에서 대안이 됩니다.</li></ul>
+<p>반대로 혼자 규칙적으로 치는 개인이라면 같은 골프장의 기명 정회원권이 더 싸고 주말 조건도 좋은 경우가 많습니다. <a href="/guide/golf">골프회원권 안내</a>에서 종류별 차이를 비교하세요.</p>
+<h2>가격은 어떻게 형성되나요?</h2>
+<p>무기명은 골프장이 발행 수량을 제한하는 경우가 많아 <strong>같은 골프장 기명 회원권보다 높은 가격</strong>에 거래됩니다. 주말 이용 조건(주중 전용인지, 주말 월 몇 회인지)과 지정 카드 수(1인용·2인용·4인용)에 따라 같은 골프장 안에서도 값이 갈립니다. 현재 호가는 <a href="/exclusive/anonymous">무기명 전용관 매물</a>과 <a href="/market/corporate">법인회원권 시세표</a>에서 확인할 수 있습니다.</p>
+<h2>매수 전 확인할 것 5가지</h2>
+<ol><li><strong>주말 이용 규정</strong>: 주중 전용인지, 주말 횟수 제한이 있는지.</li><li><strong>카드 수와 동반자 규정</strong>: 카드 1장당 몇 명이 회원 대우를 받는지.</li><li><strong>개인 등록 가능 여부</strong>: 법인만 받는 골프장이 있습니다.</li><li><strong>입회금 반환 조건</strong>: 무기명도 회원권이므로 반환 조건과 만기를 봅니다.</li><li><strong>골프장의 무기명 정책 변경 이력</strong>: 무기명 폐지·축소가 있었던 골프장은 시세가 흔들립니다.</li></ol>
+<h2>세금·회계는 어떻게 되나요?</h2>
+<p>법인이 사면 회원권을 자산으로 계상하고 취득세를 냅니다. 접대 목적 이용분은 접대비 처리 한도와 관련이 있고, 개인이 팔 때는 양도차익에 양도소득세가 붙습니다. 자세한 내용은 <a href="/blog/corporate-golf-membership-tax-guide">법인 골프회원권 세무 가이드</a>와 <a href="/blog/anonymous-golf-membership-pros-cons">무기명 회원권 장단점</a> 글에 정리했습니다. 개별 사안은 세무사 확인이 필요합니다.</p>
+<p class="cta">무기명 매물은 <a href="/exclusive/anonymous">무기명 전용관</a>에서, 종목별 조건 상담은 <a href="/apply">매매 신청</a> 또는 02-583-0583으로 문의하세요.</p>`;
+  res.send(page({ title: '무기명 골프회원권이란? 기명과 차이·가격·주말 이용·구매 가이드', description: '무기명 골프회원권의 뜻, 기명 회원권과의 차이 비교표, 가격이 높은 이유, 주말 이용 제한, 법인·모임에 맞는 이유, 구매 전 확인 5가지.', path: '/guide/anonymous', body: guideShell({ eyebrow: '회원권 안내', h1: '무기명 골프회원권 안내: 뜻·기명과 차이·가격·구매 방법', bluf: `무기명 골프회원권은 <strong>특정인을 등록하지 않고 회원권이나 지정 카드를 가진 사람이면 누구나 회원 대우로 이용</strong>하는 골프회원권입니다. 명의개서 없이 이용자를 바꿀 수 있어 법인 접대와 모임에 맞고, 같은 골프장 기명 회원권보다 높은 가격에 거래되며 주말 이용 조건은 골프장마다 다릅니다.`, sections, faqs, side: sideStats(), keyFacts, byline: true }), breadcrumbs: [{ name: '회원권 안내', href: '/guide/golf' }, { name: '무기명 골프회원권 안내', href: '/guide/anonymous' }], ogImage: '/og/page/golf.png', jsonld: [].concat(articleLd({ title: '무기명 골프회원권 안내', desc: '무기명 골프회원권 뜻·차이·가격·구매', url: '/guide/anonymous' }), faqLd(faqs), definedTermLd('무기명 골프회원권', '특정인을 회원으로 등록하지 않고 회원권 또는 지정 카드 소지자가 회원 자격으로 이용하는 골프회원권', '/guide/anonymous'), speakableLd('/guide/anonymous', '무기명 골프회원권 안내')) }));
+});
+
 // ── 전용관 ──
 const EXCL = {
-  anonymous: { h1: '무기명 회원권 전용관', desc: '등록자 지정 없이 소지자 누구나 회원 자격으로 이용하는 무기명 골프회원권 매물과 이용 조건', bluf: '무기명 회원권은 특정인 등록 없이 회원권(또는 지정 카드) 소지자가 회원 자격으로 이용하는 상품으로, 이용자가 자주 바뀌는 법인 접대·모임에 적합합니다. 같은 골프장의 기명 회원권보다 가격이 높고 주말 이용 조건이 골프장마다 다르므로 매수 전 확인이 필수입니다.', cat: 'golf', kind: '무기명', faqs: [FAQ[4], { q: '무기명 회원권은 주말에도 쓸 수 있나요?', a: '골프장별로 주말 이용 횟수·동반 조건을 제한하는 경우가 있습니다. 매물별 이용 조건을 상담 시 확인해 드립니다.' }] },
+  anonymous: { h1: '무기명 골프회원권 전용관', desc: '등록자 지정 없이 소지자 누구나 회원 자격으로 이용하는 무기명 골프회원권 매물과 이용 조건', bluf: '무기명 회원권은 특정인 등록 없이 회원권(또는 지정 카드) 소지자가 회원 자격으로 이용하는 상품으로, 이용자가 자주 바뀌는 법인 접대·모임에 적합합니다. 같은 골프장의 기명 회원권보다 가격이 높고 주말 이용 조건이 골프장마다 다르므로 매수 전 확인이 필수입니다. 개념·기명과의 차이·세금은 <a href="/guide/anonymous">무기명 골프회원권 안내</a>에서 설명합니다.', cat: 'golf', kind: '무기명', faqs: [FAQ[4], { q: '무기명 회원권은 주말에도 쓸 수 있나요?', a: '골프장별로 주말 이용 횟수·동반 조건을 제한하는 경우가 있습니다. 매물별 이용 조건을 상담 시 확인해 드립니다.' }] },
   daemyung: { h1: '대명리조트(소노) 전용관', desc: '소노호텔앤리조트(구 대명리조트) 회원권 전용 매물과 이용 안내', bluf: '소노호텔앤리조트(구 대명리조트) 회원권은 전국 체인 이용과 성수기 배정 조건이 상품별로 다릅니다. 전용관에서는 상품별 이용 일수·객실 타입·관리비 조건을 비교해 매물을 안내합니다.', cat: 'condo', kind: '대명', faqs: [{ q: '대명(소노) 회원권은 어떤 지점을 쓸 수 있나요?', a: '상품에 따라 전국 소노 체인 이용 범위가 다릅니다. 매물별 이용 가능 지점과 성수기 배정 조건을 안내해 드립니다.' }, FAQ[6]] },
   prepaid: { h1: '선불카드 전용관', desc: '골프장 선불카드·이용권 매물', bluf: '선불카드는 특정 골프장·리조트의 이용 요금을 미리 충전해 회원가 수준으로 이용하는 상품으로, 회원권보다 낮은 비용으로 이용 혜택을 얻고자 하는 분께 적합합니다. 잔액·유효기간·양도 조건을 확인 후 거래합니다.', cat: 'sale', kind: '선불카드', faqs: [{ q: '선불카드도 양도가 되나요?', a: '상품별로 양도 가능 여부와 수수료가 다릅니다. 잔액과 유효기간을 확인한 뒤 골프장 승인 절차를 거쳐 양도합니다.' }] },
 };

@@ -15,7 +15,7 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
   await sleep(800);
   const get = async (p, opt = {}) => { const r = await fetch(BASE + p, opt); return { status: r.status, text: await r.text(), headers: r.headers }; };
   // 공개 페이지
-  const pages = ['/', '/market/golf', '/market/condo', '/market/corporate', '/market/fitness', '/golf', '/guide/golf', '/guide/condo', '/guide/fitness', '/guide/process', '/faq', '/exclusive/anonymous', '/listings', '/apply', '/blog', '/notice', '/news', '/videos', '/about', '/about/history', '/about/location', '/about/careers', '/privacy'];
+  const pages = ['/', '/market/golf', '/market/condo', '/market/corporate', '/market/fitness', '/golf', '/guide/golf', '/guide/anonymous', '/guide/condo', '/guide/fitness', '/guide/process', '/faq', '/exclusive/anonymous', '/listings', '/apply', '/blog', '/notice', '/news', '/videos', '/about', '/about/history', '/about/location', '/about/careers', '/privacy'];
   const titles = new Set(); const descs = new Set();
   for (const p of pages) {
     const r = await get(p);

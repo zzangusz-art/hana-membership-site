@@ -288,3 +288,9 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(31,58,115,.25);bo
 /* 드롭다운이 화면 오른쪽 밖으로 나가지 않게: 끝쪽 메뉴는 오른쪽 정렬, JS가 넘치는 경우 .sub-right 부여 */
 .nav-item:nth-last-child(-n+2) .sub,.nav-item.sub-right .sub{left:auto;right:0}
 .header-v2 .nav-item .sub{max-width:calc(100vw - 32px)}
+
+/* 대표 페이지 핵심 수치·바이라인, 홈 키워드 카드 */
+.key-facts{list-style:none;display:flex;flex-wrap:wrap;gap:10px;padding:0;margin:14px 0 0}.key-facts li{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px;min-width:150px}.key-facts span{display:block;font-size:12px;color:var(--muted);font-weight:700}.key-facts b{display:block;font-size:17px;color:var(--navy);margin-top:2px}
+.byline{margin:12px 0 0;font-size:13px;color:var(--muted)}.byline b{color:var(--ink)}
+.pillars{background:#f6f8fc}.pillar-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.pillar{display:block;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:26px 24px;color:var(--ink);transition:.25s;border-top:4px solid var(--green)}.pillar:hover{text-decoration:none;transform:translateY(-4px);box-shadow:var(--sh)}.pillar h3{margin:0 0 10px;font-size:20px;color:var(--navy)}.pillar p{color:var(--ink-2);font-size:15px;line-height:1.7;margin:0 0 12px}.pillar .more{color:var(--green-d);font-weight:800;font-size:14px}
+@media (max-width:900px){.pillar-grid{grid-template-columns:1fr}}
