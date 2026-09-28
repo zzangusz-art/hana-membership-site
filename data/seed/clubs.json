@@ -98,9 +98,11 @@
       "name": "동래베네스트골프클럽",
       "price_name": "동래베네스트",
       "region": "영남",
-      "address": "부산광역시 금정구",
+      "address": "부산광역시 금정구 하정로 66",
       "holes": 18,
-      "type": "회원제"
+      "type": "회원제",
+      "opened": "1971",
+      "verified": 1
     },
     {
       "name": "동부산컨트리클럽",
@@ -116,10 +118,11 @@
       "name": "드비치골프클럽",
       "price_name": "드비치",
       "region": "영남",
-      "address": "경상남도 거제시 장목면",
+      "address": "경상남도 거제시 장목면 거제북로 1573",
       "holes": 18,
       "type": "회원제",
-      "verified": 0
+      "verified": 1,
+      "opened": "2011"
     },
     {
       "name": "라데나골프클럽",
@@ -198,17 +201,21 @@
       "name": "블루원용인컨트리클럽",
       "price_name": "블루원용인",
       "region": "수도권",
-      "address": "경기도 용인시",
-      "holes": 18,
-      "type": "회원제"
+      "address": "경기도 용인시 처인구 원삼면 보개원삼로1534번길 40",
+      "holes": 27,
+      "type": "회원제",
+      "opened": "1993",
+      "verified": 1
     },
     {
       "name": "블루헤런골프클럽",
       "price_name": "블루헤런",
       "region": "수도권",
-      "address": "경기도 여주시",
-      "holes": 27,
-      "type": "회원제"
+      "address": "경기도 여주시 대신면 고달사로 67",
+      "holes": 18,
+      "type": "회원제",
+      "opened": "1992",
+      "verified": 1
     },
     {
       "name": "서울컨트리클럽",
@@ -232,9 +239,10 @@
       "name": "솔모로컨트리클럽",
       "price_name": "솔모로",
       "region": "수도권",
-      "address": "경기도 여주시",
-      "holes": 27,
-      "type": "회원제"
+      "address": "경기도 여주시 가남읍 솔모로그린길 171",
+      "holes": 36,
+      "type": "회원제",
+      "verified": 1
     },
     {
       "name": "송추컨트리클럽",
@@ -249,9 +257,11 @@
       "name": "수원컨트리클럽",
       "price_name": "수원입회",
       "region": "수도권",
-      "address": "경기도 용인시",
-      "holes": 18,
-      "type": "회원제"
+      "address": "경기도 용인시 기흥구 중부대로 495",
+      "holes": 36,
+      "type": "회원제",
+      "opened": "1975",
+      "verified": 1
     },
     {
       "name": "스카이밸리컨트리클럽",
