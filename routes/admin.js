@@ -17,6 +17,7 @@ const scheduler = require('../lib/scheduler');
 const report = require('../lib/report');
 const audit = require('../lib/audit');
 const analytics = require('../lib/analytics');
+const inflow = require('../lib/inflow');
 const shot = require('../lib/screenshot');
 const og = require('../lib/og');
 const indexnow = require('../lib/indexnow');
@@ -52,6 +53,7 @@ router.get('/dashboard', (req, res) => {
     scheduler: scheduler.status(), llm: { available: providers.llmAvailable(), ...providers.getLlmConfig(), apiKey: undefined }, inblog: { enabled: inblog.enabled(), push: getSetting('inblog_push', '1') === '1', url: settings.cfg('inblog_url') },
     audit: audit.latest() ? { score: audit.latest().score, date: audit.latest().date } : null,
     traffic: analytics.summary(report.weekRange(wk).start, today),
+    inflow: (() => { try { const s = inflow.summary(report.weekRange(wk).start, today); return { total: s.total, byChannel: s.byChannel, events: s.events }; } catch (_) { return null; } })(),
     plan: db.prepare('SELECT week, COUNT(*) n, SUM(done) d FROM plan_tasks GROUP BY week ORDER BY week').all(),
     reports: db.prepare('SELECT id, week, kind, title, created_at FROM reports ORDER BY created_at DESC LIMIT 5').all(),
   });
@@ -176,6 +178,20 @@ router.post('/reports/generate', async (req, res) => { try { const kind = ['week
 router.get('/reports/preview/:week', (req, res) => res.type('html').send(report.renderHtml(report.collect(Number(req.params.week) || 1), 'weekly')));
 router.post('/audit/run', async (req, res) => { try { res.json(await auditRunner()); } catch (e) { res.status(500).json({ error: e.message }); } });
 router.get('/audit', (req, res) => res.json({ latest: audit.latest(), history: audit.history(30) }));
+// 유입 경로·전환
+const ymd = (v, def) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) ? String(v) : def);
+const { addDays } = require('../lib/util');
+router.get('/inflow', (req, res) => { const to = ymd(req.query.to, kstDate()); const from = ymd(req.query.from, addDays(to, -6)); res.json(inflow.summary(from, to)); });
+router.get('/inflow/sessions', (req, res) => { const to = ymd(req.query.to, kstDate()); const from = ymd(req.query.from, addDays(to, -6)); res.json(inflow.sessions({ from, to, channel: String(req.query.channel || ''), source: String(req.query.source || ''), conv: String(req.query.conv || ''), limit: req.query.limit })); });
+router.get('/inflow/session/:id', (req, res) => { const t = inflow.trail(String(req.params.id)); if (!t) return res.status(404).json({ error: '방문 기록이 없습니다.' }); res.json(t); });
+router.get('/inflow/export.csv', (req, res) => {
+  const to = ymd(req.query.to, kstDate()); const from = ymd(req.query.from, addDays(to, -6));
+  const rows = inflow.sessions({ from, to, limit: 2000 }); const q = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const head = ['시작(KST)', '채널', '출처', '매체', '캠페인', '검색어', '직전 주소', '처음 들어온 페이지', '마지막 페이지', '쪽수', '기기', '재방문', '문의', '전화 클릭', '카톡 클릭', '문의번호'];
+  const kst = (ts) => new Date(ts * 1000 + 9 * 3600e3).toISOString().slice(0, 16).replace('T', ' ');
+  const csv = [head.map(q).join(','), ...rows.map(r => [kst(r.started_at), r.label, r.source, r.medium, r.campaign, r.keyword, r.ref_url, r.landing, r.last_path, r.pv, r.device, r.revisit ? 'Y' : '', r.inq, r.tel, r.kakao, r.inquiry_id || ''].map(q).join(','))].join('\r\n');
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8'); res.setHeader('Content-Disposition', `attachment; filename="inflow_${from}_${to}.csv"`); res.send('\ufeff' + csv);
+});
 router.get('/traffic', (req, res) => { const to = kstDate(); const from = req.query.from || report.kickoff(); res.json({ from, to, ...analytics.summary(from, to) }); });
 
 // ── 스크린샷(전후 비교) ──
@@ -185,7 +201,7 @@ router.get('/screenshots/file', (req, res) => { const f = path.resolve(String(re
 router.post('/screenshots/upload', upload.array('files', 40), (req, res) => { const dir = path.join(shot.SHOT_DIR, kstDate()); fs.mkdirSync(dir, { recursive: true }); let n = 0; for (const f of req.files || []) { const name = Buffer.from(f.originalname, 'latin1').toString('utf8').replace(/[^\w.가-힣-]/g, '_'); if (!/\.(png|jpe?g)$/i.test(name)) continue; fs.writeFileSync(path.join(dir, name), f.buffer); n++; } res.json({ ok: true, saved: n, dir }); });
 
 // ── 설정 ──
-const SETTING_KEYS = ['site_url', 'site_name', 'legal_name', 'slogan', 'phone', 'fax', 'email', 'address', 'ceo', 'privacy_officer', 'youtube', 'naver_blog', 'naver_blog_alt', 'instagram', 'kakao_channel', 'inblog_url', 'naver_verification', 'google_verification', 'google_verification_file', 'indexnow_enabled', 'donga_sync', 'donga_time', 'ga_id', 'gen_times', 'auto_generate', 'auto_publish', 'inblog_push', 'llm_provider', 'kickoff_date', 'inblog_api_key', ...Object.values(providers.KEY_SETTING), ...Object.values(providers.BASEURL_SETTING), 'model_anthropic', 'model_openai', 'model_gemini', 'model_openai-compatible'];
+const SETTING_KEYS = ['site_url', 'site_name', 'legal_name', 'slogan', 'phone', 'fax', 'email', 'address', 'ceo', 'privacy_officer', 'youtube', 'naver_blog', 'naver_blog_alt', 'instagram', 'kakao_channel', 'inblog_url', 'naver_verification', 'google_verification', 'google_verification_file', 'indexnow_enabled', 'donga_sync', 'donga_time', 'ga_id', 'naver_analytics_id', 'gen_times', 'auto_generate', 'auto_publish', 'inblog_push', 'llm_provider', 'kickoff_date', 'inblog_api_key', ...Object.values(providers.KEY_SETTING), ...Object.values(providers.BASEURL_SETTING), 'model_anthropic', 'model_openai', 'model_gemini', 'model_openai-compatible'];
 router.get('/settings', (req, res) => { const o = settings.all(); for (const k of SETTING_KEYS) if (!(k in o)) o[k] = getSetting(k, ''); for (const k of Object.keys(o)) if (/api_key/.test(k)) o[k] = o[k] ? '••••' + String(o[k]).slice(-4) : ''; o._env = { anthropic: !!process.env.ANTHROPIC_API_KEY, openai: !!process.env.OPENAI_API_KEY, gemini: !!process.env.GEMINI_API_KEY, inblog: !!process.env.INBLOG_API_KEY }; res.json(o); });
 router.post('/settings', (req, res) => { const b = req.body || {}; for (const k of SETTING_KEYS) if (k in b) { if (/api_key/.test(k) && String(b[k]).startsWith('••••')) continue; setSetting(k, b[k]); } res.json({ ok: true }); });
 

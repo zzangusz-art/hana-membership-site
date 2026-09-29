@@ -60,12 +60,36 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
   r = await get(`/api/prices/golf/${j.items[0].id}/history`); ok(JSON.parse(r.text).history.length >= 1, 'API 시세 이력');
   r = await fetch(BASE + '/api/inquiry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'buy', name: '테스트', phone: '010-1234-5678', agree: 1, item: '아시아나', category: 'golf' }) }); ok(r.status === 200 && (await r.json()).ok, 'POST /api/inquiry');
   r = await fetch(BASE + '/api/inquiry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'x' }) }); ok(r.status === 400, 'POST /api/inquiry 검증(400)');
+  // 유입 경로·전환 추적
+  { const inf = require('../lib/inflow'); const own = ['hanamember.co.kr'];
+    const d1 = inf.detect({ referer: 'https://search.naver.com/search.naver?query=%EA%B3%A8%ED%94%84%ED%9A%8C%EC%9B%90%EA%B6%8C', ownHosts: own });
+    const d2 = inf.detect({ referer: 'https://chatgpt.com/', ownHosts: own }); const d3 = inf.detect({ referer: 'https://hanamember.co.kr/golf', ownHosts: own });
+    const d4 = inf.detect({ referer: 'https://m.blog.naver.com/skim12160/1', query: { utm_source: 'naver_blog', utm_medium: 'social', utm_campaign: 'oct' }, ownHosts: own });
+    const d5 = inf.detect({ query: { n_media: '27758', n_query: '무기명 골프회원권' }, ownHosts: own }); const d6 = inf.detect({ ua: 'Mozilla/5.0 (Linux; Android 14) KAKAOTALK 11.0', ownHosts: own });
+    ok(d1.channel === 'organic' && d1.source === '네이버 검색' && d1.keyword === '골프회원권' && d2.channel === 'ai' && d2.source === 'ChatGPT' && d3.channel === 'direct' && d4.channel === 'social' && d4.campaign === 'oct' && d5.channel === 'paid' && d5.keyword === '무기명 골프회원권' && d6.source.includes('카카오'), '유입 출처 판정(검색·AI·내부이동·UTM·광고·인앱)');
+    const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36';
+    let rr = await fetch(BASE + '/market/golf', { headers: { 'user-agent': UA, referer: 'https://search.naver.com/search.naver?query=%EA%B3%A8%ED%94%84%ED%9A%8C%EC%9B%90%EA%B6%8C%20%EC%8B%9C%EC%84%B8' } });
+    const ck = (rr.headers.getSetCookie ? rr.headers.getSetCookie() : []).map(c => c.split(';')[0]).filter(c => /^hsid=|^hvid=/.test(c)).join('; ');
+    ok(rr.status === 200 && /hsid=/.test(ck) && /hvid=/.test(ck), '방문 쿠키 발급');
+    await rr.text(); await (await fetch(BASE + '/golf', { headers: { 'user-agent': UA, cookie: ck, referer: BASE + '/market/golf' } })).text();
+    rr = await fetch(BASE + '/api/t', { method: 'POST', headers: { 'Content-Type': 'application/json', 'user-agent': UA, cookie: ck }, body: JSON.stringify({ t: 'tel', l: '02-583-0583', p: '/golf' }) }); ok(rr.status === 204, '전환 이벤트 수집(전화 클릭)');
+    rr = await fetch(BASE + '/api/t', { method: 'POST', headers: { 'Content-Type': 'application/json', cookie: ck }, body: JSON.stringify({ t: 'inquiry', l: 'x' }) });
+    rr = await fetch(BASE + '/api/inquiry', { method: 'POST', headers: { 'Content-Type': 'application/json', 'user-agent': UA, cookie: ck, referer: BASE + '/apply' }, body: JSON.stringify({ kind: 'buy', name: '유입테스트', phone: '010-2222-3333', agree: 1, item: '기흥', category: 'golf' }) }); const ij = await rr.json();
+    const { db: sdb } = require('../db'); const row = sdb.prepare('SELECT * FROM inquiries WHERE id=?').get(ij.id); const v = sdb.prepare('SELECT * FROM visits WHERE id=?').get(row.session_id);
+    ok(row.src_source === '네이버 검색' && row.src_keyword === '골프회원권 시세' && row.src_landing === '/market/golf' && v && v.pv === 2 && v.tel === 1 && v.inq === 1 && v.inquiry_id === ij.id, '문의에 유입 정보 연결', `${row.src_source} · ${row.src_keyword} · pv ${v && v.pv}`);
+    rr = await fetch(BASE + '/', { headers: { 'user-agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' } }); ok(!(rr.headers.getSetCookie ? rr.headers.getSetCookie() : []).some(c => /^hsid=/.test(c)), '봇은 방문으로 기록하지 않음');
+  }
   // 관리자
   r = await fetch(BASE + '/api/admin/dashboard'); ok(r.status === 401, '관리자 미로그인 401');
   r = await fetch(BASE + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'admin', pw: 'hana1234!' }) });
   const cookie = (r.headers.get('set-cookie') || '').split(';')[0]; ok(r.status === 200 && cookie.startsWith('hana_admin='), '관리자 로그인');
   const A = (p, opt = {}) => fetch(BASE + '/api/admin' + p, { ...opt, headers: { 'Content-Type': 'application/json', cookie, ...(opt.headers || {}) } });
   r = await A('/dashboard'); const dash = await r.json(); ok(r.status === 200 && dash.prices.golf > 50 && dash.week >= 1, '관리자 대시보드', `${dash.week}주차 · 골프 ${dash.prices.golf}종목 · 문의 ${dash.inquiries.total}`);
+  { const today = require('../lib/util').kstDate(); r = await A(`/inflow?from=${today}&to=${today}`); const inf = await r.json(); const org = inf.byChannel.find(c => c.channel === 'organic');
+    ok(r.status === 200 && org && org.sessions >= 1 && org.inq >= 1 && org.tel >= 1 && org.conv === 1 && inf.total.conv === 1 && inf.events.tel >= 1 && inf.events.inquiry >= 1 && !inf.events.view && inf.keywords.some(k => k.keyword === '골프회원권 시세'), '관리자 유입 경로 집계', `검색 ${org && org.sessions}건 · 문의 ${inf.events.inquiry} · 전화 ${inf.events.tel}`);
+    r = await A(`/inflow/sessions?from=${today}&to=${today}&conv=1`); const ls = await r.json(); ok(r.status === 200 && ls.length >= 1 && ls[0].source, '관리자 방문 목록(전환 필터)');
+    r = await A('/inflow/session/' + ls[0].id); const tr = await r.json(); ok(r.status === 200 && tr.events.some(e => e.type === 'view') && tr.events.some(e => e.type === 'inquiry'), '방문 경로 상세');
+    r = await A(`/inflow/export.csv?from=${today}&to=${today}`); const csv = await r.text(); ok(r.status === 200 && csv.includes('네이버 검색'), '방문 목록 CSV'); }
   r = await A('/prices/template.xlsx'); const xbuf = Buffer.from(await r.arrayBuffer()); ok(r.status === 200 && xbuf.length > 5000, '시세 엑셀 양식 다운로드', `${xbuf.length} bytes`);
   // 엑셀 업로드(양식을 수정해 업로드)
   const XLSX = require('xlsx'); const wb = XLSX.read(xbuf, { type: 'buffer' }); const ws = wb.Sheets['골프회원권']; const aoa = XLSX.utils.sheet_to_json(ws, { header: 1 });

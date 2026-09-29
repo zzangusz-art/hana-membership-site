@@ -181,6 +181,24 @@ function getSetting(key, def = '') { const r = getStmt.get(key); return r ? r.va
 function setSetting(key, val) { setStmt.run(key, val == null ? '' : String(val)); }
 function allSettings() { const o = {}; for (const r of db.prepare('SELECT key,value FROM settings').all()) o[r.key] = r.value; return o; }
 
+// ── 유입 경로·전환 추적(lib/inflow.js) ──
+db.exec(`
+CREATE TABLE IF NOT EXISTS visits (
+  id TEXT PRIMARY KEY, vid TEXT, date TEXT NOT NULL, started_at INTEGER NOT NULL, last_at INTEGER NOT NULL,
+  channel TEXT NOT NULL, source TEXT NOT NULL, medium TEXT, campaign TEXT, term TEXT, content TEXT, keyword TEXT,
+  ref_host TEXT, ref_url TEXT, landing TEXT, last_path TEXT, device TEXT, revisit INTEGER DEFAULT 0,
+  pv INTEGER NOT NULL DEFAULT 0, tel INTEGER NOT NULL DEFAULT 0, kakao INTEGER NOT NULL DEFAULT 0, inq INTEGER NOT NULL DEFAULT 0, inquiry_id INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_visits_date ON visits(date, channel);
+CREATE TABLE IF NOT EXISTS visit_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, visit_id TEXT NOT NULL, ts INTEGER NOT NULL, date TEXT NOT NULL,
+  type TEXT NOT NULL, label TEXT, path TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_vev_visit ON visit_events(visit_id);
+CREATE INDEX IF NOT EXISTS idx_vev_date ON visit_events(date, type);
+`);
+for (const c of ['session_id', 'src_channel', 'src_source', 'src_medium', 'src_campaign', 'src_keyword', 'src_landing']) ensureColumn('inquiries', c, 'TEXT');
+
 // ── 최초 관리자 ──
 if (db.prepare('SELECT COUNT(*) c FROM admins').get().c === 0) {
   const id = process.env.ADMIN_ID || 'admin';

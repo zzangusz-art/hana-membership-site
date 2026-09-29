@@ -29,12 +29,12 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", 'https://www.googletagmanager.com', 'https://www.youtube.com'],
+      scriptSrc: ["'self'", "'unsafe-inline'", 'https://www.googletagmanager.com', 'https://www.youtube.com', 'https://wcs.naver.net', 'https://wcs.pstatic.net'],
       styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
       fontSrc: ["'self'", 'https://cdn.jsdelivr.net', 'data:'],
-      imgSrc: ["'self'", 'data:', 'https://i.ytimg.com', 'https://www.google-analytics.com', 'https://*.googleusercontent.com'],
+      imgSrc: ["'self'", 'data:', 'https://i.ytimg.com', 'https://www.google-analytics.com', 'https://*.googleusercontent.com', 'https://wcs.naver.com', 'https://wcs.naver.net'],
       frameSrc: ["'self'", 'https://www.youtube.com', 'https://www.youtube-nocookie.com', 'https://www.google.com', 'https://maps.google.com'],
-      connectSrc: ["'self'", 'https://www.google-analytics.com', 'https://region1.google-analytics.com'],
+      connectSrc: ["'self'", 'https://www.google-analytics.com', 'https://region1.google-analytics.com', 'https://*.google-analytics.com', 'https://wcs.naver.com', 'https://wcs.naver.net'],
       objectSrc: ["'none'"], baseUri: ["'self'"], formAction: ["'self'"], upgradeInsecureRequests: null,
     },
   },
@@ -70,6 +70,9 @@ app.use((req, res, next) => {
 });
 app.use((req, res, next) => { layout.setRequestOrigin(`${req.protocol}://${req.get('host')}`); next(); });
 app.use(analytics.middleware);
+const inflow = require('./lib/inflow');
+app.use(inflow.middleware); // 유입 경로·전환 추적(세션 단위)
+try { inflow.prune(); } catch (_) { /* no-op */ }
 
 // 동적 OG 썸네일: /og/post/<slug>.png · /og/club/<slug>.png · /og/page/<key>.png (7일 캐시, 크롬 없으면 기본 og.png)
 const og = require('./lib/og');

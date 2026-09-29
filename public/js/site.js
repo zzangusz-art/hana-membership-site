@@ -138,6 +138,11 @@
     const initial = new URLSearchParams(location.search).get('sido'); if (initial) apply(initial);
   }
 
+  // 유입·전환 추적: 전화·카카오톡·외부 채널 클릭, 문의 폼 입력 시작을 서버로 알림(GA4가 있으면 같이 전송)
+  const trk = (t, l) => { try { const d = JSON.stringify({ t, l: l || '', p: location.pathname }); if (navigator.sendBeacon) navigator.sendBeacon('/api/t', new Blob([d], { type: 'application/json' })); else fetch('/api/t', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: d, keepalive: true }); if (window.gtag) window.gtag('event', { tel: 'tel_click', kakao: 'kakao_click', outbound: 'outbound_click', form: 'form_start' }[t] || t, { label: l || '', page: location.pathname }); } catch (_) { /* no-op */ } };
+  document.addEventListener('click', (e) => { const a = e.target.closest && e.target.closest('a[href]'); if (!a) return; const h = a.getAttribute('href') || ''; if (/^tel:/i.test(h)) trk('tel', h.slice(4)); else if (/kakao\.com/i.test(h)) trk('kakao', '카카오톡 문의'); else if (/^https?:\/\//i.test(h) && a.hostname && a.hostname !== location.hostname) trk('outbound', a.hostname.replace(/^www\./, '')); }, true);
+  $$('form[data-ajax]').forEach(f => f.addEventListener('focusin', function once() { f.removeEventListener('focusin', once); trk('form', f.id || 'apply'); }));
+
   // 매매신청 URL 파라미터 → 폼 프리필
   const params = new URLSearchParams(location.search); if (params.get('item')) { const i = $('input[name=item]'); if (i && !i.value) i.value = params.get('item'); }
 })();

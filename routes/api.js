@@ -6,6 +6,7 @@ const { db } = require('../db');
 const prices = require('../lib/prices');
 const { now, kstDate, isoFromTs } = require('../lib/util');
 const settings = require('../lib/settings');
+const inflow = require('../lib/inflow');
 
 const router = express.Router();
 
@@ -23,6 +24,13 @@ router.get('/prices/:category/:id/history', (req, res) => {
   res.json({ id: r.id, name: r.name, unit: '만원', history: prices.history(r.id, days) });
 });
 
+// 전환 이벤트 수집(전화·카톡 버튼 클릭 등) — 본문 {t:유형, l:라벨, p:경로}. 문의 접수(inquiry)는 서버가 직접 기록하므로 받지 않는다.
+const evLimit = rateLimit({ windowMs: 60 * 1000, max: 40, standardHeaders: true, legacyHeaders: false });
+router.post('/t', evLimit, (req, res) => {
+  try { const b = req.body || {}; const t = String(b.t || ''); if (['tel', 'kakao', 'outbound', 'form'].includes(t)) inflow.track(req, t, String(b.l || ''), String(b.p || '')); } catch (_) { /* no-op */ }
+  res.status(204).end();
+});
+
 const inqLimit = rateLimit({ windowMs: 10 * 60 * 1000, max: 8, standardHeaders: true, legacyHeaders: false, message: { error: '요청이 많습니다. 잠시 후 다시 시도해 주세요.' } });
 router.post('/inquiry', inqLimit, (req, res) => {
   const b = req.body || {};
@@ -33,8 +41,10 @@ router.post('/inquiry', inqLimit, (req, res) => {
   if (b.website) return res.json({ ok: true }); // honeypot
   const kind = ['buy', 'sell', 'consult'].includes(b.kind) ? b.kind : 'consult';
   const ts = now();
-  const info = db.prepare('INSERT INTO inquiries (kind,category,name,phone,email,item,budget,message,agree,ip,ua,referrer,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,1,?,?,?,?,?)')
-    .run(kind, String(b.category || '').slice(0, 20), name, phone, String(b.email || '').slice(0, 80), String(b.item || '').slice(0, 80), String(b.budget || '').slice(0, 60), String(b.message || '').slice(0, 1500), (req.headers['x-forwarded-for'] || req.ip || '').toString().split(',')[0].slice(0, 45), String(req.headers['user-agent'] || '').slice(0, 200), String(req.headers.referer || '').slice(0, 200), ts, ts);
+  let at = {}; try { at = inflow.attribution(req); } catch (_) { at = {}; }
+  const info = db.prepare('INSERT INTO inquiries (kind,category,name,phone,email,item,budget,message,agree,ip,ua,referrer,created_at,updated_at,session_id,src_channel,src_source,src_medium,src_campaign,src_keyword,src_landing) VALUES (?,?,?,?,?,?,?,?,1,?,?,?,?,?,?,?,?,?,?,?,?)')
+    .run(kind, String(b.category || '').slice(0, 20), name, phone, String(b.email || '').slice(0, 80), String(b.item || '').slice(0, 80), String(b.budget || '').slice(0, 60), String(b.message || '').slice(0, 1500), (req.headers['x-forwarded-for'] || req.ip || '').toString().split(',')[0].slice(0, 45), String(req.headers['user-agent'] || '').slice(0, 200), String(req.headers.referer || '').slice(0, 200), ts, ts, at.session_id || '', at.src_channel || '', at.src_source || '', at.src_medium || '', at.src_campaign || '', at.src_keyword || '', at.src_landing || '');
+  try { inflow.linkInquiry(req, info.lastInsertRowid); } catch (_) { /* no-op */ }
   res.json({ ok: true, id: info.lastInsertRowid, message: '접수되었습니다. 담당 상담사가 곧 연락드리겠습니다.' });
 });
 
