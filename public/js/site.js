@@ -48,6 +48,43 @@
     $$('#qtRegions .chip').forEach(c => c.addEventListener('click', () => { $$('#qtRegions .chip').forEach(x => x.classList.remove('active')); c.classList.add('active'); region = c.dataset.region; apply(); }));
   }
 
+  // 시세 추이 차트: 기간 90일·1년·3년·5년·10년 선택. <div class="pchart" data-cat data-id data-name>
+  const RANGES = [['90일', 90], ['1년', 365], ['3년', 1095], ['5년', 1825], ['10년', 3650]];
+  const pchart = (box, startDays) => {
+    if (!box || box.dataset.ready) return; box.dataset.ready = '1';
+    const cat = box.dataset.cat || 'golf', id = box.dataset.id, name = box.dataset.name || '';
+    box.innerHTML = `<div class="pc-tabs" role="group" aria-label="차트 기간">${RANGES.map(([l, d]) => `<button type="button" class="pc-tab" data-days="${d}">${l}</button>`).join('')}</div><div class="pc-view"></div><p class="note pc-note"></p>`;
+    const view = $('.pc-view', box), note = $('.pc-note', box); const cache = {};
+    const ymd = (s) => s.slice(2).replace(/-/g, '.');
+    const draw = (hist, days, since) => {
+      const pts = hist.filter(h => h.value != null);
+      if (pts.length < 2) { view.innerHTML = '<p class="note">이 기간의 시세 기록이 아직 2개 미만입니다. 시세가 갱신될 때마다 쌓입니다.</p>'; note.textContent = ''; return; }
+      const W = 640, H = 240, L = 62, R = 18, T = 14, B = 34; const t = pts.map(h => Date.parse(h.date + 'T00:00:00Z')); const vals = pts.map(h => h.value);
+      const t0 = t[0], t1 = t[t.length - 1] || t0 + 1; const min = Math.min(...vals), max = Math.max(...vals); const pad = (max - min) * 0.08 || Math.max(1, max * 0.02); const lo = min - pad, hi = max + pad;
+      const x = (v) => L + (t1 === t0 ? 0.5 : (v - t0) / (t1 - t0)) * (W - L - R); const y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+      const line = pts.map((h, i) => `${x(t[i]).toFixed(1)},${y(h.value).toFixed(1)}`).join(' '); const up = vals[vals.length - 1] >= vals[0]; const col = up ? '#d0342c' : '#1a63c9';
+      const grid = [0, .25, .5, .75, 1].map(f => { const v = lo + (hi - lo) * f; return `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="#e3e8f0"/><text x="${L - 8}" y="${y(v) + 4}" font-size="11" fill="#6b7485" text-anchor="end">${Math.round(v).toLocaleString('ko-KR')}</text>`; }).join('');
+      const ticks = [0, .5, 1].map(f => { const tv = t0 + (t1 - t0) * f; const d = new Date(tv).toISOString().slice(0, 10); return `<text x="${x(tv)}" y="${H - 10}" font-size="11" fill="#6b7485" text-anchor="${f === 0 ? 'start' : f === 1 ? 'end' : 'middle'}">${ymd(d)}</text>`; }).join('');
+      const dots = pts.length <= 40 ? pts.map((h, i) => `<circle cx="${x(t[i]).toFixed(1)}" cy="${y(h.value).toFixed(1)}" r="3.2" fill="${col}"><title>${h.date} · ${h.value.toLocaleString('ko-KR')}만원</title></circle>`).join('') : `<circle cx="${x(t1).toFixed(1)}" cy="${y(vals[vals.length - 1]).toFixed(1)}" r="4" fill="${col}"/>`;
+      const gid = 'pcg' + id + days;
+      view.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${name} 시세 추이"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".18"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>${grid}<polygon fill="url(#${gid})" points="${x(t0).toFixed(1)},${H - B} ${line} ${x(t1).toFixed(1)},${H - B}"/><polyline fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" points="${line}"/>${dots}${ticks}</svg>`;
+      const d = vals[vals.length - 1] - vals[0]; const pct = vals[0] ? Math.round(d / vals[0] * 1000) / 10 : 0;
+      const want = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10); const short = since && since > want && Date.parse(since) - Date.parse(want) > 45 * 86400000;
+      note.innerHTML = `${pts[0].date} ~ ${pts[pts.length - 1].date} · 최저 ${min.toLocaleString('ko-KR')} · 최고 ${max.toLocaleString('ko-KR')} · 기간 등락 <b class="${d > 0 ? 'up' : d < 0 ? 'down' : ''}">${d > 0 ? '+' : ''}${d.toLocaleString('ko-KR')} (${pct}%)</b> · 단위 만원${short ? `<br>이 종목의 시세 기록은 ${since}부터 있습니다.` : ''}${days > 1825 && !short ? '<br>5년보다 오래된 구간은 1년에 한 번 기록입니다.' : ''}`;
+    };
+    const load = async (days) => {
+      $$('.pc-tab', box).forEach(b => b.classList.toggle('active', Number(b.dataset.days) === days));
+      if (cache[days]) return draw(cache[days].history, days, cache[days].since);
+      view.innerHTML = '<div class="skel skel-chart"></div>';
+      try { const r = await fetch(`/api/prices/${cat}/${id}/history?days=${days}`); const j = await r.json(); cache[days] = j; draw(j.history || [], days, j.since); } catch (_) { view.innerHTML = '<p class="note">추이를 불러오지 못했습니다.</p>'; }
+    };
+    box.addEventListener('click', (e) => { const b = e.target.closest('.pc-tab'); if (b) load(Number(b.dataset.days)); });
+    load(startDays || 90);
+  };
+  $$('.pchart').forEach(b => { if (!b.closest('[hidden]')) pchart(b); });
+  // 골프장 페이지: 회원권 종류 탭
+  $$('.vr-card').forEach(card => card.addEventListener('click', (e) => { const tab = e.target.closest('.vr-tab'); if (!tab) return; const i = tab.dataset.vr; $$('.vr-tab', card).forEach(t => { const on = t === tab; t.classList.toggle('active', on); t.setAttribute('aria-selected', on); }); $$('.vr-panel', card).forEach(p => { p.hidden = p.dataset.vr !== i; if (!p.hidden) $$('.pchart', p).forEach(b => pchart(b)); }); try { const u = new URL(location.href); u.searchParams.set('type', tab.dataset.label); history.replaceState(null, '', u.pathname + u.search + '#types'); } catch (_) { /* no-op */ } }));
+
   // 시세표: 검색 즉시 필터(서버 제출 전 클라이언트 필터), 비교, 추이 모달
   const mk = $('#mkTable'); if (mk) {
     const q = $('#mkQ'); q && q.addEventListener('input', () => { const v = q.value.trim().toLowerCase(); $$('tbody tr', mk).forEach(tr => { if (!tr.dataset.name) return; tr.style.display = !v || tr.dataset.name.toLowerCase().includes(v) ? '' : 'none'; }); });
@@ -57,8 +94,7 @@
     mk.addEventListener('change', (e) => { if (!e.target.classList.contains('cmp-chk')) return; if ($$('.cmp-chk:checked', mk).length > 3) { e.target.checked = false; (window.toast ? toast('최대 3개까지 비교할 수 있습니다.', 'err') : alert('최대 3개까지 비교할 수 있습니다.')); } renderCmp(); });
     const modal = $('#histModal'); const chart = $('#histChart'); const title = $('#histTitle'); const note = $('#histNote'); const cat = location.pathname.split('/')[2] || 'golf';
     const close = () => { modal.hidden = true; }; $('.modal-close', modal).addEventListener('click', close); modal.addEventListener('click', (e) => { if (e.target === modal) close(); }); document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
-    const draw = (hist, name) => { const vals = hist.map(h => h.value); const W = 640, H = 220, P = 56; if (vals.length < 2) { chart.innerHTML = '<p class="note">추이 데이터가 아직 2개 미만입니다. 매주 갱신되며 누적됩니다.</p>'; return; } const min = Math.min(...vals), max = Math.max(...vals); const span = max - min || 1; const x = (i) => P + i / (vals.length - 1) * (W - P * 2); const y = (v) => H - P + 6 - (v - min) / span * (H - P * 2); const pts = vals.map((v, i) => `${x(i)},${y(v)}`).join(' '); const up = vals[vals.length - 1] >= vals[0]; const col = up ? '#d0342c' : '#1a63c9'; const grid = [0, .25, .5, .75, 1].map(f => { const v = Math.round(min + span * f); return `<line x1="${P}" x2="${W - P}" y1="${y(v)}" y2="${y(v)}" stroke="#e3e8f0"/><text x="${P - 6}" y="${y(v) + 4}" font-size="11" fill="#6b7485" text-anchor="end">${v.toLocaleString()}</text>`; }).join(''); const dots = hist.map((h, i) => `<circle cx="${x(i)}" cy="${y(h.value)}" r="3.5" fill="${col}"><title>${h.date}: ${h.value.toLocaleString()}만원</title></circle>`).join(''); const labels = [0, Math.floor((hist.length - 1) / 2), hist.length - 1].map(i => `<text x="${x(i)}" y="${H - 8}" font-size="11" fill="#6b7485" text-anchor="middle">${hist[i].date.slice(5)}</text>`).join(''); chart.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${name} 시세 추이">${grid}<polyline fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round" points="${pts}"/>${dots}${labels}</svg>`; note.textContent = `${hist[0].date} ~ ${hist[hist.length - 1].date} · 최저 ${min.toLocaleString()} · 최고 ${max.toLocaleString()} · 단위 만원`; };
-    mk.addEventListener('click', async (e) => { const b = e.target.closest('[data-hist]'); if (!b || b.tagName === 'A') return; e.preventDefault(); const id = b.dataset.hist; const tr = b.closest('tr'); title.textContent = `${tr.dataset.name} 최근 90일 시세 추이`; chart.innerHTML = '<div class="skel skel-chart"></div><div class="skel skel-line" style="width:60%"></div>'; modal.hidden = false; try { const r = await fetch(`/api/prices/${cat}/${id}/history?days=90`); const j = await r.json(); draw(j.history, tr.dataset.name); } catch (_) { chart.innerHTML = '<p class="note">추이를 불러오지 못했습니다.</p>'; } });
+    mk.addEventListener('click', (e) => { const b = e.target.closest('[data-hist]'); if (!b || b.tagName === 'A') return; e.preventDefault(); const tr = b.closest('tr'); title.textContent = `${tr.dataset.name} 시세 추이`; note.textContent = ''; chart.innerHTML = ''; const box = document.createElement('div'); box.className = 'pchart'; box.dataset.cat = cat; box.dataset.id = b.dataset.hist; box.dataset.name = tr.dataset.name; chart.appendChild(box); modal.hidden = false; pchart(box); });
   }
 
   // FAQ: 하나 열면 같은 목록의 다른 항목 닫기(선택적 UX)

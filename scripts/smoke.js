@@ -49,7 +49,7 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
   const inx = require('../lib/indexnow'); r = await get('/' + inx.key() + '.txt'); ok(r.status === 200 && r.text.trim() === inx.key(), 'IndexNow 키 파일');
   ok((await inx.submit(['/'])).skipped === true, 'IndexNow: 임시 도메인에선 전송 안 함(skipped)');
   r = await get('/market/01'); ok(r.status === 200 || r.status === 301, '구 URL 리다이렉트 /market/01');
-  { const oc = db.prepare("SELECT old_id, slug FROM clubs WHERE old_id IS NOT NULL AND old_id<>'' LIMIT 1").get(); if (oc) { const rr = await fetch(BASE + '/golf/01_view/' + oc.old_id, { redirect: 'manual' }); ok(rr.status === 301 && decodeURIComponent(rr.headers.get('location') || '') === '/golf/' + oc.slug, '구 골프장 URL 301 → 상세'); } ok(db.prepare("SELECT COUNT(*) c FROM clubs WHERE status='published'").get().c >= 250, '골프장 이관 250+', String(db.prepare("SELECT COUNT(*) c FROM clubs").get().c)); }
+  { const oc = db.prepare("SELECT old_id, slug FROM clubs WHERE old_id IS NOT NULL AND old_id<>'' AND parent_id IS NULL LIMIT 1").get(); if (oc) { const rr = await fetch(BASE + '/golf/01_view/' + oc.old_id, { redirect: 'manual' }); ok(rr.status === 301 && decodeURIComponent(rr.headers.get('location') || '') === '/golf/' + oc.slug, '구 골프장 URL 301 → 상세'); } ok(db.prepare("SELECT COUNT(*) c FROM clubs WHERE status='published'").get().c >= 250, '골프장 이관 250+', String(db.prepare("SELECT COUNT(*) c FROM clubs").get().c)); }
   r = await fetch(BASE + '/company/03', { redirect: 'manual' }); ok(r.status === 301 && r.headers.get('location') === '/about/location', '구 URL 301 /company/03 → /about/location');
   // fetch는 Host 헤더를 못 바꾸므로 http.request로 구 도메인 호스트를 흉내낸다
   r = await new Promise((resolve, reject) => { require('http').request({ host: '127.0.0.1', port: process.env.PORT, path: '/company/03?x=1', headers: { Host: 'www.hanamark.co.kr' } }, (res) => { res.resume(); resolve({ status: res.statusCode, location: res.headers.location || '' }); }).on('error', reject).end(); });
@@ -60,6 +60,18 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
   r = await get(`/api/prices/golf/${j.items[0].id}/history`); ok(JSON.parse(r.text).history.length >= 1, 'API 시세 이력');
   r = await fetch(BASE + '/api/inquiry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'buy', name: '테스트', phone: '010-1234-5678', agree: 1, item: '아시아나', category: 'golf' }) }); ok(r.status === 200 && (await r.json()).ok, 'POST /api/inquiry');
   r = await fetch(BASE + '/api/inquiry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'x' }) }); ok(r.status === 400, 'POST /api/inquiry 검증(400)');
+  // 골프장 회원권 종류 통합 · 차트 기간
+  { const cg = require('../lib/clubgroup'); ok(cg.baseKey('강남300 주중가족') === cg.baseKey('강남300') && cg.baseKey('부곡(3250)') === cg.baseKey('부곡컨트리클럽') && cg.baseKey('남촌55000') === '남촌' && cg.baseKey('센추리21(10000)') === '센추리21' && cg.baseKey('골드레이크 주중') !== cg.baseKey('골드 주주'), '골프장 이름 묶기 규칙');
+    const par = db.prepare("SELECT * FROM clubs WHERE name='강남300'").get(); const kid = db.prepare("SELECT * FROM clubs WHERE name='강남300 주중가족'").get();
+    ok(par && kid && !par.parent_id && kid.parent_id === par.id && kid.variant_label === '주중가족', '회원권 종류 통합(강남300)');
+    let rr = await fetch(BASE + '/golf/' + encodeURIComponent(kid.slug), { redirect: 'manual' }); ok(rr.status === 301 && decodeURIComponent(rr.headers.get('location')) === `/golf/${par.slug}?type=주중가족`, '종류 주소 → 대표 골프장 301', rr.headers.get('location'));
+    rr = await get(`/golf/${encodeURIComponent(par.slug)}?type=${encodeURIComponent('주중가족')}`); ok(rr.status === 200 && rr.text.includes('class="vr-tabs"') && rr.text.includes('강남300 주중개인') && /class="vr-tab active"[^>]*data-label="주중가족"/.test(rr.text), '대표 페이지 안에서 종류 선택');
+    rr = await get('/golf'); const nPar = db.prepare("SELECT COUNT(*) c FROM clubs WHERE status='published' AND parent_id IS NULL").get().c; ok(rr.status === 200 && !rr.text.includes('/golf/' + encodeURIComponent(kid.slug) + '"') && rr.text.includes(`${nPar}개 골프장`) && nPar < 200, '골프장 목록은 대표만', `${nPar}곳`);
+    rr = await get('/sitemap.xml'); ok(!rr.text.includes('/golf/' + encodeURIComponent(kid.slug) + '<'), '사이트맵에서 종류 주소 제외');
+    const asi = db.prepare("SELECT * FROM clubs WHERE name='아시아나컨트리클럽'").get(); rr = await get('/golf/' + encodeURIComponent(asi.slug)); ok(rr.text.includes('class="pchart"') && rr.text.includes('AggregateOffer') && rr.text.includes('아시아나 주중개인'), '종류별 시세·차트·AggregateOffer');
+    const pr = db.prepare("SELECT id FROM prices WHERE category='golf' AND name='88'").get(); rr = await get(`/api/prices/golf/${pr.id}/history?days=3650`); const hj = JSON.parse(rr.text); const r90 = JSON.parse((await get(`/api/prices/golf/${pr.id}/history?days=90`)).text);
+    ok(hj.days === 3650 && hj.history.length > 30 && hj.history[0].date < '2018-01-01' && hj.since <= hj.history[0].date && r90.history.length < hj.history.length, '시세 이력 10년 조회', `${hj.history.length}점 · ${hj.history[0].date}~`);
+    rr = await get('/'); ok(rr.text.includes('class="hd-yt"') && !/hd-links"><a[^>]*>유튜브</.test(rr.text), '헤더 유튜브 로고'); }
   // 유입 경로·전환 추적
   { const inf = require('../lib/inflow'); const own = ['hanamember.co.kr'];
     const d1 = inf.detect({ referer: 'https://search.naver.com/search.naver?query=%EA%B3%A8%ED%94%84%ED%9A%8C%EC%9B%90%EA%B6%8C', ownHosts: own });

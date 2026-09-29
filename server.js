@@ -21,6 +21,8 @@ const { seedIfEmpty } = require('./scripts/seed');
 const { page } = layout;
 
 seedIfEmpty();
+try { const g = require('./lib/clubgroup').sync(); if (g.changed) console.log(`[clubs] 골프장 ${g.clubs}곳 · 회원권 종류 ${g.variants}건 묶음`); } catch (e) { console.error('[clubs] 묶기 실패', e.message); }
+try { const h = require('./lib/prices').importHistory(path.join(__dirname, 'data', 'seed', 'price-history.json')); if (h.rows) console.log(`[prices] 과거 시세 이력 ${h.items}종목 ${h.rows}건 추가`); } catch (e) { console.error('[prices] 이력 가져오기 실패', e.message); }
 
 const app = express();
 app.set('trust proxy', 1);
@@ -108,7 +110,7 @@ app.get('/favicon.ico', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'img', 
 // 구 사이트 URL → 새 URL 301 (검색 신호 승계)
 const REDIRECTS = { '/market/01': '/market/golf', '/market/02': '/market/corporate', '/market/03': '/market/condo', '/market/04': '/market/fitness', '/membership/01': '/listings?category=golf', '/membership/02': '/listings?category=condo', '/membership/03': '/listings?category=fitness', '/membership/04': '/listings?category=sale', '/membership/05': '/listings?category=tour', '/building/01': '/exclusive/anonymous', '/building/02': '/exclusive/daemyung', '/building/03': '/exclusive/prepaid', '/golf/01': '/golf', '/golf/02': '/market/golf', '/resort/01': '/guide/condo', '/resort/02': '/market/condo', '/fitness/01': '/guide/fitness', '/fitness/02': '/market/fitness', '/application': '/apply', '/community/01': '/notice', '/community/02': '/news', '/community/03': '/faq', '/community/04': '/notice', '/company/01': '/about', '/company/02': '/about', '/company/03': '/about/location', '/company/04': '/about/careers' };
 app.use((req, res, next) => { const p = req.path.replace(/\/$/, ''); if (REDIRECTS[p]) return res.redirect(301, REDIRECTS[p]); next(); });
-app.get(/^\/golf\/01_view\/(\d+)\/?$/, (req, res) => { const c = db.prepare("SELECT slug FROM clubs WHERE old_id=? AND status='published'").get(req.params[0]); return res.redirect(301, c ? '/golf/' + encodeURIComponent(c.slug) : '/golf'); });
+app.get(/^\/golf\/01_view\/(\d+)\/?$/, (req, res) => { let c = db.prepare("SELECT slug, parent_id, variant_label, name FROM clubs WHERE old_id=? AND status='published'").get(req.params[0]); if (c && c.parent_id) { const par = db.prepare("SELECT slug FROM clubs WHERE id=?").get(c.parent_id); if (par) return res.redirect(301, '/golf/' + encodeURIComponent(par.slug) + '?type=' + encodeURIComponent(c.variant_label || c.name)); } return res.redirect(301, c ? '/golf/' + encodeURIComponent(c.slug) : '/golf'); });
 app.get(/^\/golf\/02_view\/(\d+)\/?$/, (req, res) => res.redirect(301, '/market/golf'));
 
 // 공개 API

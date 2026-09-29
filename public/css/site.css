@@ -304,3 +304,11 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(31,58,115,.25);bo
 /* 글 썸네일 */
 .post-card a{padding:0;overflow:hidden;display:flex;flex-direction:column}.post-thumb{width:100%;aspect-ratio:1200/630;object-fit:cover;display:block;background:#152a55}.post-card .tag{margin:16px 20px 0;align-self:flex-start}.post-card h3{margin:10px 20px 6px}.post-card p{margin:0 20px 10px}.post-card time{margin:auto 20px 18px;display:block}
 .post-hero{margin:18px 0 0}.post-hero img{width:100%;height:auto;border-radius:16px;display:block;box-shadow:var(--sh)}
+
+/* 헤더 유튜브 로고 */
+.hd-links{align-items:center}.hd-links a.hd-yt{display:inline-flex;align-items:center;line-height:0;transition:transform .2s}.hd-links a.hd-yt:hover{transform:scale(1.08)}
+/* 시세 추이 차트(기간 선택) */
+.pchart{margin-top:6px}.pc-tabs{display:inline-flex;gap:4px;background:#eef2f9;border-radius:999px;padding:4px;margin-bottom:10px}.pc-tab{border:0;background:none;padding:7px 16px;border-radius:999px;font:inherit;font-size:14px;font-weight:700;color:var(--ink-2);cursor:pointer}.pc-tab:hover{color:var(--navy)}.pc-tab.active{background:var(--navy);color:#fff}.pc-view{min-height:180px}.pc-view svg{display:block;height:auto}.pc-note{margin:6px 0 0}
+/* 골프장 페이지: 회원권 종류 */
+.vr-card h2 small{font-size:14px;color:var(--muted);font-weight:600;margin-left:6px}.vr-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 16px}.vr-tab{display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:10px 16px;font:inherit;cursor:pointer;transition:.2s;text-align:left}.vr-tab b{font-size:15px;color:var(--ink)}.vr-tab span{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}.vr-tab:hover{border-color:var(--navy)}.vr-tab.active{border-color:var(--navy);background:var(--navy)}.vr-tab.active b,.vr-tab.active span{color:#fff}.vr-panel h3{margin:4px 0 10px;font-size:18px}.vr-panel h4{margin:18px 0 8px}.vr-cta{margin:16px 0 0}
+@media (max-width:640px){.pc-tab{padding:6px 11px;font-size:13px}.vr-tab{padding:8px 12px}.vr-tab b{font-size:14px}}

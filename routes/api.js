@@ -19,9 +19,9 @@ router.get('/prices/:category', (req, res) => {
 });
 router.get('/prices/:category/:id/history', (req, res) => {
   const r = db.prepare('SELECT * FROM prices WHERE id=? AND category=?').get(req.params.id, req.params.category); if (!r) return res.status(404).json({ error: 'not found' });
-  const days = Math.min(365, Math.max(7, parseInt(req.query.days || '90', 10) || 90));
+  const days = Math.min(3660, Math.max(7, parseInt(req.query.days || '90', 10) || 90));
   res.set('Cache-Control', 'public, max-age=600');
-  res.json({ id: r.id, name: r.name, unit: '만원', history: prices.history(r.id, days) });
+  res.json({ id: r.id, name: r.name, unit: '만원', days, since: prices.since(r.id), history: prices.history(r.id, days) });
 });
 
 // 전환 이벤트 수집(전화·카톡 버튼 클릭 등) — 본문 {t:유형, l:라벨, p:경로}. 문의 접수(inquiry)는 서버가 직접 기록하므로 받지 않는다.

@@ -181,6 +181,9 @@ function getSetting(key, def = '') { const r = getStmt.get(key); return r ? r.va
 function setSetting(key, val) { setStmt.run(key, val == null ? '' : String(val)); }
 function allSettings() { const o = {}; for (const r of db.prepare('SELECT key,value FROM settings').all()) o[r.key] = r.value; return o; }
 
+// 골프장 묶기(lib/clubgroup.js): 회원권 종류별 항목을 대표 골프장 아래로
+for (const [c, t] of [['parent_id', 'INTEGER'], ['variant_label', 'TEXT'], ['group_name', 'TEXT']]) ensureColumn('clubs', c, t);
+
 // ── 유입 경로·전환 추적(lib/inflow.js) ──
 db.exec(`
 CREATE TABLE IF NOT EXISTS visits (

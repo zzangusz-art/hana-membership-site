@@ -45,7 +45,7 @@ router.get('/', (req, res) => {
   const updated = g.lastUpdated ? kstDate(new Date(g.lastUpdated * 1000)) : kstDate();
   const posts = db.prepare("SELECT * FROM posts WHERE kind='blog' AND status='published' ORDER BY published_at DESC LIMIT 3").all();
   const videos = db.prepare('SELECT * FROM videos ORDER BY sort, id DESC LIMIT 3').all();
-  const clubCount = db.prepare("SELECT COUNT(*) c FROM clubs WHERE status='published'").get().c;
+  const clubCount = db.prepare("SELECT COUNT(*) c FROM clubs WHERE status='published' AND parent_id IS NULL").get().c;
   const featured = db.prepare("SELECT * FROM listings WHERE status='open' ORDER BY featured DESC, id DESC LIMIT 4").all();
   const years = new Date().getFullYear() - 2004;
   const ticker = all.slice().sort(() => 0.5 - Math.random()).slice(0, 28);
@@ -209,9 +209,9 @@ router.get('/market/:category', (req, res, next) => {
     </form>
     <div class="compare-panel" id="cmpPanel" hidden><h3>선택한 종목 비교 (최대 3개)</h3><div id="cmpBody" class="cmp-body"></div></div>
     <div class="table-wrap"><table class="price-table market-table" id="mkTable"><thead><tr><th class="cmp-col" hidden>비교</th><th>회원권명</th><th>지역</th><th class="num">금일시세</th><th class="num">전일시세</th><th class="num">전일 대비</th>${cat !== 'golf' ? '<th class="num">회원수</th>' : ''}<th>90일 추이</th></tr></thead><tbody>
-      ${rows.map(r => `<tr data-id="${r.id}" data-name="${attr(r.name)}" data-region="${attr(r.region || '')}" data-today="${r.today}" data-prev="${r.prev ?? ''}"><td class="cmp-col" hidden><input type="checkbox" class="cmp-chk" aria-label="${attr(r.name)} 비교 선택"></td><td><a class="row-name" href="${cat === 'golf' ? '/golf?q=' + encodeURIComponent(r.name) : '#'}" data-hist="${r.id}">${esc(r.name)}</a></td><td>${esc(r.region || '-')}</td><td class="num"><b>${fmtNum(r.today)}</b></td><td class="num">${fmtNum(r.prev)}</td><td class="num">${chg(r)}</td>${cat !== 'golf' ? `<td class="num">${r.members ? fmtNum(r.members) : '-'}</td>` : ''}<td><button class="spark-btn" data-hist="${r.id}" aria-label="${attr(r.name)} 90일 추이 보기">${sparkline(prices.history(r.id, 90), 100, 28)}</button></td></tr>`).join('') || `<tr><td colspan="8">검색 결과가 없습니다. <a href="/market/${cat}">전체 보기</a></td></tr>`}
+      ${rows.map(r => `<tr data-id="${r.id}" data-name="${attr(r.name)}" data-region="${attr(r.region || '')}" data-today="${r.today}" data-prev="${r.prev ?? ''}"><td class="cmp-col" hidden><input type="checkbox" class="cmp-chk" aria-label="${attr(r.name)} 비교 선택"></td><td><a class="row-name" href="${cat === 'golf' ? '/golf?q=' + encodeURIComponent(r.name) : '#'}" data-hist="${r.id}">${esc(r.name)}</a></td><td>${esc(r.region || '-')}</td><td class="num"><b>${fmtNum(r.today)}</b></td><td class="num">${fmtNum(r.prev)}</td><td class="num">${chg(r)}</td>${cat !== 'golf' ? `<td class="num">${r.members ? fmtNum(r.members) : '-'}</td>` : ''}<td><button class="spark-btn" data-hist="${r.id}" aria-label="${attr(r.name)} 시세 추이 보기">${sparkline(prices.history(r.id, 90), 100, 28)}</button></td></tr>`).join('') || `<tr><td colspan="8">검색 결과가 없습니다. <a href="/market/${cat}">전체 보기</a></td></tr>`}
     </tbody></table></div>
-    <p class="note">단위: 만원 · 전일시세는 직전 갱신값 · 종목명을 누르면 골프장 소개, 추이를 누르면 90일 그래프가 열립니다 · JSON: <a href="/api/prices/${cat}">/api/prices/${cat}</a></p>
+    <p class="note">단위: 만원 · 전일시세는 직전 갱신값 · 종목명을 누르면 골프장 소개, 추이를 누르면 그래프가 열리고 기간(90일·1년·3년·5년·10년)을 고를 수 있습니다 · JSON: <a href="/api/prices/${cat}">/api/prices/${cat}</a></p>
     <div class="modal" id="histModal" hidden><div class="modal-box"><button class="modal-close" aria-label="닫기">×</button><h3 id="histTitle"></h3><div id="histChart"></div><p class="note" id="histNote"></p></div></div>
   </div>
 </section>
@@ -230,74 +230,99 @@ router.get('/market/:category', (req, res, next) => {
 // ── 골프장 목록 ──
 // 주소 → 시·도(지도 라벨). 주소가 없으면 '' (지도 밖 목록에만 표시)
 const kmap = require('../lib/korea-map');
+const clubgroup = require('../lib/clubgroup');
 function sido(addr) {
   const a = String(addr || '').trim();
   const T = [['서울', '서울'], ['인천', '인천'], ['경기', '경기도'], ['강원', '강원도'], ['충청북도', '충청북도'], ['충북', '충청북도'], ['충청남도', '충청남도'], ['충남', '충청남도'], ['대전', '대전'], ['세종', '세종'], ['전라북도', '전라북도'], ['전북', '전라북도'], ['전라남도', '전라남도'], ['전남', '전라남도'], ['광주', '광주'], ['경상북도', '경상북도'], ['경북', '경상북도'], ['대구', '대구'], ['경상남도', '경상남도'], ['경남', '경상남도'], ['부산', '부산'], ['울산', '울산'], ['제주', '제주도']];
   for (const [k, v] of T) if (a.startsWith(k)) return v; return '';
 }
+// 시세 추이 차트 자리(기간 90일·1년·3년·5년·10년은 site.js가 그린다)
+function chartBox(p, cat = 'golf') { return `<div class="pchart" data-cat="${attr(cat)}" data-id="${p.id}" data-name="${attr(p.name)}"></div>`; }
+const priceRange = (vs) => { const ps = vs.filter(v => v.price).map(v => v.price.today); if (!ps.length) return ''; const lo = Math.min(...ps), hi = Math.max(...ps); return lo === hi ? fmtMan(lo) : `${fmtMan(lo)} ~ ${fmtMan(hi)}`; };
+
 router.get('/golf', (req, res) => {
   const q = String(req.query.q || '').trim().slice(0, 40); const region = String(req.query.region || '').trim().slice(0, 10);
-  let sql = "SELECT * FROM clubs WHERE status='published'"; const args = [];
-  if (q) { sql += ' AND (name LIKE ? OR price_name LIKE ?)'; args.push(`%${q}%`, `%${q}%`); }
+  // 회원권 종류별 항목(강남300 주중가족 등)은 대표 골프장 아래로 묶여 있으므로 대표만 나열한다
+  let sql = "SELECT * FROM clubs WHERE status='published' AND parent_id IS NULL"; const args = [];
+  if (q) { sql += " AND (name LIKE ? OR price_name LIKE ? OR group_name LIKE ? OR id IN (SELECT parent_id FROM clubs WHERE status='published' AND parent_id IS NOT NULL AND (name LIKE ? OR price_name LIKE ?)))"; args.push(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`); }
   if (region) { sql += ' AND region=?'; args.push(region); }
-  sql += ' ORDER BY name';
-  const clubs = db.prepare(sql).all(...args).map(c => ({ ...c, price: c.price_name ? prices.byName('golf', c.price_name) : null }));
-  const regions = db.prepare("SELECT region, COUNT(*) c FROM clubs WHERE status='published' AND region<>'' GROUP BY region ORDER BY c DESC").all();
-  const total = db.prepare("SELECT COUNT(*) c FROM clubs WHERE status='published'").get().c;
+  sql += ' ORDER BY COALESCE(NULLIF(group_name, \'\'), name)';
+  const ctx = clubgroup.context();
+  const clubs = db.prepare(sql).all(...args).map(c => { const vs = clubgroup.variants(c, ctx); return { ...c, title: c.group_name || c.name, nvar: vs.length, price: (vs.find(v => v.price) || {}).price || null, range: priceRange(vs) }; });
+  const regions = db.prepare("SELECT region, COUNT(*) c FROM clubs WHERE status='published' AND parent_id IS NULL AND region<>'' GROUP BY region ORDER BY c DESC").all();
+  const total = db.prepare("SELECT COUNT(*) c FROM clubs WHERE status='published' AND parent_id IS NULL").get().c;
   const site = settings.siteUrl();
   const sidoCount = {}; clubs.forEach(c => { const sd = c.sido || sido(c.address); if (sd) sidoCount[sd] = (sidoCount[sd] || 0) + 1; });
   const sidos = Object.entries(sidoCount).sort((a, b) => b[1] - a[1]);
   const body = `
-<section class="page-head"><div class="wrap"><p class="eyebrow">골프장 소개</p><h1>골프장 회원권 거래·입회권 안내 <small>${total}개 골프장</small></h1><p class="bluf">골프장마다 회원권 시세, 입회권·명의개서 조건, 회원권 혜택과 부킹 특징, 어떤 분께 맞는지를 정리했습니다. 시세는 시세표와 연동되어 매주 갱신됩니다.</p>
+<section class="page-head"><div class="wrap"><p class="eyebrow">골프장 소개</p><h1>골프장 회원권 거래·입회권 안내 <small>${total}개 골프장</small></h1><p class="bluf">골프장마다 회원권 시세, 입회권·명의개서 조건, 회원권 혜택과 부킹 특징, 어떤 분께 맞는지를 정리했습니다. 주중·가족·여자 회원권처럼 종류가 여러 가지인 골프장은 골프장 페이지 안에서 종류를 골라 볼 수 있습니다.</p>
 <form class="market-controls" method="get" action="/golf"><input type="search" name="q" value="${attr(q)}" placeholder="골프장명 검색"><div class="chips"><a class="chip${!region ? ' active' : ''}" href="/golf">전체</a>${regions.map(r => `<a class="chip${region === r.region ? ' active' : ''}" href="/golf?region=${encodeURIComponent(r.region)}">${esc(r.region)} ${r.c}</a>`).join('')}</div><button class="btn btn-primary" type="submit">검색</button></form></div></section>
 <section class="section kmap-sec"><div class="wrap"><div class="sec-head"><div><p class="eyebrow">지역별 골프장</p><h2>지도에서 지역을 눌러 골프장을 찾아보세요</h2></div><p class="note">지역을 누르면 목록이 바뀌고, 다시 누르면 전체로 돌아갑니다.</p></div>
 <div class="kmap-wrap"><div class="kmap-box" data-short='${JSON.stringify(kmap.SHORT).replace(/'/g, '&#39;')}'>${kmap.SVG}</div>
 <div class="kmap-side"><div class="chips kmap-chips"><button type="button" class="chip active" data-sido="">전체 ${clubs.length}</button>${sidos.map(([sd, n]) => `<button type="button" class="chip" data-sido="${attr(sd)}">${esc(kmap.SHORT[sd] || sd)} ${n}</button>`).join('')}</div>
-<div class="kmap-list" id="kmapList"><h3 id="kmapTitle">전체 골프장 <small>${clubs.length}</small></h3><ul id="kmapUl">${clubs.map(c => `<li data-sido="${attr(c.sido || sido(c.address))}"><a href="/golf/${encodeURIComponent(c.slug)}">${c.logo ? `<img class="li-logo" src="${attr(c.logo)}" alt="" loading="lazy" width="40" height="40">` : ''}<b>${esc(c.name)}</b><span>${esc((c.address || '').split(' ').slice(0, 2).join(' ') || c.region || '')}${c.holes && c.verified ? ` · ${c.holes}홀` : ''}</span>${c.price ? `<em>${fmtMan(c.price.today)}</em>` : ''}</a></li>`).join('')}</ul><p class="kmap-empty" id="kmapEmpty" hidden>이 지역에 등록된 골프장 소개가 아직 없습니다. 전국 회원제 골프장 회원권을 중개하니 <a href="/apply">매매 신청</a>으로 문의해 주세요.</p></div></div></div></div></section>
+<div class="kmap-list" id="kmapList"><h3 id="kmapTitle">전체 골프장 <small>${clubs.length}</small></h3><ul id="kmapUl">${clubs.map(c => `<li data-sido="${attr(c.sido || sido(c.address))}"><a href="/golf/${encodeURIComponent(c.slug)}">${c.logo ? `<img class="li-logo" src="${attr(c.logo)}" alt="" loading="lazy" width="40" height="40">` : ''}<b>${esc(c.title)}</b><span>${esc((c.address || '').split(' ').slice(0, 2).join(' ') || c.region || '')}${c.holes && c.verified ? ` · ${c.holes}홀` : ''}${c.nvar > 1 ? ` · 회원권 ${c.nvar}종` : ''}</span>${c.price ? `<em>${fmtMan(c.price.today)}</em>` : ''}</a></li>`).join('')}</ul><p class="kmap-empty" id="kmapEmpty" hidden>이 지역에 등록된 골프장 소개가 아직 없습니다. 전국 회원제 골프장 회원권을 중개하니 <a href="/apply">매매 신청</a>으로 문의해 주세요.</p></div></div></div></div></section>
 <section class="section"><div class="wrap"><h2 class="sr-h">골프장 상세 카드</h2>
-  <div class="club-grid">${clubs.map(c => `<a class="club-card reveal" href="/golf/${encodeURIComponent(c.slug)}" data-sido="${attr(c.sido || sido(c.address))}">${c.logo ? `<img class="cc-logo" src="${attr(c.logo)}" alt="" loading="lazy" width="56" height="56">` : ''}<div class="cc-top"><span class="tag">${esc(c.region || '')}</span>${c.body_html ? '' : '<span class="tag tag-soft">준비 중</span>'}</div><h2>${esc(c.name)}</h2><p class="cc-addr">${esc(c.address || '')}</p><div class="cc-price">${c.price ? `<b>${fmtMan(c.price.today)}</b>${chg(c.price)}` : '<span class="note">시세 상담 문의</span>'}</div></a>`).join('') || '<p>검색 결과가 없습니다.</p>'}</div>
+  <div class="club-grid">${clubs.map(c => `<a class="club-card reveal" href="/golf/${encodeURIComponent(c.slug)}" data-sido="${attr(c.sido || sido(c.address))}">${c.logo ? `<img class="cc-logo" src="${attr(c.logo)}" alt="" loading="lazy" width="56" height="56">` : ''}<div class="cc-top"><span class="tag">${esc(c.region || '')}</span>${c.nvar > 1 ? `<span class="tag tag-soft">회원권 ${c.nvar}종</span>` : ''}</div><h2>${esc(c.title)}</h2><p class="cc-addr">${esc(c.address || '')}</p><div class="cc-price">${c.range ? `<b>${c.range}</b>${c.nvar > 1 ? '' : chg(c.price)}` : '<span class="note">시세 상담 문의</span>'}</div></a>`).join('') || '<p>검색 결과가 없습니다.</p>'}</div>
 </div></section>
-<section class="section explain"><div class="wrap narrow"><h2>골프장 소개 페이지에 있는 것</h2><p>시세·지역·규모 표, 어떤 분께 맞는 회원권인지 상담 경험으로 쓴 해설, 상담에서 자주 받는 질문의 답이 있습니다. 골프장이 회원 수나 입회금, 부킹 제도를 바꾸면 내용을 고칩니다.</p><h2>원하는 골프장이 없다면?</h2><p>표시된 골프장 외에도 전국 회원제 골프장 회원권을 중개합니다. <a href="/apply">매매 신청</a> 또는 ${esc(settings.cfg('phone'))}으로 문의하시면 시세와 매물을 안내해 드립니다.</p></div></section>`;
-  res.send(page({ title: `골프장 회원권 거래·입회권 안내: 골프장별 시세·혜택·추천 (${total}개 골프장)`, description: `전국 ${total}개 골프장 회원권 시세와 입회권·명의개서 조건, 회원권 혜택, 어떤 분께 맞는지 골프장별 추천. 지역 지도 검색.`, path: '/golf', body, breadcrumbs: [{ name: '골프장 소개', href: '/golf' }], ogImage: '/og/page/golf.png', jsonld: [{ '@context': 'https://schema.org', '@type': 'ItemList', name: '골프장별 회원권 안내', numberOfItems: clubs.length, itemListElement: clubs.slice(0, 100).map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, url: `${site}/golf/${encodeURIComponent(c.slug)}` })) }] }));
+<section class="section explain"><div class="wrap narrow"><h2>골프장 소개 페이지에 있는 것</h2><p>시세·지역·규모 표, 회원권 종류별 시세와 추이 그래프, 어떤 분께 맞는 회원권인지 상담 경험으로 쓴 해설, 상담에서 자주 받는 질문의 답이 있습니다. 골프장이 회원 수나 입회금, 부킹 제도를 바꾸면 내용을 고칩니다.</p><h2>원하는 골프장이 없다면?</h2><p>표시된 골프장 외에도 전국 회원제 골프장 회원권을 중개합니다. <a href="/apply">매매 신청</a> 또는 ${esc(settings.cfg('phone'))}으로 문의하시면 시세와 매물을 안내해 드립니다.</p></div></section>`;
+  res.send(page({ title: `골프장 회원권 거래·입회권 안내: 골프장별 시세·혜택·추천 (${total}개 골프장)`, description: `전국 ${total}개 골프장 회원권 시세와 입회권·명의개서 조건, 회원권 혜택, 어떤 분께 맞는지 골프장별 추천. 지역 지도 검색.`, path: '/golf', body, breadcrumbs: [{ name: '골프장 소개', href: '/golf' }], ogImage: '/og/page/golf.png', jsonld: [{ '@context': 'https://schema.org', '@type': 'ItemList', name: '골프장별 회원권 안내', numberOfItems: clubs.length, itemListElement: clubs.slice(0, 100).map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.title, url: `${site}/golf/${encodeURIComponent(c.slug)}` })) }] }));
 });
 
 // ── 골프장 상세 ──
 router.get('/golf/:slug', (req, res, next) => {
   const c = db.prepare("SELECT * FROM clubs WHERE slug=? AND status='published'").get(req.params.slug); if (!c) return next();
+  // 회원권 종류 항목의 주소로 들어오면 대표 골프장 페이지의 해당 종류로 보낸다
+  if (c.parent_id) { const par = db.prepare("SELECT slug FROM clubs WHERE id=? AND status='published'").get(c.parent_id); if (par) return res.redirect(301, `/golf/${encodeURIComponent(par.slug)}?type=${encodeURIComponent(c.variant_label || c.name)}`); }
   const s = settings.all(); const site = settings.siteUrl();
-  const p = c.price_name ? prices.byName('golf', c.price_name) : null; const hist = p ? prices.history(p.id, 90) : [];
+  const title = c.group_name || c.name; const url = `/golf/${encodeURIComponent(c.slug)}`;
+  const vs = clubgroup.variants(c); const multi = vs.length > 1;
+  const want = String(req.query.type || '').trim();
+  let active = want ? vs.findIndex(v => v.label === want || v.name === want) : -1; if (active < 0) active = Math.max(0, vs.findIndex(v => v.price));
+  const p = (vs.find(v => v.price) || {}).price || null; const range = priceRange(vs);
   let faqs = []; try { faqs = JSON.parse(c.faq_json || '[]'); } catch (_) { /* no-op */ }
-  const related = db.prepare("SELECT slug,name,price_name FROM clubs WHERE status='published' AND region=? AND id<>? ORDER BY RANDOM() LIMIT 4").all(c.region || '', c.id).map(r => ({ ...r, price: r.price_name ? prices.byName('golf', r.price_name) : null }));
-  const posts = db.prepare("SELECT * FROM posts WHERE kind='blog' AND status='published' AND (title LIKE ? OR tags LIKE ?) ORDER BY published_at DESC LIMIT 3").all(`%${c.name.replace(/컨트리클럽|골프클럽|CC/g, '').trim()}%`, `%${c.name}%`);
-  const updated = p ? kstDate(new Date(p.updated_at * 1000)) : '';
-  const summary = c.summary || `${c.name} 회원권 정보와 시세를 하나회원권거래소가 안내합니다.`;
-  const bodyHtml = c.body_html || `<h2>${esc(c.name)} 회원권, 이런 분께 맞습니다</h2><p>이 골프장 해설은 아직 쓰는 중입니다. 시세와 입회 조건은 아래 표를 보시거나 전화로 물어봐 주세요.</p>`;
-  const specs = [['현재 시세', p ? `<b>${fmtMan(p.today)}</b> ${chg(p)}` : '상담 시 안내'], ['전일 시세', p ? fmtMan(p.prev ?? p.today) : '-'], ['시세 갱신', updated || '-'], ['권역', esc((c.sido ? c.sido + ' · ' : '') + (c.region || '-'))], ['소재지', esc(c.address || '-')], ...(c.members ? [['회원 수', `${Number(c.members).toLocaleString('ko-KR')}명`]] : []), ...(c.phone ? [['골프장 전화', esc(c.phone)]] : []), ...(c.website ? [['홈페이지', `<a href="${attr(/^https?:/.test(c.website) ? c.website : 'http://' + c.website)}" target="_blank" rel="noopener nofollow">${esc(c.website.replace(/^https?:\/\//, ''))}</a>`]] : []), ['규모', c.verified && c.holes ? `${c.holes}홀` : '상담 시 안내'], ['운영 형태', esc(c.type || '회원제')], ['시세표 종목명', p ? `<a href="/market/golf?q=${encodeURIComponent(p.name)}">${esc(p.name)}</a>` : '-']];
+  const related = db.prepare("SELECT * FROM clubs WHERE status='published' AND parent_id IS NULL AND region=? AND id<>? ORDER BY RANDOM() LIMIT 4").all(c.region || '', c.id).map(r => ({ ...r, title: r.group_name || r.name, price: r.price_name ? prices.byName('golf', r.price_name) : null }));
+  const posts = db.prepare("SELECT * FROM posts WHERE kind='blog' AND status='published' AND (title LIKE ? OR tags LIKE ?) ORDER BY published_at DESC LIMIT 3").all(`%${title.replace(/컨트리클럽|골프클럽|CC/gi, '').trim()}%`, `%${title}%`);
+  const upd = (x) => (x ? kstDate(new Date(x.updated_at * 1000)) : ''); const updated = upd(p);
+  const summary = c.summary || `${title} 회원권 정보와 시세를 하나회원권거래소가 안내합니다.`;
+  const bodyHtml = c.body_html || `<h2>${esc(title)} 회원권, 이런 분께 맞습니다</h2><p>이 골프장 해설은 아직 쓰는 중입니다. 시세와 입회 조건은 아래 표를 보시거나 전화로 물어봐 주세요.</p>`;
+  const priceRows = (x) => [['현재 시세', x ? `<b>${fmtMan(x.today)}</b> ${chg(x)}` : '상담 시 안내'], ['전일 시세', x ? fmtMan(x.prev ?? x.today) : '-'], ['시세 갱신', upd(x) || '-']];
+  const clubRows = [['권역', esc((c.sido ? c.sido + ' · ' : '') + (c.region || '-'))], ['소재지', esc(c.address || '-')], ...(c.members ? [['회원 수', `${Number(c.members).toLocaleString('ko-KR')}명`]] : []), ...(c.phone ? [['골프장 전화', esc(c.phone)]] : []), ...(c.website ? [['홈페이지', `<a href="${attr(/^https?:/.test(c.website) ? c.website : 'http://' + c.website)}" target="_blank" rel="noopener nofollow">${esc(c.website.replace(/^https?:\/\//, ''))}</a>`]] : []), ['규모', c.verified && c.holes ? `${c.holes}홀` : '상담 시 안내'], ['운영 형태', esc(c.type || '회원제')]];
+  const specs = multi ? [['회원권 종류', `${vs.length}종 (${vs.map(v => esc(v.label)).join(' · ')})`], ...(range ? [['시세 범위', `<b>${range}</b>`]] : []), ...clubRows] : [...priceRows(p), ...clubRows, ['시세표 종목명', p ? `<a href="/market/golf?q=${encodeURIComponent(p.name)}">${esc(p.name)}</a>` : '-']];
+  const tableHtml = (json) => { let t = []; try { t = JSON.parse(json || '[]'); } catch (_) { /* no-op */ } return t.map(tb => `<table class="spec prd-info-table"><thead><tr>${tb.head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${tb.rows.map(r => `<tr>${r.map((v, i) => i ? `<td>${esc(v)}</td>` : `<th>${esc(v)}</th>`).join('')}</tr>`).join('')}</tbody></table>`).join(''); };
+  const chartCard = (x) => `<div class="spec-chart"><h3>시세 추이</h3>${chartBox(x)}<noscript>${sparkline(prices.history(x.id, 365), 600, 120)}</noscript></div>`;
+  // 회원권 종류 선택(탭). 모든 종류의 내용을 HTML에 담아 검색엔진·AI가 읽을 수 있게 한다.
+  const typesHtml = multi ? `<div class="spec-card vr-card" id="types"><h2>${esc(title)} 회원권 종류 <small>${vs.length}종</small></h2><p class="note">종류를 누르면 그 회원권의 시세와 추이가 나옵니다.</p>
+    <div class="vr-tabs" role="tablist" aria-label="회원권 종류">${vs.map((v, i) => `<button type="button" class="vr-tab${i === active ? ' active' : ''}" role="tab" aria-selected="${i === active}" data-vr="${i}" data-label="${attr(v.label)}"><b>${esc(v.label)}</b><span>${v.price ? fmtMan(v.price.today) : '시세 문의'}</span></button>`).join('')}</div>
+    ${vs.map((v, i) => { const k = v.club && !v.isParent ? v.club : null; const extra = k && k.tables_json && k.tables_json !== c.tables_json ? tableHtml(k.tables_json) : ''; const rows = [['회원권', `<b>${esc(v.name)}</b>`], ...priceRows(v.price), ...(k && k.members ? [['회원 수', `${Number(k.members).toLocaleString('ko-KR')}명`]] : []), ...(k && k.summary && k.summary !== c.summary ? [['설명', esc(k.summary)]] : []), ...(v.price ? [['시세표 종목명', `<a href="/market/golf?q=${encodeURIComponent(v.price.name)}">${esc(v.price.name)}</a>`]] : [])]; return `<div class="vr-panel" role="tabpanel" data-vr="${i}"${i === active ? '' : ' hidden'}><h3>${esc(v.name)} 회원권</h3><table class="spec"><tbody>${rows.map(([a, b]) => `<tr><th>${a}</th><td>${b}</td></tr>`).join('')}</tbody></table>${v.price ? chartCard(v.price) : '<p class="note">이 회원권은 시세표에 없는 종목입니다. 현재 호가와 매물은 상담으로 안내해 드립니다.</p>'}${extra ? `<h4>이용 요금·조건</h4>${extra}` : ''}<p class="vr-cta"><a class="btn btn-green" href="/apply?item=${encodeURIComponent(v.name)}">${esc(v.name)} 매매 상담</a></p></div>`; }).join('')}</div>` : '';
   const body = `
-<section class="page-head club-head"><div class="wrap">${c.logo ? `<img class="club-logo" src="${attr(c.logo)}" alt="${attr(c.name)} 로고" width="96" height="96">` : ''}<p class="eyebrow">골프장 소개 · ${esc(c.sido || c.region || '')}</p><h1>${esc(c.name)} 회원권 시세·입회 조건·매수 가이드</h1><p class="bluf">${esc(summary)}</p>
-<div class="club-actions"><a class="btn btn-green" href="/apply?item=${encodeURIComponent(c.name)}">이 회원권 매매 상담</a><a class="btn btn-ghost" href="tel:${attr(s.phone)}">📞 ${esc(s.phone)}</a></div></div></section>
+<section class="page-head club-head"><div class="wrap">${c.logo ? `<img class="club-logo" src="${attr(c.logo)}" alt="${attr(title)} 로고" width="96" height="96">` : ''}<p class="eyebrow">골프장 소개 · ${esc(c.sido || c.region || '')}</p><h1>${esc(title)} 회원권 시세·입회 조건·매수 가이드</h1><p class="bluf">${esc(summary)}</p>
+<div class="club-actions"><a class="btn btn-green" href="/apply?item=${encodeURIComponent(title)}">이 회원권 매매 상담</a><a class="btn btn-ghost" href="tel:${attr(s.phone)}">📞 ${esc(s.phone)}</a>${multi ? `<a class="btn btn-ghost" href="#types">회원권 ${vs.length}종 보기</a>` : ''}</div></div></section>
 <section class="section club-body"><div class="wrap club-grid2">
   <div class="club-main">
-    <div class="spec-card"><h2>${esc(c.name)} 회원권 기본 정보</h2><table class="spec"><tbody>${specs.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</tbody></table>
-    ${p ? `<div class="spec-chart"><h3>최근 90일 시세 추이</h3>${sparkline(hist, 600, 120)}<p class="note">단위 만원 · 하나회원권거래소 시세표 기준 · 갱신 ${updated}</p></div>` : ''}</div>
+    ${typesHtml}
+    <div class="spec-card"><h2>${esc(title)} ${multi ? '골프장' : '회원권'} 기본 정보</h2><table class="spec"><tbody>${specs.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</tbody></table>
+    ${!multi && p ? `${chartCard(p)}<p class="note">단위 만원 · 하나회원권거래소 시세표 기준 · 갱신 ${updated}</p>` : ''}</div>
     <div class="three"><div class="box"><h3>적합한 매수자</h3><p>${esc(c.fit_for || '상담 시 이용 패턴에 맞춰 안내')}</p></div><div class="box"><h3>부킹 특징</h3><p>${esc(c.booking || '주말 예약 방식·동반 규정은 골프장 규정 확인')}</p></div><div class="box"><h3>입회·명의개서</h3><p>${esc(c.transfer || '명의개서료·심사 기간은 상담 시 최신 조건 안내')}</p></div></div>
-    ${(() => { let t = []; try { t = JSON.parse(c.tables_json || '[]'); } catch (_) { /* no-op */ } return t.length ? `<div class="spec-card"><h2>이용 요금·조건 (골프장 제공)</h2>${t.map(tb => `<table class="spec prd-info-table"><thead><tr>${tb.head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${tb.rows.map(r => `<tr>${r.map((v, i) => i ? `<td>${esc(v)}</td>` : `<th>${esc(v)}</th>`).join('')}</tr>`).join('')}</tbody></table>`).join('')}<p class="note">골프장 공지 기준이며 변동될 수 있습니다. 최신 조건은 상담 시 확인해 드립니다.</p></div>` : ''; })()}
+    ${(() => { const t = tableHtml(c.tables_json); return t ? `<div class="spec-card"><h2>이용 요금·조건 (골프장 제공)</h2>${t}<p class="note">골프장 공지 기준이며 변동될 수 있습니다. 최신 조건은 상담 시 확인해 드립니다.</p></div>` : ''; })()}
     <article class="prose">${bodyHtml}</article>
-    ${faqs.length ? faqHtml(faqs, `${c.name} 회원권 자주 묻는 질문`) : ''}
+    ${faqs.length ? faqHtml(faqs, `${title} 회원권 자주 묻는 질문`) : ''}
     ${!c.verified ? `<p class="note">※ 기본 정보(규모·소재지)는 담당자 검증 후 표시됩니다. 오류가 있다면 <a href="mailto:${attr(s.email)}">${esc(s.email)}</a>로 알려 주세요.</p>` : ''}
   </div>
   <aside class="club-side">
-    <div class="side-card"><h3>매매 상담</h3><p>${esc(c.name)} 회원권 매수·매도 호가와 매물을 확인해 드립니다.</p><a class="btn btn-green block" href="/apply?item=${encodeURIComponent(c.name)}">매매 신청</a><a class="btn btn-ghost block" href="tel:${attr(s.phone)}">${esc(s.phone)}</a></div>
-    ${related.length ? `<div class="side-card"><h3>같은 권역 골프장</h3><ul class="side-list">${related.map(r => `<li><a href="/golf/${encodeURIComponent(r.slug)}">${esc(r.name)}</a>${r.price ? `<span>${fmtNum(r.price.today)}</span>` : ''}</li>`).join('')}</ul></div>` : ''}
+    <div class="side-card"><h3>매매 상담</h3><p>${esc(title)} 회원권 매수·매도 호가와 매물을 확인해 드립니다.</p><a class="btn btn-green block" href="/apply?item=${encodeURIComponent(title)}">매매 신청</a><a class="btn btn-ghost block" href="tel:${attr(s.phone)}">${esc(s.phone)}</a></div>
+    ${related.length ? `<div class="side-card"><h3>같은 권역 골프장</h3><ul class="side-list">${related.map(r => `<li><a href="/golf/${encodeURIComponent(r.slug)}">${esc(r.title)}</a>${r.price ? `<span>${fmtNum(r.price.today)}</span>` : ''}</li>`).join('')}</ul></div>` : ''}
     ${posts.length ? `<div class="side-card"><h3>관련 글</h3><ul class="side-list">${posts.map(x => `<li><a href="/blog/${attr(x.slug)}">${esc(x.title)}</a></li>`).join('')}</ul></div>` : ''}
     <div class="side-card author"><h3>안내</h3><p><b>${esc(s.legal_name)}</b> 회원권 상담팀<br>2004년부터 회원권 매매 중개 · 분양 대행 28건<br><a href="/about">회사소개</a></p></div>
   </aside>
 </div></section>`;
-  const ld = [{ '@context': 'https://schema.org', '@type': 'GolfCourse', name: c.name, url: `${site}/golf/${encodeURIComponent(c.slug)}`, address: c.address ? { '@type': 'PostalAddress', streetAddress: c.address, addressCountry: 'KR' } : undefined, telephone: c.phone || undefined, sameAs: c.website || undefined, image: c.logo ? site + c.logo : undefined, description: summary },
-    { '@context': 'https://schema.org', '@type': 'Article', headline: `${c.name} 회원권 시세·입회 조건·매수 가이드`, description: truncate(stripHtml(summary), 155), url: `${site}/golf/${encodeURIComponent(c.slug)}`, datePublished: isoFromTs(c.created_at), dateModified: isoFromTs(c.updated_at), author: { '@id': site + '/#org' }, publisher: { '@id': site + '/#org' }, mainEntityOfPage: `${site}/golf/${encodeURIComponent(c.slug)}`, about: { '@type': 'Thing', name: `${c.name} 골프회원권` } }];
-  if (p) ld.push({ '@context': 'https://schema.org', '@type': 'Product', name: `${c.name} 골프회원권`, description: summary, brand: { '@type': 'Brand', name: c.name }, offers: { '@type': 'Offer', priceCurrency: 'KRW', price: p.today * 10000, availability: 'https://schema.org/InStock', url: `${site}/golf/${encodeURIComponent(c.slug)}`, seller: { '@id': site + '/#org' }, priceValidUntil: kstDate(new Date(Date.now() + 7 * 86400000)) } });
+  const priced = vs.filter(v => v.price);
+  const ld = [{ '@context': 'https://schema.org', '@type': 'GolfCourse', name: title, url: site + url, address: c.address ? { '@type': 'PostalAddress', streetAddress: c.address, addressCountry: 'KR' } : undefined, telephone: c.phone || undefined, sameAs: c.website || undefined, image: c.logo ? site + c.logo : undefined, description: summary },
+    { '@context': 'https://schema.org', '@type': 'Article', headline: `${title} 회원권 시세·입회 조건·매수 가이드`, description: truncate(stripHtml(summary), 155), url: site + url, datePublished: isoFromTs(c.created_at), dateModified: isoFromTs(c.updated_at), author: { '@id': site + '/#org' }, publisher: { '@id': site + '/#org' }, mainEntityOfPage: site + url, about: { '@type': 'Thing', name: `${title} 골프회원권` } }];
+  const until = kstDate(new Date(Date.now() + 7 * 86400000));
+  if (priced.length === 1) ld.push({ '@context': 'https://schema.org', '@type': 'Product', name: `${title} 골프회원권`, description: summary, brand: { '@type': 'Brand', name: title }, offers: { '@type': 'Offer', priceCurrency: 'KRW', price: p.today * 10000, availability: 'https://schema.org/InStock', url: site + url, seller: { '@id': site + '/#org' }, priceValidUntil: until } });
+  else if (priced.length > 1) ld.push({ '@context': 'https://schema.org', '@type': 'Product', name: `${title} 골프회원권`, description: `${summary} 회원권 종류: ${priced.map(v => `${v.name} ${fmtMan(v.price.today)}`).join(', ')}.`, brand: { '@type': 'Brand', name: title }, offers: { '@type': 'AggregateOffer', priceCurrency: 'KRW', lowPrice: Math.min(...priced.map(v => v.price.today)) * 10000, highPrice: Math.max(...priced.map(v => v.price.today)) * 10000, offerCount: priced.length, availability: 'https://schema.org/InStock', url: site + url, seller: { '@id': site + '/#org' } } });
   if (faqs.length) ld.push(faqLd(faqs));
-  res.send(page({ title: `${c.name} 회원권 시세 ${p ? fmtMan(p.today) : ''} · 입회 조건·매수 가이드`, description: truncate(`${c.name} 회원권 시세 ${p ? fmtMan(p.today) + '(' + updated + ' 갱신)' : ''}, ${c.region || ''} ${c.address || ''}. 적합한 매수자, 부킹 특징, 명의개서 조건과 자주 묻는 질문. 하나회원권거래소 매매 상담 ${s.phone}.`, 158), path: `/golf/${encodeURIComponent(c.slug)}`, body, breadcrumbs: [{ name: '골프장 소개', href: '/golf' }, { name: c.name, href: `/golf/${encodeURIComponent(c.slug)}` }], jsonld: ld, dateModified: isoFromTs(c.updated_at), bodyClass: 'club-page', ogImage: `/og/club/${encodeURIComponent(c.slug)}.png` }));
+  res.send(page({ title: `${title} 회원권 시세 ${range || ''} · ${multi ? `종류 ${vs.length}종·` : ''}입회 조건·매수 가이드`.replace(/\s+/g, ' '), description: truncate(`${title} 회원권 시세 ${range ? range + '(' + updated + ' 갱신)' : ''}${multi ? ', 종류 ' + vs.map(v => v.label).join('·') : ''}, ${c.region || ''} ${c.address || ''}. 적합한 매수자, 부킹 특징, 명의개서 조건. 하나회원권거래소 ${s.phone}.`, 158), path: url, body, breadcrumbs: [{ name: '골프장 소개', href: '/golf' }, { name: title, href: url }], jsonld: ld, dateModified: isoFromTs(c.updated_at), bodyClass: 'club-page', ogImage: `/og/club/${encodeURIComponent(c.slug)}.png` }));
 });
 
 module.exports = { router, chg, sparkline, faqHtml, postCard };
