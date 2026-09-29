@@ -43,6 +43,7 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
   r = await get('/google4502547acc516217.html'); ok(r.status === 200 && r.text.includes('google-site-verification: google4502547acc516217.html'), '서치콘솔 HTML 파일 확인 경로');
   r = await get('/'); ok(r.text.includes('name="google-site-verification" content="cz8hCAIc0eJ0psUK0tNGnlRJtrPoVBT7aD1fFVuV_qo"'), '서치콘솔 메타태그 출력');
   ok(r.text.includes('name="naver-site-verification" content="52dbce83db0c7054e7ef1c8fc7454d5942c28ce2"'), '서치어드바이저 메타태그 출력');
+  { const dg = require('../lib/donga'); const rows = dg.parse('<table><tr><th>회원권명</th><th>금일시세</th><th>전일시세</th><th>등락</th></tr><tr><td>88(팔팔)</td><td>43,000</td><td>43,000</td><td>0</td></tr><tr><td>가야우대</td><td>16,300</td><td>15,800</td><td>500</td></tr></table>'); const m = dg.matchAll([{ name: '88' }, { name: '가야 우대' }, { name: '없는종목' }], rows); ok(rows.length === 2 && rows[1].today === 16300 && m.matched.length === 2 && m.unmatched[0] === '없는종목', '동아 시세 파서·매핑', JSON.stringify(m.matched.map(x => x.ours + '→' + x.theirs))); }
   const inx = require('../lib/indexnow'); r = await get('/' + inx.key() + '.txt'); ok(r.status === 200 && r.text.trim() === inx.key(), 'IndexNow 키 파일');
   ok((await inx.submit(['/'])).skipped === true, 'IndexNow: 임시 도메인에선 전송 안 함(skipped)');
   r = await get('/market/01'); ok(r.status === 200 || r.status === 301, '구 URL 리다이렉트 /market/01');

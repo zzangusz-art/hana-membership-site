@@ -20,6 +20,7 @@ const analytics = require('../lib/analytics');
 const shot = require('../lib/screenshot');
 const og = require('../lib/og');
 const indexnow = require('../lib/indexnow');
+const donga = require('../lib/donga');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -139,6 +140,9 @@ router.post('/posts/:id/publish', async (req, res) => {
   res.json({ ok: true, inblog: ib });
 });
 router.get('/indexnow', async (req, res) => res.json(await indexnow.status()));
+router.get('/donga', (req, res) => res.json(donga.status()));
+router.post('/donga/sync', async (req, res) => { try { res.json(await donga.sync({ dryRun: !!req.body?.dryRun })); } catch (e) { res.status(500).json({ error: e.message }); } });
+router.post('/donga/map', (req, res) => { const m = req.body?.map; if (!m || typeof m !== 'object') return res.status(400).json({ error: 'map 객체 필요' }); setSetting('donga_map', JSON.stringify(m)); res.json({ ok: true }); });
 router.post('/indexnow/submit-all', async (req, res) => { try { res.json(await indexnow.submitAll({ force: !!req.body?.force })); } catch (e) { res.status(500).json({ error: e.message }); } });
 router.post('/indexnow/submit', async (req, res) => { try { res.json(await indexnow.submit(Array.isArray(req.body?.urls) ? req.body.urls : [], { force: !!req.body?.force })); } catch (e) { res.status(500).json({ error: e.message }); } });
 router.post('/posts/:id/inblog', async (req, res) => { const p = db.prepare('SELECT * FROM posts WHERE id=?').get(req.params.id); if (!p) return res.status(404).json({ error: 'not found' }); try { const j = JSON.parse(p.source_urls || '[]'); p.faq_json = JSON.stringify(j.faq || []); } catch (_) { p.faq_json = '[]'; } res.json(await pushToInblog(p)); });
@@ -181,7 +185,7 @@ router.get('/screenshots/file', (req, res) => { const f = path.resolve(String(re
 router.post('/screenshots/upload', upload.array('files', 40), (req, res) => { const dir = path.join(shot.SHOT_DIR, kstDate()); fs.mkdirSync(dir, { recursive: true }); let n = 0; for (const f of req.files || []) { const name = Buffer.from(f.originalname, 'latin1').toString('utf8').replace(/[^\w.가-힣-]/g, '_'); if (!/\.(png|jpe?g)$/i.test(name)) continue; fs.writeFileSync(path.join(dir, name), f.buffer); n++; } res.json({ ok: true, saved: n, dir }); });
 
 // ── 설정 ──
-const SETTING_KEYS = ['site_url', 'site_name', 'legal_name', 'slogan', 'phone', 'fax', 'email', 'address', 'ceo', 'privacy_officer', 'youtube', 'naver_blog', 'instagram', 'kakao_channel', 'inblog_url', 'naver_verification', 'google_verification', 'google_verification_file', 'indexnow_enabled', 'ga_id', 'gen_times', 'auto_generate', 'auto_publish', 'inblog_push', 'llm_provider', 'kickoff_date', 'inblog_api_key', ...Object.values(providers.KEY_SETTING), ...Object.values(providers.BASEURL_SETTING), 'model_anthropic', 'model_openai', 'model_gemini', 'model_openai-compatible'];
+const SETTING_KEYS = ['site_url', 'site_name', 'legal_name', 'slogan', 'phone', 'fax', 'email', 'address', 'ceo', 'privacy_officer', 'youtube', 'naver_blog', 'instagram', 'kakao_channel', 'inblog_url', 'naver_verification', 'google_verification', 'google_verification_file', 'indexnow_enabled', 'donga_sync', 'donga_time', 'ga_id', 'gen_times', 'auto_generate', 'auto_publish', 'inblog_push', 'llm_provider', 'kickoff_date', 'inblog_api_key', ...Object.values(providers.KEY_SETTING), ...Object.values(providers.BASEURL_SETTING), 'model_anthropic', 'model_openai', 'model_gemini', 'model_openai-compatible'];
 router.get('/settings', (req, res) => { const o = settings.all(); for (const k of SETTING_KEYS) if (!(k in o)) o[k] = getSetting(k, ''); for (const k of Object.keys(o)) if (/api_key/.test(k)) o[k] = o[k] ? '••••' + String(o[k]).slice(-4) : ''; o._env = { anthropic: !!process.env.ANTHROPIC_API_KEY, openai: !!process.env.OPENAI_API_KEY, gemini: !!process.env.GEMINI_API_KEY, inblog: !!process.env.INBLOG_API_KEY }; res.json(o); });
 router.post('/settings', (req, res) => { const b = req.body || {}; for (const k of SETTING_KEYS) if (k in b) { if (/api_key/.test(k) && String(b[k]).startsWith('••••')) continue; setSetting(k, b[k]); } res.json({ ok: true }); });
 
