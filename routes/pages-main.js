@@ -50,10 +50,11 @@ router.get('/', (req, res) => {
   const years = new Date().getFullYear() - 2004;
   const ticker = all.slice().sort(() => 0.5 - Math.random()).slice(0, 28);
   const SLIDES = [
-    { key: 'golf', icon: '⛳', kicker: '프리미엄 골프 라이프 · 2004년부터', tab: '프리미엄 골프 라이프', title: '골프회원권 <span class="hl">시세 조회·구매·매입</span>, 한 곳에서', sub: `골프회원권 ${g.total}종목 시세, 매주 월요일 갱신`, lead: '매도자가 부르는 값과 실제 계약된 값은 다릅니다. 시세표는 그 둘을 같이 보고 만듭니다. 골프장 회원권 거래는 상담한 담당자가 계약과 명의개서 접수까지 그대로 맡습니다.', href: '/market/golf', img: '/img/hero/golf.jpg', bg: '/img/hero/golf-bg.jpg' },
+    { key: 'golf', icon: '⛳', kicker: '프리미엄 골프 라이프 · 2004년부터 회원권 거래 전문', tab: '프리미엄 골프 라이프', title: '골프회원권 · 무기명 골프회원권 · 콘도회원권<br><span class="hl">시세 조회·구매·매입</span>, 한 곳에서', sub: `골프회원권 ${g.total}종목 시세, 매주 월요일 갱신`, lead: '매도자가 부르는 값과 실제 계약된 값은 다릅니다. 시세표는 그 둘을 같이 보고 만듭니다. 골프장 회원권 거래는 상담한 담당자가 계약과 명의개서 접수까지 그대로 맡습니다.', href: '/market/golf', img: '/img/hero/golf.jpg', bg: '/img/hero/golf-bg.jpg' },
     { key: 'condo', icon: '🏔️', kicker: '콘도·리조트 회원권', tab: '휴식과 힐링의 콘도', title: '휴식과 힐링의 <span class="hl">콘도</span>', sub: '공유제인지 회원제인지부터 확인하세요', lead: '등기가 되는 공유제와 입회금을 맡기는 회원제는 세금도, 되팔 때도 다릅니다. 가족 휴가용인지 법인 복지용인지 말씀해 주시면 맞는 쪽을 골라 드립니다.', href: '/market/condo', img: '/img/hero/condo.jpg', bg: '/img/hero/condo-bg.jpg' },
     { key: 'fitness', icon: '🏋️', kicker: '피트니스 회원권', tab: '건강한 피트니스 라이프', title: '건강한 <span class="hl">피트니스 라이프</span>', sub: '호텔 피트니스 개인·부부 회원권', lead: '호텔마다 양도 승인 기간과 연회비가 다릅니다. 시세표에서 확인하시고 매매 신청을 남기시면 당일 연락드립니다.', href: '/market/fitness', img: '/img/hero/fitness.jpg', bg: '/img/hero/fitness-bg.jpg' },
   ];
+  const nb = require('../lib/naverblog').cached(6);
   const tickerHtml = ticker.map(r => `<span class="tk"><b>${esc(r.name)}</b> ${fmtNum(r.today)} ${chg(r)}</span>`).join('');
   const faqs = FAQ.slice(0, 6);
 
@@ -140,6 +141,8 @@ ${featured.length ? `<section class="section listings-hl"><div class="wrap"><div
   </div>
 </section>
 
+${nb.length ? `<section class="section nblog"><div class="wrap"><div class="sec-head"><div><p class="eyebrow">네이버 블로그</p><h2>하나회원권거래소 블로그 최신 글</h2></div><a class="link" href="${attr(s.naver_blog)}" target="_blank" rel="noopener">블로그 전체 보기 →</a></div><div class="nb-grid">${nb.map(x => `<a class="nb reveal" href="${attr(x.link)}" target="_blank" rel="noopener"><span class="nb-date">${esc(x.date)}</span><h3>${esc(x.title)}</h3>${x.desc ? `<p>${esc(x.desc)}</p>` : ''}</a>`).join('')}</div></div></section>` : ''}
+
 <section class="section videos">
   <div class="wrap">
     <div class="sec-head"><div><p class="eyebrow">유튜브</p><h2>하나회원권TV, 구독자 1.4만 유튜브 채널</h2></div><a class="link" href="${attr(s.youtube)}" target="_blank" rel="noopener">채널 구독 →</a></div>
@@ -170,7 +173,7 @@ ${featured.length ? `<section class="section listings-hl"><div class="wrap"><div
 <section class="partners"><div class="wrap"><p class="eyebrow center">함께한 파트너</p><div class="marquee"><div class="marquee-track">${['한국골프회원권경영인협회', 'NEOWIZ', '미래신용정보', '동양생명', 'samyang', 'POSCO ICT', '한글과컴퓨터', 'SEOUL DRAGON CITY', '한국골프회원권경영인협회', 'NEOWIZ', '미래신용정보', '동양생명', 'samyang', 'POSCO ICT', '한글과컴퓨터', 'SEOUL DRAGON CITY'].map(p => `<span>${p}</span>`).join('')}</div></div></div></section>`;
 
   res.send(page({
-    title: `하나회원권거래소 | 골프회원권 시세 조회·구매·매입, 회원권 거래 전문 (2004년~)`,
+    title: `골프회원권·무기명 골프회원권·콘도회원권 시세 조회·구매·매입 | 하나회원권거래소`,
     description: `골프회원권 시세 조회와 구매·매입·판매, 콘도·피트니스 회원권 거래. 2004년부터 회원권 거래 전문, 24시간 상담 ${s.phone}.`,
     path: '/', body, bodyClass: 'home',
     jsonld: [faqLd(faqs), datasetLd('golf', all, g.lastUpdated)],

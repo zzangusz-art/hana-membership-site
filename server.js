@@ -92,6 +92,7 @@ app.get('/robots.txt', (req, res) => res.type('text/plain').send(seo.robots()));
 app.get(/^\/(google[a-f0-9]{16})\.html$/, (req, res, next) => { const f = settings.cfg('google_verification_file'); if (req.params[0] + '.html' !== f) return next(); res.type('text/html').send(`google-site-verification: ${f}`); });
 // IndexNow 키 파일(네이버·Bing 소유 확인용)
 const indexnow = require('./lib/indexnow');
+require('./lib/naverblog').refresh().catch(e => console.error('[naverblog]', e.message));
 app.get(/^\/([a-f0-9]{32})\.txt$/, (req, res, next) => { if (req.params[0] !== indexnow.key()) return next(); res.type('text/plain').send(indexnow.key()); });
 app.get('/llms.txt', (req, res) => res.type('text/plain; charset=utf-8').send(seo.llms()));
 app.get('/llms-full.txt', (req, res) => res.type('text/plain; charset=utf-8').send(seo.llmsFull()));
