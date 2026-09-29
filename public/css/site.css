@@ -300,3 +300,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(31,58,115,.25);bo
 .nb-mini{margin:28px 0 12px;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}.nb-mini h2{font-size:17px;margin:0 0 10px}.nb-mini ul{list-style:none;padding:0;margin:0 0 8px}.nb-mini li{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line)}.nb-mini li span{color:var(--muted);font-size:12px;white-space:nowrap}
 @media (max-width:900px){.nb-grid{grid-template-columns:1fr}}
 .slide-inner h1,.slide-inner .h1{font-size:clamp(28px,3.4vw,44px)}
+
+/* 글 썸네일 */
+.post-card a{padding:0;overflow:hidden;display:flex;flex-direction:column}.post-thumb{width:100%;aspect-ratio:1200/630;object-fit:cover;display:block;background:#152a55}.post-card .tag{margin:16px 20px 0;align-self:flex-start}.post-card h3{margin:10px 20px 6px}.post-card p{margin:0 20px 10px}.post-card time{margin:auto 20px 18px;display:block}
+.post-hero{margin:18px 0 0}.post-hero img{width:100%;height:auto;border-radius:16px;display:block;box-shadow:var(--sh)}

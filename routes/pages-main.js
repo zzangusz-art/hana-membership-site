@@ -31,7 +31,7 @@ function faqHtml(faqs, title = '자주 묻는 질문') {
 }
 function postCard(p) {
   const TL = { club: '골프장 소개', report: '시세 리포트', guide: '거래 가이드', trend: '시장 동향' };
-  return `<article class="post-card reveal"><a href="/blog/${attr(p.slug)}"><span class="tag tag-${attr(p.type || 'guide')}">${TL[p.type] || '가이드'}</span><h3>${esc(p.title)}</h3><p>${esc(truncate(p.excerpt || stripHtml(p.body_html), 90))}</p><time datetime="${isoFromTs(p.published_at || p.created_at)}">${fmtKoDate(kstDate(new Date((p.published_at || p.created_at) * 1000)))}</time></a></article>`;
+  return `<article class="post-card reveal"><a href="/blog/${attr(p.slug)}"><img class="post-thumb" src="/og/post/${encodeURIComponent(p.slug)}.jpg" alt="" loading="lazy" width="600" height="315"><span class="tag tag-${attr(p.type || 'guide')}">${TL[p.type] || '가이드'}</span><h3>${esc(p.title)}</h3><p>${esc(truncate(p.excerpt || stripHtml(p.body_html), 90))}</p><time datetime="${isoFromTs(p.published_at || p.created_at)}">${fmtKoDate(kstDate(new Date((p.published_at || p.created_at) * 1000)))}</time></a></article>`;
 }
 function datasetLd(category, rows, updated) {
   const site = settings.siteUrl(); const label = prices.CATS[category];
@@ -173,7 +173,7 @@ ${nb.length ? `<section class="section nblog"><div class="wrap"><div class="sec-
 <section class="partners"><div class="wrap"><p class="eyebrow center">함께한 파트너</p><div class="marquee"><div class="marquee-track">${['한국골프회원권경영인협회', 'NEOWIZ', '미래신용정보', '동양생명', 'samyang', 'POSCO ICT', '한글과컴퓨터', 'SEOUL DRAGON CITY', '한국골프회원권경영인협회', 'NEOWIZ', '미래신용정보', '동양생명', 'samyang', 'POSCO ICT', '한글과컴퓨터', 'SEOUL DRAGON CITY'].map(p => `<span>${p}</span>`).join('')}</div></div></div></section>`;
 
   res.send(page({
-    title: `골프회원권·무기명 골프회원권·콘도회원권 시세 조회·구매·매입 | 하나회원권거래소`,
+    title: `하나회원권거래소 | 골프회원권·무기명 골프회원권·콘도회원권 시세 조회·구매·매입`,
     description: `골프회원권 시세 조회와 구매·매입·판매, 콘도·피트니스 회원권 거래. 2004년부터 회원권 거래 전문, 24시간 상담 ${s.phone}.`,
     path: '/', body, bodyClass: 'home',
     jsonld: [faqLd(faqs), datasetLd('golf', all, g.lastUpdated)],

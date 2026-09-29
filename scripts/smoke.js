@@ -31,7 +31,8 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
   const club = db.prepare("SELECT slug FROM clubs WHERE status='published' LIMIT 1").get();
   let r = await get('/golf/' + encodeURIComponent(club.slug)); ok(r.status === 200 && r.text.includes('"GolfCourse"') && r.text.includes('"Product"'), 'GET /golf/:slug (GolfCourse·Product 스키마)');
   const post = db.prepare("SELECT slug FROM posts WHERE kind='blog' AND status='published' LIMIT 1").get();
-  r = await get('/blog/' + post.slug); ok(r.status === 200 && r.text.includes('"Article"') && r.text.includes('"FAQPage"'), 'GET /blog/:slug (Article·FAQPage 스키마)');
+  r = await get('/blog/' + post.slug); ok(r.status === 200 && r.text.includes('"Article"') && r.text.includes('"FAQPage"') && r.text.includes('class="post-hero"'), 'GET /blog/:slug (Article·FAQPage 스키마·대표 이미지)');
+  { const rr = await fetch(BASE + '/og/post/' + encodeURIComponent(post.slug) + '.jpg'); ok(rr.status === 200 && /image\/(jpeg|png)/.test(rr.headers.get('content-type') || ''), '글 썸네일 jpg 라우트', rr.headers.get('content-type') || ''); }
   const lst = db.prepare("SELECT id FROM listings WHERE status='open' AND image<>'' LIMIT 1").get();
   if (lst) { r = await get('/listings/' + lst.id); ok(r.status === 200 && r.text.includes('"Product"') && r.text.includes('prd-fig'), 'GET /listings/:id (Product 스키마·이미지)'); }
   // SEO 파일

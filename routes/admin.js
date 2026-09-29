@@ -121,7 +121,7 @@ router.post('/posts', (req, res) => {
     const old = db.prepare('SELECT * FROM posts WHERE id=?').get(b.id); if (!old) return res.status(404).json({ error: 'not found' });
     db.prepare('UPDATE posts SET kind=?,type=?,title=?,slug=?,excerpt=?,meta_description=?,body_html=?,tags=?,author=?,status=?,published_at=?,updated_at=? WHERE id=?')
       .run(kind, b.type || old.type, b.title, b.slug || old.slug, b.excerpt || '', b.meta_description || '', sanitizeHtml(b.body_html), b.tags || '', b.author || old.author, status, status === 'published' ? (old.published_at || ts) : old.published_at, ts, b.id);
-    og.invalidate(`post-${b.slug || old.slug}`);
+    og.invalidate(`v2-post-${b.slug || old.slug}`);
     if (status === 'published') indexnow.submit([`/${kind === 'blog' ? 'blog' : kind}/${b.slug || old.slug}`]).catch(() => {});
     return res.json({ ok: true, id: b.id });
   }
