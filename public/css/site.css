@@ -317,3 +317,6 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(31,58,115,.25);bo
 .dt-table th{width:150px;background:#f3f5f9;text-align:center;font-weight:800;color:var(--ink);vertical-align:middle}.dt-table td{line-height:1.85;padding:16px 20px}.dt-table tr+tr th,.dt-table tr+tr td{border-top:1px solid var(--line)}
 .t2-tabs{display:grid;grid-template-columns:1fr 1fr;margin:-4px 0 18px;border-bottom:1px solid var(--line)}.t2-tab{border:0;background:#fff;padding:16px 10px;font:inherit;font-size:18px;font-weight:700;color:#9aa6bd;cursor:pointer;transition:.2s}.t2-tab:hover{color:var(--navy)}.t2-tab.active{background:var(--navy);color:#fff;border-radius:10px 10px 0 0}
 @media (max-width:640px){.dt-table th{width:92px;font-size:14px;padding:12px 6px}.dt-table td{padding:12px 12px;font-size:14px}.t2-tab{font-size:15px;padding:13px 6px}}
+
+/* 매물 탭: 전용관 구분 */
+.tabs .tab-excl{border-style:dashed}
