@@ -268,7 +268,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(31,58,115,.25);bo
 .gc-ic{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--navy);background:#eef2f9;padding:6px 10px;border-radius:999px;line-height:1;margin-bottom:12px}
 
 /* 헤더 v2 — 두 줄(네이비 바 + 메뉴 바) */
-.header-v2{background:#fff}.header-v2 .hd-top{background:var(--navy);color:#fff;overflow:hidden;max-height:120px;transition:max-height .28s ease}.header-v2.scrolled .hd-top{max-height:0}
+.header-v2{background:#fff}.header-v2 .hd-top{background:var(--navy);color:#fff}
 .hd-top-in{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:104px;gap:24px}
 .hd-left{display:flex;align-items:center;gap:26px}.hd-left img{height:36px;width:auto;display:block}.hd-left a img{height:34px}
 .hd-logo{justify-self:center;display:block}.hd-logo img{height:60px;width:auto;display:block}
@@ -320,3 +320,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(31,58,115,.25);bo
 
 /* 매물 탭: 전용관 구분 */
 .tabs .tab-excl{border-style:dashed}
+
+/* 헤더 축소: 높이를 줄이면(본문이 밀려 올라감) 스크롤 경계에서 떨리므로, 높이는 그대로 두고 위 띠만큼 transform으로 밀어 올린다 */
+.header-v2{--hdtop:104px;transition:transform .28s ease,box-shadow .2s;will-change:transform}.header-v2.scrolled{transform:translateY(calc(-1 * var(--hdtop)))}
+@media (max-width:1360px){.header-v2{--hdtop:96px}}@media (max-width:1100px){.header-v2{--hdtop:88px}}@media (max-width:900px){.header-v2.scrolled{transform:none}}

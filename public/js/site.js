@@ -5,7 +5,9 @@
 
   // 헤더·모바일 메뉴·맨 위로
   const header = $('#header'); const burger = $('#burger'); const mnav = $('#mobileNav'); const toTop = $('#toTop');
-  const onScroll = () => { header && header.classList.toggle('scrolled', window.scrollY > 8); toTop && toTop.classList.toggle('show', window.scrollY > 500); };
+  // 헤더 축소는 임계값을 두 개(내려갈 때 120px, 올라올 때 30px) 두어 경계에서 켜졌다 꺼졌다 하며 떨리지 않게 한다
+  let hdOn = false;
+  const onScroll = () => { const y = window.scrollY; if (header) { if (!hdOn && y > 120) { hdOn = true; header.classList.add('scrolled'); } else if (hdOn && y < 30) { hdOn = false; header.classList.remove('scrolled'); } } toTop && toTop.classList.toggle('show', y > 500); };
   window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
   // 드로어 내비(우측 슬라이드) — 백드롭 클릭·ESC·닫기 버튼으로 닫힘, 열릴 때 스크롤 잠금
   const bd = $('#drawerBd'); const setDrawer = (open) => { if (!mnav) return; mnav.classList.toggle('open', open); bd && bd.classList.toggle('open', open); burger && burger.setAttribute('aria-expanded', String(open)); document.body.style.overflow = open ? 'hidden' : ''; if (open) { const f = $('#drawerClose'); f && f.focus(); } };
