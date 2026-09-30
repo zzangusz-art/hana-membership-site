@@ -48,7 +48,9 @@ router.get('/', (req, res) => {
   const clubCount = db.prepare("SELECT COUNT(*) c FROM clubs WHERE status='published' AND parent_id IS NULL").get().c;
   const featured = db.prepare("SELECT * FROM listings WHERE status='open' ORDER BY featured DESC, id DESC LIMIT 4").all();
   const years = new Date().getFullYear() - 2004;
-  const ticker = all.slice().sort(() => 0.5 - Math.random()).slice(0, 28);
+  // 시세 띠: 등락이 있는 종목(등락률 큰 순)을 앞세우고, 부족하면 보합 종목으로 채움. 종목이 많아졌으므로 속도는 CSS에서 느리게.
+  const moved = all.filter(r => r.diff).sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct)).slice(0, 28);
+  const ticker = moved.length >= 12 ? moved : [...moved, ...all.filter(r => !r.diff).sort(() => 0.5 - Math.random()).slice(0, 28 - moved.length)];
   const SLIDES = [
     { key: 'golf', icon: '⛳', kicker: '프리미엄 골프 라이프 · 2004년부터 회원권 거래 전문', tab: '프리미엄 골프 라이프', title: '골프회원권 · 무기명 골프회원권 · 콘도회원권<br><span class="hl">시세 조회·구매·매입</span>, 한 곳에서', sub: `골프회원권 ${g.total}종목 시세, 매주 월요일 갱신`, lead: '매도자가 부르는 값과 실제 계약된 값은 다릅니다. 시세표는 그 둘을 같이 보고 만듭니다. 골프장 회원권 거래는 상담한 담당자가 계약과 명의개서 접수까지 그대로 맡습니다.', href: '/market/golf', img: '/img/hero/golf.jpg', bg: '/img/hero/golf-bg.jpg' },
     { key: 'condo', icon: '🏔️', kicker: '콘도·리조트 회원권', tab: '휴식과 힐링의 콘도', title: '휴식과 힐링의 <span class="hl">콘도</span>', sub: '공유제인지 회원제인지부터 확인하세요', lead: '등기가 되는 공유제와 입회금을 맡기는 회원제는 세금도, 되팔 때도 다릅니다. 가족 휴가용인지 법인 복지용인지 말씀해 주시면 맞는 쪽을 골라 드립니다.', href: '/market/condo', img: '/img/hero/condo.jpg', bg: '/img/hero/condo-bg.jpg' },

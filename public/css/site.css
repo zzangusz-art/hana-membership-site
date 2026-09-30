@@ -82,7 +82,7 @@ p{margin:0 0 1em}
 .hero-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:28px}
 .counters{list-style:none;display:flex;justify-content:center;gap:34px;padding:0;margin:0;flex-wrap:wrap}.counters li{text-align:center}.counters b{display:block;font-size:34px;font-weight:900;color:#fff;line-height:1}.counters span{font-size:13px;color:#b9c6e0}
 .ticker{position:relative;background:rgba(0,0,0,.25);border-top:1px solid rgba(255,255,255,.12);overflow:hidden;white-space:nowrap;padding:10px 0;font-size:14px}
-.ticker-track{display:inline-flex;gap:32px;animation:tick 80s linear infinite;will-change:transform}.ticker:hover .ticker-track{animation-play-state:paused}.tk b{color:#fff;margin-right:6px}.tk{color:#dbe4f5}
+.ticker-track{display:inline-flex;gap:36px;animation:tick 150s linear infinite;will-change:transform}.ticker:hover .ticker-track{animation-play-state:paused}.tk b{color:#fff;margin-right:6px}.tk{color:#dbe4f5}
 @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 /* sections */
 .section{padding:64px 0}.section.market-hl{background:var(--bg)}.services{background:#fff}.why{background:linear-gradient(180deg,#fff,#f3f6fb)}.guides{background:#fff}.posts{background:var(--bg)}.faq-sec{background:#fff}.contact-sec{background:var(--bg)}.videos{background:#fff}
