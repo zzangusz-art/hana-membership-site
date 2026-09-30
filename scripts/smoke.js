@@ -72,6 +72,9 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     const pr = db.prepare("SELECT id FROM prices WHERE category='golf' AND name='88'").get(); rr = await get(`/api/prices/golf/${pr.id}/history?days=3650`); const hj = JSON.parse(rr.text); const r90 = JSON.parse((await get(`/api/prices/golf/${pr.id}/history?days=90`)).text);
     ok(hj.days === 3650 && hj.history.length > 30 && hj.history[0].date < '2018-01-01' && hj.since <= hj.history[0].date && r90.history.length < hj.history.length, '시세 이력 10년 조회', `${hj.history.length}점 · ${hj.history[0].date}~`);
     rr = await get('/'); ok(rr.text.includes('class="hd-yt"') && !/hd-links"><a[^>]*>유튜브</.test(rr.text), '헤더 유튜브 로고'); }
+  // 골프장 해설 자동 작성(사실 기반)
+  { const empty = db.prepare("SELECT COUNT(*) c FROM clubs WHERE status='published' AND parent_id IS NULL AND (body_html IS NULL OR body_html='')").get().c; const rr = await get('/golf/' + encodeURIComponent('강남300'));
+    ok(empty === 0 && rr.text.includes('강남300 회원권, 이런 분께 맞습니다') && !rr.text.includes('해설은 아직 쓰는 중') && rr.text.includes('회원과 비회원의 그린피 차이') && rr.text.includes('15만원 차이') && !/현재 회원권 시세는 \d/.test(rr.text), '골프장 해설 자동 작성(요금 차이·시세 숫자 미포함)', `빈 해설 ${empty}`); }
   // 구 사이트 시세 이관 · 종목 상세 · 메뉴
   { const nC = db.prepare("SELECT COUNT(*) c FROM prices WHERE category='condo'").get().c, nF = db.prepare("SELECT COUNT(*) c FROM prices WHERE category='fitness'").get().c, nG = db.prepare("SELECT COUNT(*) c FROM prices WHERE category='golf'").get().c, nCo = db.prepare("SELECT COUNT(*) c FROM prices WHERE category='corporate'").get().c;
     ok(nC >= 80 && nF >= 50 && nG >= 250 && nCo >= 300, '구 사이트 시세 전체 이관', `골프 ${nG} · 법인 ${nCo} · 콘도 ${nC} · 피트니스 ${nF}`);
