@@ -72,6 +72,15 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     const pr = db.prepare("SELECT id FROM prices WHERE category='golf' AND name='88'").get(); rr = await get(`/api/prices/golf/${pr.id}/history?days=3650`); const hj = JSON.parse(rr.text); const r90 = JSON.parse((await get(`/api/prices/golf/${pr.id}/history?days=90`)).text);
     ok(hj.days === 3650 && hj.history.length > 30 && hj.history[0].date < '2018-01-01' && hj.since <= hj.history[0].date && r90.history.length < hj.history.length, '시세 이력 10년 조회', `${hj.history.length}점 · ${hj.history[0].date}~`);
     rr = await get('/'); ok(rr.text.includes('class="hd-yt"') && !/hd-links"><a[^>]*>유튜브</.test(rr.text), '헤더 유튜브 로고'); }
+  // 구 사이트 시세 이관 · 종목 상세 · 메뉴
+  { const nC = db.prepare("SELECT COUNT(*) c FROM prices WHERE category='condo'").get().c, nF = db.prepare("SELECT COUNT(*) c FROM prices WHERE category='fitness'").get().c, nG = db.prepare("SELECT COUNT(*) c FROM prices WHERE category='golf'").get().c, nCo = db.prepare("SELECT COUNT(*) c FROM prices WHERE category='corporate'").get().c;
+    ok(nC >= 80 && nF >= 50 && nG >= 250 && nCo >= 300, '구 사이트 시세 전체 이관', `골프 ${nG} · 법인 ${nCo} · 콘도 ${nC} · 피트니스 ${nF}`);
+    const cp = db.prepare("SELECT id FROM prices WHERE category='condo' AND name='오크밸리-25'").get(); let rr = await get('/market/condo'); ok(cp && rr.text.includes(`href="/market/condo/${cp.id}"`) && !rr.text.includes('href="#"'), '콘도 시세표 회원권명 링크');
+    rr = await get(`/market/condo/${cp.id}`); ok(rr.status === 200 && rr.text.includes('오크밸리-25 회원권 시세') && rr.text.includes('시설 정보') && rr.text.includes('오크밸리 다른 회원권 종류') && rr.text.includes('class="pchart"'), '콘도 종목 상세(시설 정보·다른 종류·차트)');
+    const fp = db.prepare("SELECT id FROM prices WHERE category='fitness' AND name='반트-부부'").get(); rr = await get(`/market/fitness/${fp.id}`); ok(rr.status === 200 && rr.text.includes('vantt.com'), '피트니스 종목 상세');
+    const gp = db.prepare("SELECT id FROM prices WHERE category='golf' AND name='강남300 주중가족'").get(); rr = await get('/market/golf'); ok(gp && rr.text.includes(`?type=${encodeURIComponent('주중가족')}"`), '골프 시세표 회원권명 → 골프장 페이지 종류');
+    const strayGolf = db.prepare("SELECT id FROM prices WHERE category='golf' AND name='토탈골프'").get(); if (strayGolf) { rr = await get(`/market/golf/${strayGolf.id}`); ok(rr.status === 200 && rr.text.includes('토탈골프 회원권 시세'), '골프장 페이지 없는 골프 종목 상세'); }
+    rr = await get('/'); ok(rr.text.includes('>회원권 매물<') && rr.text.includes('>전용관<') && rr.text.includes('/listings?category=tour') && rr.text.includes('/exclusive/prepaid') && !rr.text.includes('매물·전용관'), '메뉴: 회원권 매물 / 전용관 분리'); }
   // 해외투어(외부 링크형) 매물
   { const rr = await get('/listings?category=tour'); const n = db.prepare("SELECT COUNT(*) c FROM listings WHERE category='tour' AND link LIKE 'https://blog.naver.com/%'").get().c; ok(rr.status === 200 && n >= 15 && rr.text.includes('일정 보기 ↗') && rr.text.includes('target="_blank"') && rr.text.includes('하나멤버쉽투어'), '해외투어 목록(블로그 링크)', `${n}건`); }
   // 골프장 회원권 세부 정보 · 개인/법인 정보

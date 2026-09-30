@@ -171,7 +171,8 @@ CREATE TABLE IF NOT EXISTS videos (
 // 스키마 보강 — 이미 만들어진 DB(운영 볼륨)에 새 컬럼 추가 (없을 때만)
 function ensureColumn(table, col, decl) { const cols = db.prepare(`PRAGMA table_info(${table})`).all().map(c => c.name); if (!cols.includes(col)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${decl}`); }
 ensureColumn('listings', 'image', 'TEXT');
-ensureColumn('listings', 'link', 'TEXT'); // 외부 상세(해외투어: 네이버 블로그 글)
+ensureColumn('listings', 'link', 'TEXT');
+for (const [c, t] of [['info_json', 'TEXT'], ['old_id', 'TEXT']]) ensureColumn('prices', c, t); // 구 사이트 시세 상세(주소·전화·URL·개장일 등) // 외부 상세(해외투어: 네이버 블로그 글)
 for (const [c, t] of [['sido', 'TEXT'], ['phone', 'TEXT'], ['website', 'TEXT'], ['members', 'INTEGER'], ['logo', 'TEXT'], ['tables_json', 'TEXT'], ['old_id', 'TEXT'], ['source', 'TEXT']]) ensureColumn('clubs', c, t); ensureColumn('listings', 'images', 'TEXT'); ensureColumn('listings', 'info_json', 'TEXT'); ensureColumn('listings', 'desc_html', 'TEXT'); ensureColumn('listings', 'src_id', 'TEXT');
 
 

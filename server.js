@@ -23,6 +23,7 @@ const { page } = layout;
 seedIfEmpty();
 try { const g = require('./lib/clubgroup').sync(); if (g.changed) console.log(`[clubs] 골프장 ${g.clubs}곳 · 회원권 종류 ${g.variants}건 묶음`); } catch (e) { console.error('[clubs] 묶기 실패', e.message); }
 try { const n = require('./lib/clubdetail').seed(path.join(__dirname, 'data', 'seed', 'club-details.json')); if (n) console.log(`[clubs] 회원권 세부 정보 ${n}곳 반영`); } catch (e) { console.error('[clubs] 세부 정보 반영 실패', e.message); }
+try { const m = require('./lib/prices').importHanamarket(path.join(__dirname, 'data', 'seed', 'prices-hanamarket.json')); if (m.inserted || m.updated) console.log(`[prices] 구 사이트 시세 이관: 신규 ${m.inserted} · 정보 보충 ${m.updated}`); } catch (e) { console.error('[prices] 시세 이관 실패', e.message); }
 try { const h = require('./lib/prices').importHistory(path.join(__dirname, 'data', 'seed', 'price-history.json')); if (h.rows) console.log(`[prices] 과거 시세 이력 ${h.items}종목 ${h.rows}건 추가`); } catch (e) { console.error('[prices] 이력 가져오기 실패', e.message); }
 
 const app = express();
