@@ -82,6 +82,8 @@
     load(startDays || 90);
   };
   $$('.pchart').forEach(b => { if (!b.closest('[hidden]')) pchart(b); });
+  // 개인/법인 회원권 정보 탭
+  $$('.tabs2').forEach(box => box.addEventListener('click', (e) => { const t = e.target.closest('.t2-tab'); if (!t) return; $$('.t2-tab', box).forEach(x => { const on = x === t; x.classList.toggle('active', on); x.setAttribute('aria-selected', on); }); $$('.t2-panel', box).forEach(p => { p.hidden = p.dataset.t2 !== t.dataset.t2; }); }));
   // 골프장 페이지: 회원권 종류 탭
   $$('.vr-card').forEach(card => card.addEventListener('click', (e) => { const tab = e.target.closest('.vr-tab'); if (!tab) return; const i = tab.dataset.vr; $$('.vr-tab', card).forEach(t => { const on = t === tab; t.classList.toggle('active', on); t.setAttribute('aria-selected', on); }); $$('.vr-panel', card).forEach(p => { p.hidden = p.dataset.vr !== i; if (!p.hidden) $$('.pchart', p).forEach(b => pchart(b)); }); try { const u = new URL(location.href); u.searchParams.set('type', tab.dataset.label); history.replaceState(null, '', u.pathname + u.search + '#types'); } catch (_) { /* no-op */ } }));
 

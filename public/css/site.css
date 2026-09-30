@@ -312,3 +312,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(31,58,115,.25);bo
 /* 골프장 페이지: 회원권 종류 */
 .vr-card h2 small{font-size:14px;color:var(--muted);font-weight:600;margin-left:6px}.vr-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 16px}.vr-tab{display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:10px 16px;font:inherit;cursor:pointer;transition:.2s;text-align:left}.vr-tab b{font-size:15px;color:var(--ink)}.vr-tab span{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}.vr-tab:hover{border-color:var(--navy)}.vr-tab.active{border-color:var(--navy);background:var(--navy)}.vr-tab.active b,.vr-tab.active span{color:#fff}.vr-panel h3{margin:4px 0 10px;font-size:18px}.vr-panel h4{margin:18px 0 8px}.vr-cta{margin:16px 0 0}
 @media (max-width:640px){.pc-tab{padding:6px 11px;font-size:13px}.vr-tab{padding:8px 12px}.vr-tab b{font-size:14px}}
+
+/* 골프장 페이지: 회원권 세부 정보 · 개인/법인 탭 */
+.dt-table th{width:150px;background:#f3f5f9;text-align:center;font-weight:800;color:var(--ink);vertical-align:middle}.dt-table td{line-height:1.85;padding:16px 20px}.dt-table tr+tr th,.dt-table tr+tr td{border-top:1px solid var(--line)}
+.t2-tabs{display:grid;grid-template-columns:1fr 1fr;margin:-4px 0 18px;border-bottom:1px solid var(--line)}.t2-tab{border:0;background:#fff;padding:16px 10px;font:inherit;font-size:18px;font-weight:700;color:#9aa6bd;cursor:pointer;transition:.2s}.t2-tab:hover{color:var(--navy)}.t2-tab.active{background:var(--navy);color:#fff;border-radius:10px 10px 0 0}
+@media (max-width:640px){.dt-table th{width:92px;font-size:14px;padding:12px 6px}.dt-table td{padding:12px 12px;font-size:14px}.t2-tab{font-size:15px;padding:13px 6px}}

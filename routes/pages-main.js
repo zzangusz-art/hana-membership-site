@@ -231,6 +231,7 @@ router.get('/market/:category', (req, res, next) => {
 // 주소 → 시·도(지도 라벨). 주소가 없으면 '' (지도 밖 목록에만 표시)
 const kmap = require('../lib/korea-map');
 const clubgroup = require('../lib/clubgroup');
+const clubdetail = require('../lib/clubdetail');
 function sido(addr) {
   const a = String(addr || '').trim();
   const T = [['서울', '서울'], ['인천', '인천'], ['경기', '경기도'], ['강원', '강원도'], ['충청북도', '충청북도'], ['충북', '충청북도'], ['충청남도', '충청남도'], ['충남', '충청남도'], ['대전', '대전'], ['세종', '세종'], ['전라북도', '전라북도'], ['전북', '전라북도'], ['전라남도', '전라남도'], ['전남', '전라남도'], ['광주', '광주'], ['경상북도', '경상북도'], ['경북', '경상북도'], ['대구', '대구'], ['경상남도', '경상남도'], ['경남', '경상남도'], ['부산', '부산'], ['울산', '울산'], ['제주', '제주도']];
@@ -302,7 +303,7 @@ router.get('/golf/:slug', (req, res, next) => {
     ${typesHtml}
     <div class="spec-card"><h2>${esc(title)} ${multi ? '골프장' : '회원권'} 기본 정보</h2><table class="spec"><tbody>${specs.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</tbody></table>
     ${!multi && p ? `${chartCard(p)}<p class="note">단위 만원 · 하나회원권거래소 시세표 기준 · 갱신 ${updated}</p>` : ''}</div>
-    <div class="three"><div class="box"><h3>적합한 매수자</h3><p>${esc(c.fit_for || '상담 시 이용 패턴에 맞춰 안내')}</p></div><div class="box"><h3>부킹 특징</h3><p>${esc(c.booking || '주말 예약 방식·동반 규정은 골프장 규정 확인')}</p></div><div class="box"><h3>입회·명의개서</h3><p>${esc(c.transfer || '명의개서료·심사 기간은 상담 시 최신 조건 안내')}</p></div></div>
+    ${clubdetail.render(c, vs, s).html}
     ${(() => { const t = tableHtml(c.tables_json); return t ? `<div class="spec-card"><h2>이용 요금·조건 (골프장 제공)</h2>${t}<p class="note">골프장 공지 기준이며 변동될 수 있습니다. 최신 조건은 상담 시 확인해 드립니다.</p></div>` : ''; })()}
     <article class="prose">${bodyHtml}</article>
     ${faqs.length ? faqHtml(faqs, `${title} 회원권 자주 묻는 질문`) : ''}

@@ -18,6 +18,7 @@ const report = require('../lib/report');
 const audit = require('../lib/audit');
 const analytics = require('../lib/analytics');
 const inflow = require('../lib/inflow');
+const clubdetail = require('../lib/clubdetail');
 const shot = require('../lib/screenshot');
 const og = require('../lib/og');
 const indexnow = require('../lib/indexnow');
@@ -85,10 +86,12 @@ router.post('/clubs', (req, res) => {
   if (b.id) {
     db.prepare('UPDATE clubs SET name=?,slug=?,region=?,address=?,holes=?,opened=?,type=?,summary=?,body_html=?,faq_json=?,fit_for=?,booking=?,transfer=?,price_name=?,status=?,verified=?,updated_at=? WHERE id=?')
       .run(b.name, slug, b.region || '', b.address || '', b.holes ? Number(b.holes) : null, b.opened || '', b.type || '회원제', b.summary || '', sanitizeHtml(b.body_html || ''), b.faq_json || '[]', b.fit_for || '', b.booking || '', b.transfer || '', b.price_name || '', b.status || 'published', b.verified ? 1 : 0, ts, b.id);
+    if (clubdetail.hasForm(b)) { const cur = db.prepare('SELECT detail_json FROM clubs WHERE id=?').get(b.id); db.prepare('UPDATE clubs SET detail_json=? WHERE id=?').run(clubdetail.fromForm(b, cur && cur.detail_json), b.id); }
     return res.json({ ok: true, id: b.id });
   }
   const info = db.prepare('INSERT INTO clubs (slug,name,region,address,holes,opened,type,summary,body_html,faq_json,fit_for,booking,transfer,price_name,status,verified,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
     .run(slug, b.name, b.region || '', b.address || '', b.holes ? Number(b.holes) : null, b.opened || '', b.type || '회원제', b.summary || '', sanitizeHtml(b.body_html || ''), b.faq_json || '[]', b.fit_for || '', b.booking || '', b.transfer || '', b.price_name || '', b.status || 'published', b.verified ? 1 : 0, ts, ts);
+  if (clubdetail.hasForm(b)) db.prepare('UPDATE clubs SET detail_json=? WHERE id=?').run(clubdetail.fromForm(b, ''), info.lastInsertRowid);
   res.json({ ok: true, id: info.lastInsertRowid });
 });
 router.post('/clubs/:id/verify', (req, res) => { db.prepare('UPDATE clubs SET verified=?, updated_at=? WHERE id=?').run(req.body?.verified ? 1 : 0, now(), req.params.id); res.json({ ok: true }); });

@@ -72,6 +72,10 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     const pr = db.prepare("SELECT id FROM prices WHERE category='golf' AND name='88'").get(); rr = await get(`/api/prices/golf/${pr.id}/history?days=3650`); const hj = JSON.parse(rr.text); const r90 = JSON.parse((await get(`/api/prices/golf/${pr.id}/history?days=90`)).text);
     ok(hj.days === 3650 && hj.history.length > 30 && hj.history[0].date < '2018-01-01' && hj.since <= hj.history[0].date && r90.history.length < hj.history.length, '시세 이력 10년 조회', `${hj.history.length}점 · ${hj.history[0].date}~`);
     rr = await get('/'); ok(rr.text.includes('class="hd-yt"') && !/hd-links"><a[^>]*>유튜브</.test(rr.text), '헤더 유튜브 로고'); }
+  // 골프장 회원권 세부 정보 · 개인/법인 정보
+  { let rr = await get('/golf/' + encodeURIComponent('88컨트리클럽')); ok(rr.status === 200 && rr.text.includes('회원권 세부 정보') && rr.text.includes('1988년 7월 8일 골프장 개장') && rr.text.includes('개인 회원권 정보') && rr.text.includes('법인 회원권 정보') && rr.text.includes('법인인감증명서') && rr.text.includes('<th>시세 흐름</th>') && !rr.text.includes('<th>향후 전망</th>'), '골프장 세부 정보·개인/법인 탭(88CC)');
+    rr = await get('/golf/' + encodeURIComponent('강남300')); ok(rr.text.includes('필요 서류(일반 기준)') && !rr.text.includes('<th>코스 소개</th>'), '세부 정보 없는 골프장은 빈 항목 미표시·일반 기준 서류');
+    const cd = require('../lib/clubdetail'); const j = cd.fromForm({ d_intro: '소개', dp_docs: 'a\nb', dc_target: '법인' }, ''); const pj = cd.parse(j); ok(pj.intro === '소개' && pj.personal.docs === 'a\nb' && pj.corporate.target === '법인' && pj._edited === true, '세부 정보 관리자 저장 형식'); }
   // 유입 경로·전환 추적
   { const inf = require('../lib/inflow'); const own = ['hanamember.co.kr'];
     const d1 = inf.detect({ referer: 'https://search.naver.com/search.naver?query=%EA%B3%A8%ED%94%84%ED%9A%8C%EC%9B%90%EA%B6%8C', ownHosts: own });
