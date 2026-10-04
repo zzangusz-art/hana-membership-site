@@ -32,6 +32,8 @@ const safe = (s) => s.replace(/[^\w가-힣]+/g, '_').replace(/^_|_$/g, '');
   // 구글·Perplexity는 헤드리스를 봇으로 막으므로, 창을 띄운 실제 크롬 + 전용 프로필(쿠키 유지)로 연다
   const puppeteer = require('puppeteer-core');
   const profileDir = path.join(ROOT_OUT, '.chrome-profile'); fs.mkdirSync(profileDir, { recursive: true });
+  // 이전 실행이 남긴 캡처용 크롬(같은 프로필)을 정리 — 남아 있으면 프로필 잠금 때문에 새 크롬이 뜨지 않는다
+  if (process.platform === 'win32') { try { const { execSync } = require('child_process'); const cmd = "Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'chrome.exe' -and $_.CommandLine -like '*.chrome-profile*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"; execSync('powershell -NoProfile -EncodedCommand ' + Buffer.from(cmd, 'utf16le').toString('base64'), { stdio: 'ignore', timeout: 20000 }); } catch (_) { /* no-op */ } }
   const browser = await puppeteer.launch({ executablePath: shot.findChrome(), headless: process.argv.includes('--headless') ? true : false, userDataDir: profileDir, defaultViewport: null,
     args: ['--disable-blink-features=AutomationControlled', '--window-size=1366,900', '--lang=ko-KR', '--no-first-run', '--no-default-browser-check', '--disable-infobars'], ignoreDefaultArgs: ['--enable-automation'] });
   const results = [];
