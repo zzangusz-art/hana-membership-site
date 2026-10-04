@@ -75,6 +75,15 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
   // 동아 자동 반영 안전장치: 이름 앞부분만 같은 매칭이 60% 넘게 다르면 반영하지 않음
   { const dg = require('../lib/donga'); const m = dg.matchAll([{ name: '용원', today: 8700, prev: 8700 }], [{ name: '용원(VVIP)', today: 230000, prev: 230000 }]); ok(m.matched.length === 1 && m.matched[0].how === 'base', '동아 base 매칭 확인(용원→용원(VVIP))');
     const pr = db.prepare("SELECT id FROM prices WHERE category='golf' AND name='용원'").get(); if (pr) { db.prepare('UPDATE prices SET today=230000, prev=8700 WHERE id=?').run(pr.id); const r = await dg.sync({ dryRun: false }).catch(e => ({ error: e.message })); const v = db.prepare('SELECT today, prev FROM prices WHERE id=?').get(pr.id); ok(!r.error && v.today < 50000 && (r.suspect || []).some(x => x.startsWith('용원')), '동아 안전장치: 잘못된 값 복구·의심 매칭 제외', `today ${v.today} · suspect ${(r.suspect || []).join(',')}`); } }
+  // 예약 발행
+  { const sch = db.prepare("SELECT COUNT(*) c FROM posts WHERE status='scheduled'").get().c; const future = db.prepare("SELECT slug, published_at FROM posts WHERE status='scheduled' ORDER BY published_at LIMIT 1").get();
+    ok(sch >= 5 && future && future.published_at > Math.floor(Date.now() / 1000), '미래 날짜 시드 글은 예약 상태', `${sch}건 · 첫 발행 ${new Date(future.published_at * 1000).toISOString().slice(0, 16)}`);
+    let rr = await get('/blog'); ok(!rr.text.includes('/blog/' + future.slug + '"'), '예약 글은 목록·사이트맵에 미노출');
+    rr = await get('/blog/' + future.slug); ok(rr.status === 404, '예약 글 URL은 발행 전 404');
+    const sc = require('../lib/scheduler'); const done = await sc.publishScheduled(future.published_at + 1); ok(done.some(d => d.slug === future.slug) && db.prepare('SELECT status FROM posts WHERE slug=?').get(future.slug).status === 'published', '발행 시각 도래 시 자동 발행');
+    rr = await get('/blog/' + future.slug); ok(rr.status === 200 && rr.text.includes('"FAQPage"'), '발행 후 글 페이지');
+    db.prepare("UPDATE posts SET status='scheduled' WHERE slug=?").run(future.slug);
+    ok(db.prepare("SELECT COUNT(*) c FROM topic_pool WHERE topic LIKE '%거래소 추천%'").get().c >= 2, '키워드 주제 풀 등록'); }
   // 골프장 해설 자동 작성(사실 기반)
   { const empty = db.prepare("SELECT COUNT(*) c FROM clubs WHERE status='published' AND parent_id IS NULL AND (body_html IS NULL OR body_html='')").get().c; const rr = await get('/golf/' + encodeURIComponent('강남300'));
     ok(empty === 0 && rr.text.includes('강남300 회원권, 이런 분께 맞습니다') && !rr.text.includes('해설은 아직 쓰는 중') && rr.text.includes('회원과 비회원의 그린피 차이') && rr.text.includes('15만원 차이') && !/현재 회원권 시세는 \d/.test(rr.text), '골프장 해설 자동 작성(요금 차이·시세 숫자 미포함)', `빈 해설 ${empty}`); }

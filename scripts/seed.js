@@ -115,7 +115,7 @@ function seedPlan(force) {
 // 가이드 글 시드 — articles.json + articles-*.json 을 slug 기준으로 없는 것만 추가(멱등). 발행일은 파일의 date(YYYY-MM-DD) 또는 지금.
 function seedArticles() {
   const files = fs.readdirSync(SEED).filter(f => /^articles.*\.json$/.test(f)).sort();
-  const ins = db.prepare("INSERT INTO posts (kind,type,slug,title,excerpt,meta_description,body_html,tags,status,source,source_urls,published_at,created_at,updated_at) VALUES ('blog',?,?,?,?,?,?,?,'published','manual',?,?,?,?)");
+  const ins = db.prepare("INSERT INTO posts (kind,type,slug,title,excerpt,meta_description,body_html,tags,status,source,source_urls,published_at,created_at,updated_at) VALUES ('blog',?,?,?,?,?,?,?,?,'manual',?,?,?,?)");
   let n = 0;
   for (const f of files) {
     const m = f.match(/articles-(\d{4}-\d{2}-\d{2})/); const base = m ? Math.floor(new Date(m[1] + 'T09:00:00+09:00') / 1000) : now() - 86400;
@@ -123,8 +123,9 @@ function seedArticles() {
     arr.forEach((a, i) => {
       const ex = db.prepare('SELECT id, body_html FROM posts WHERE slug=?').get(a.slug);
       if (ex) { if (ex.body_html !== a.body_html) db.prepare('UPDATE posts SET title=?, excerpt=?, meta_description=?, body_html=?, updated_at=? WHERE id=?').run(a.title, a.excerpt, a.meta_description, a.body_html, now(), ex.id); return; }
-      const t = Math.min(now(), base + i * 3600);
-      ins.run(a.type, a.slug, a.title, a.excerpt, a.meta_description, a.body_html, (a.tags || []).join(','), JSON.stringify({ sources: [], faq: a.faq || [] }), t, t, t); n++;
+      // 파일 날짜가 미래면 예약 발행(scheduled): 스케줄러가 그 시각에 발행하고 인블로그로 보낸다
+      const when = base + i * 3600; const future = when > now(); const t = future ? when : Math.min(now(), when);
+      ins.run(a.type, a.slug, a.title, a.excerpt, a.meta_description, a.body_html, (a.tags || []).join(','), future ? 'scheduled' : 'published', JSON.stringify({ sources: [], faq: a.faq || [] }), t, future ? now() : t, future ? now() : t); n++;
     });
   }
   return n;

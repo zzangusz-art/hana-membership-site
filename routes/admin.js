@@ -138,7 +138,7 @@ router.post('/posts', (req, res) => {
 router.post('/posts/:id/publish', async (req, res) => {
   const p = db.prepare('SELECT * FROM posts WHERE id=?').get(req.params.id); if (!p) return res.status(404).json({ error: 'not found' });
   const pub = req.body?.publish !== false; const ts = now();
-  db.prepare('UPDATE posts SET status=?, published_at=?, updated_at=? WHERE id=?').run(pub ? 'published' : 'draft', pub ? (p.published_at || ts) : p.published_at, ts, p.id);
+  db.prepare('UPDATE posts SET status=?, published_at=?, updated_at=? WHERE id=?').run(pub ? 'published' : 'draft', pub ? Math.min(p.published_at || ts, ts) : p.published_at, ts, p.id);
   let ib = { skipped: true };
   if (p.kind === 'blog') { const full = db.prepare('SELECT * FROM posts WHERE id=?').get(p.id); try { const j = JSON.parse(full.source_urls || '[]'); full.faq_json = JSON.stringify(j.faq || []); } catch (_) { full.faq_json = '[]'; } ib = await pushToInblog(full); if (!pub && full.inblog_id && inblog.enabled()) { try { await inblog.unpublish(full.inblog_id); db.prepare("UPDATE posts SET inblog_status='draft' WHERE id=?").run(p.id); } catch (_) { /* no-op */ } } }
   if (pub) indexnow.submit([`/${p.kind === 'blog' ? 'blog' : p.kind}/${p.slug}`]).catch(() => {});
