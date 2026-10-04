@@ -91,7 +91,7 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
   { const rr = await get('/listings?category=tour'); const n = db.prepare("SELECT COUNT(*) c FROM listings WHERE category='tour' AND link LIKE 'https://blog.naver.com/%'").get().c; ok(rr.status === 200 && n >= 15 && rr.text.includes('일정 보기 ↗') && rr.text.includes('target="_blank"') && rr.text.includes('하나멤버쉽투어'), '해외투어 목록(블로그 링크)', `${n}건`); }
   // 골프장 회원권 세부 정보 · 개인/법인 정보
   { let rr = await get('/golf/' + encodeURIComponent('88컨트리클럽')); ok(rr.status === 200 && rr.text.includes('회원권 세부 정보') && rr.text.includes('1988년 7월 8일 골프장 개장') && rr.text.includes('개인 회원권 정보') && rr.text.includes('법인 회원권 정보') && rr.text.includes('법인인감증명서') && rr.text.includes('<th>시세 흐름</th>') && !rr.text.includes('<th>향후 전망</th>'), '골프장 세부 정보·개인/법인 탭(88CC)');
-    rr = await get('/golf/' + encodeURIComponent('강남300')); ok(rr.text.includes('필요 서류(일반 기준)') && !rr.text.includes('<th>코스 소개</th>'), '세부 정보 없는 골프장은 빈 항목 미표시·일반 기준 서류');
+    rr = await get('/golf/' + encodeURIComponent('제주')); ok(rr.text.includes('필요 서류(일반 기준)') && !rr.text.includes('<th>코스 소개</th>'), '세부 정보 없는 골프장은 빈 항목 미표시·일반 기준 서류');
     const cd = require('../lib/clubdetail'); const j = cd.fromForm({ d_intro: '소개', dp_docs: 'a\nb', dc_target: '법인' }, ''); const pj = cd.parse(j); ok(pj.intro === '소개' && pj.personal.docs === 'a\nb' && pj.corporate.target === '법인' && pj._edited === true, '세부 정보 관리자 저장 형식'); }
   // 유입 경로·전환 추적
   { const inf = require('../lib/inflow'); const own = ['hanamember.co.kr'];
