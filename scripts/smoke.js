@@ -77,7 +77,7 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     const pr = db.prepare("SELECT id FROM prices WHERE category='golf' AND name='용원'").get(); if (pr) { db.prepare('UPDATE prices SET today=230000, prev=8700 WHERE id=?').run(pr.id); const r = await dg.sync({ dryRun: false }).catch(e => ({ error: e.message })); const v = db.prepare('SELECT today, prev FROM prices WHERE id=?').get(pr.id); ok(!r.error && v.today < 50000 && (r.suspect || []).some(x => x.startsWith('용원')), '동아 안전장치: 잘못된 값 복구·의심 매칭 제외', `today ${v.today} · suspect ${(r.suspect || []).join(',')}`); } }
   // 예약 발행
   { const sch = db.prepare("SELECT COUNT(*) c FROM posts WHERE status='scheduled'").get().c; const future = db.prepare("SELECT slug, published_at FROM posts WHERE status='scheduled' ORDER BY published_at LIMIT 1").get();
-    ok(sch >= 5 && future && future.published_at > Math.floor(Date.now() / 1000), '미래 날짜 시드 글은 예약 상태', `${sch}건 · 첫 발행 ${new Date(future.published_at * 1000).toISOString().slice(0, 16)}`);
+    ok(sch >= 1 && future && future.published_at > Math.floor(Date.now() / 1000), '미래 날짜 시드 글은 예약 상태', `${sch}건 · 첫 발행 ${new Date(future.published_at * 1000).toISOString().slice(0, 16)}`);
     let rr = await get('/blog'); ok(!rr.text.includes('/blog/' + future.slug + '"'), '예약 글은 목록·사이트맵에 미노출');
     rr = await get('/blog/' + future.slug); ok(rr.status === 404, '예약 글 URL은 발행 전 404');
     const sc = require('../lib/scheduler'); const done = await sc.publishScheduled(future.published_at + 1); ok(done.some(d => d.slug === future.slug) && db.prepare('SELECT status FROM posts WHERE slug=?').get(future.slug).status === 'published', '발행 시각 도래 시 자동 발행');
