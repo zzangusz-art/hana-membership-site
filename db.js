@@ -204,13 +204,32 @@ CREATE INDEX IF NOT EXISTS idx_vev_date ON visit_events(date, type);
 `);
 for (const c of ['session_id', 'src_channel', 'src_source', 'src_medium', 'src_campaign', 'src_keyword', 'src_landing']) ensureColumn('inquiries', c, 'TEXT');
 
+// ── 관리자 권한(2026-10-06): owner(개발·운영 전체) / manager(업체 관리자: 직원 계정 개설 가능) / staff(직원) ──
+for (const [c, t] of [['role', "TEXT NOT NULL DEFAULT 'staff'"], ['phone', 'TEXT'], ['dept', 'TEXT'], ['active', 'INTEGER NOT NULL DEFAULT 1'], ['created_by', 'INTEGER']]) ensureColumn('admins', c, t);
+ensureColumn('inquiries', 'assignee_id', 'INTEGER');   // 담당자(admins.id)
+ensureColumn('prices', 'manual_lock', 'INTEGER NOT NULL DEFAULT 0'); // 1이면 동아 자동 반영 제외(수기 관리)
+db.exec(`
+CREATE TABLE IF NOT EXISTS customers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL, phone TEXT NOT NULL, email TEXT,
+  kind TEXT NOT NULL DEFAULT 'consult',  -- buy|sell|consult|member
+  category TEXT, item TEXT, budget TEXT, memo TEXT,
+  status TEXT NOT NULL DEFAULT 'new',    -- new|contacting|contract|hold|closed
+  assignee_id INTEGER, inquiry_id INTEGER, created_by INTEGER,
+  created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_customers_phone ON customers(phone);
+`);
+
 // ── 최초 관리자 ──
 if (db.prepare('SELECT COUNT(*) c FROM admins').get().c === 0) {
   const id = process.env.ADMIN_ID || 'admin';
   const pw = process.env.ADMIN_PW || 'hana1234!';
-  db.prepare('INSERT INTO admins (login_id,pw_hash,name,created_at) VALUES (?,?,?,?)')
-    .run(id, bcrypt.hashSync(pw, 10), '관리자', now());
+  db.prepare('INSERT INTO admins (login_id,pw_hash,name,role,created_at) VALUES (?,?,?,?,?)')
+    .run(id, bcrypt.hashSync(pw, 10), '관리자', 'owner', now());
   console.log(`[db] 최초 관리자 생성: ${id} (비밀번호는 로그인 후 변경하세요)`);
 }
+// 기존 DB: 첫 계정(admin)은 총괄(owner)
+db.prepare("UPDATE admins SET role='owner' WHERE id=(SELECT MIN(id) FROM admins) AND role<>'owner'").run();
 
 module.exports = { db, DATA_DIR, getSetting, setSetting, allSettings };

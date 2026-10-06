@@ -162,7 +162,48 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
   r = await A(`/reports/${rp.report.id}/html`); ok(r.status === 200 && (await r.text()).includes('실행계획 체크'), '리포트 HTML');
   r = await A(`/reports/${rp.report.id}/docx`); ok(r.status === 200 && (await r.arrayBuffer()).byteLength > 3000, '리포트 DOCX 다운로드');
   r = await A('/plan'); const pl = await r.json(); ok(pl.weeks.length === 4 && pl.weeks[0].tasks.length >= 8, '4주 실행계획', `1주차 ${pl.weeks[0].tasks.length}항목`);
-  r = await A('/inquiries'); ok((await r.json()).length >= 1, '문의 목록');
+  r = await A('/inquiries'); const inqList = await r.json(); ok(inqList.length >= 1, '문의 목록');
+  // ── 관리자 권한(총괄/업체 관리자/직원) ──
+  { r = await A('/me'); const me = await r.json(); ok(me.admin.role === 'owner' && me.views.includes('settings') && me.views.includes('accounts'), '총괄(admin) 권한·메뉴', me.views.join(','));
+    const mgr = db.prepare("SELECT login_id, role FROM admins WHERE role='manager'").get(); ok(mgr && mgr.login_id === 'hanamember', '업체 관리자 계정(hanamember) 자동 생성');
+    r = await A('/accounts/' + db.prepare("SELECT id FROM admins WHERE login_id='hanamember'").get().id + '/password', { method: 'POST', body: JSON.stringify({ pw: 'smoke-mgr-1234' }) }); ok(r.status === 200, '총괄이 업체 관리자 비밀번호 재설정');
+    r = await fetch(BASE + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'hanamember', pw: 'smoke-mgr-1234' }) });
+    const mck = (r.headers.get('set-cookie') || '').split(';')[0]; ok(r.status === 200 && mck.startsWith('hana_admin='), '업체 관리자 로그인');
+    const M = (p, opt = {}) => fetch(BASE + '/api/admin' + p, { ...opt, headers: { 'Content-Type': 'application/json', cookie: mck, ...(opt.headers || {}) } });
+    r = await M('/me'); const mme = await r.json(); ok(mme.admin.role === 'manager' && !mme.views.includes('settings') && !mme.views.includes('auto') && !mme.views.includes('reports') && !mme.views.includes('audit') && !mme.views.includes('plan') && !mme.views.includes('posts') && mme.views.includes('accounts') && mme.views.includes('customers'), '업체 관리자 메뉴에서 개발 메뉴 제외', mme.views.join(','));
+    let blocked = 0; for (const p of ['/settings', '/automation', '/plan', '/reports', '/audit', '/traffic', '/posts?kind=blog']) { const rr = await M(p); if (rr.status === 403) blocked++; await rr.text(); }
+    ok(blocked === 7, '업체 관리자: 개발·운영 API 7개 403', `${blocked}/7`);
+    r = await M('/dashboard'); const md = await r.json(); ok(r.status === 200 && md.role === 'manager' && md.visitors && md.visitors.days.length === 14 && md.visitors.today.sessions >= 1 && !md.scheduler && !md.llm, '업체 관리자 대시보드(일간 방문자·문의, 개발 항목 없음)', `오늘 방문 ${md.visitors.today.sessions}`);
+    r = await M('/posts?kind=notice'); ok(r.status === 200, '업체 관리자: 공지 목록 허용');
+    r = await M('/prices?category=condo'); ok(r.status === 200 && (await r.json()).rows.length > 10, '업체 관리자: 콘도 시세 조회');
+    r = await M('/prices', { method: 'POST', body: JSON.stringify({ category: 'golf', name: '스모크테스트CC', today: 13000, prev: 12345, manual_lock: true }) }); ok(r.status === 200 && db.prepare("SELECT manual_lock, today FROM prices WHERE name='스모크테스트CC'").get().manual_lock === 1, '업체 관리자: 시세 수기 수정 + 잠금');
+    const dg = require('../lib/donga'); const ours = db.prepare("SELECT name FROM prices WHERE category='golf' AND COALESCE(manual_lock,0)=0").all(); ok(!ours.some(o => o.name === '스모크테스트CC') && typeof dg.enabled === 'function', '잠금 종목은 동아 자동 반영 대상에서 제외');
+    r = await M('/listings', { method: 'POST', body: JSON.stringify({ category: 'golf', title: '스모크 무기명 매물', kind: '무기명', name: '88CC', price: 50000 }) }); const lj = await r.json(); ok(r.status === 200 && lj.id, '업체 관리자: 전용관(무기명) 매물 등록');
+    r = await M('/listings', { method: 'POST', body: JSON.stringify({ category: 'tour', title: '스모크 투어', kind: '투어' }) }); ok(r.status === 403, '업체 관리자: 해외투어 매물 등록 403(열람만)');
+    r = await M('/clubs', { method: 'POST', body: JSON.stringify({ name: '스모크골프클럽', region: '수도권', holes: 18 }) }); const cj = await r.json(); ok(r.status === 200 && cj.id, '업체 관리자: 골프장 등록');
+    r = await M('/clubs/' + cj.id + '/generate', { method: 'POST', body: '{}' }); ok(r.status === 403, '업체 관리자: AI 생성 403');
+    r = await M('/clubs/' + cj.id, { method: 'DELETE' }); ok(r.status === 200, '업체 관리자: 골프장 삭제');
+    r = await M('/accounts', { method: 'POST', body: JSON.stringify({ login_id: 'smokestaff', pw: 'staff-pass-1', name: '직원A', dept: '골프 매매', phone: '010-0000-0000' }) }); const sj = await r.json(); ok(r.status === 200 && sj.id, '업체 관리자: 직원 계정 개설');
+    r = await M('/accounts', { method: 'POST', body: JSON.stringify({ login_id: 'smokemgr2', pw: 'manager-pass', name: 'X', role: 'manager' }) }); ok(r.status === 400, '업체 관리자: 관리자 권한 계정은 개설 불가');
+    r = await M('/accounts/' + db.prepare("SELECT id FROM admins WHERE login_id='admin'").get().id + '/password', { method: 'POST', body: JSON.stringify({ pw: 'hack-hack-hack' }) }); ok(r.status === 400, '업체 관리자: 총괄 비밀번호 변경 불가');
+    r = await M('/inquiries/' + inqList[0].id, { method: 'POST', body: JSON.stringify({ status: 'contacted', memo: '배정 테스트', assignee_id: sj.id }) }); ok(r.status === 200 && db.prepare('SELECT assignee_id FROM inquiries WHERE id=?').get(inqList[0].id).assignee_id === sj.id, '문의 담당자 배정');
+    r = await M('/inquiries/' + inqList[0].id + '/to-customer', { method: 'POST' }); const tc = await r.json(); ok(r.status === 200 && tc.id, '문의 → 고객 DB 등록');
+    r = await M('/inquiries/' + inqList[0].id + '/to-customer', { method: 'POST' }); ok((await r.json()).existed === true, '고객 DB 중복 등록 방지');
+    r = await M('/customers', { method: 'POST', body: JSON.stringify({ name: '홍길동', phone: '010-1111-2222', kind: 'member', category: 'golf', item: '88CC 정회원', assignee_id: sj.id }) }); ok(r.status === 200, '고객 직접 등록');
+    r = await M('/customers?assignee=' + sj.id); const cl = await r.json(); ok(r.status === 200 && cl.rows.length === 2 && cl.rows.every(x => x.assignee_name === '직원A'), '고객 DB 담당자 필터', `${cl.rows.length}건`);
+    r = await M('/customers/export.csv'); const ccsv = await r.text(); ok(r.status === 200 && ccsv.includes('홍길동') && ccsv.includes('직원A'), '고객 DB CSV');
+    // 직원 로그인: 계정 메뉴 없음, 계정 API 403, 시세·매물은 가능
+    r = await fetch(BASE + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'smokestaff', pw: 'staff-pass-1' }) }); const sck = (r.headers.get('set-cookie') || '').split(';')[0];
+    const ST = (p, opt = {}) => fetch(BASE + '/api/admin' + p, { ...opt, headers: { 'Content-Type': 'application/json', cookie: sck, ...(opt.headers || {}) } });
+    r = await ST('/me'); const sme = await r.json(); ok(r.status === 200 && sme.admin.role === 'staff' && !sme.views.includes('accounts') && sme.views.includes('prices') && sme.views.includes('listings'), '직원 로그인·메뉴');
+    r = await ST('/accounts'); ok(r.status === 403, '직원: 계정 관리 403');
+    r = await ST('/listings/' + lj.id, { method: 'DELETE' }); ok(r.status === 200, '직원: 매물 삭제 가능');
+    // 정지된 계정은 즉시 차단
+    r = await M('/accounts/' + sj.id, { method: 'POST', body: JSON.stringify({ active: false }) }); ok(r.status === 200, '직원 계정 정지');
+    r = await ST('/me'); ok(r.status === 401, '정지된 직원 토큰 즉시 차단');
+    r = await fetch(BASE + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'smokestaff', pw: 'staff-pass-1' }) }); ok(r.status === 403, '정지된 계정 로그인 403');
+    r = await M('/accounts/' + sj.id, { method: 'DELETE' }); ok(r.status === 200 && db.prepare('SELECT assignee_id FROM customers WHERE name=?').get('홍길동').assignee_id === null, '직원 계정 삭제 → 담당 배정 해제');
+    r = await A('/accounts'); const acc = await r.json(); ok(acc.accounts.length === 2 && acc.accounts[0].role === 'owner' && acc.accounts[1].role === 'manager', '계정 목록(총괄·업체 관리자)'); }
   r = await A('/settings', { method: 'POST', body: JSON.stringify({ inblog_url: 'https://blog.hanamember.co.kr' }) }); ok(r.status === 200, '설정 저장');
   r = await get('/'); ok(r.text.includes('https://blog.hanamember.co.kr'), '설정 반영(sameAs·푸터)');
   console.log(fails ? `\n실패 ${fails}건` : '\n모든 스모크 테스트 통과');

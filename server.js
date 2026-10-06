@@ -22,6 +22,7 @@ const { page } = layout;
 
 seedIfEmpty();
 try { const mg = require('./lib/migrations').run(); if (mg.length) console.log('[migrate] ' + mg.join(' · ')); } catch (e) { console.error('[migrate] 실패', e.message); }
+try { require('./lib/auth').ensureManager(); } catch (e) { console.error('[auth] 업체 관리자 계정 생성 실패', e.message); }
 try { const g = require('./lib/clubgroup').sync(); if (g.changed) console.log(`[clubs] 골프장 ${g.clubs}곳 · 회원권 종류 ${g.variants}건 묶음`); } catch (e) { console.error('[clubs] 묶기 실패', e.message); }
 try { const f = require('./lib/content/clubtext').fillAll(); if (f.filled || f.summaries) console.log(`[clubs] 해설 자동 작성 ${f.filled}곳 · 요약 갱신 ${f.summaries}곳`); } catch (e) { console.error('[clubs] 해설 작성 실패', e.message); }
 try { const n = require('./lib/clubdetail').seed(path.join(__dirname, 'data', 'seed', 'club-details.json')); if (n) console.log(`[clubs] 회원권 세부 정보 ${n}곳 반영`); } catch (e) { console.error('[clubs] 세부 정보 반영 실패', e.message); }
