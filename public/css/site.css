@@ -324,3 +324,10 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(31,58,115,.25);bo
 /* 헤더 축소: 높이를 줄이면(본문이 밀려 올라감) 스크롤 경계에서 떨리므로, 높이는 그대로 두고 위 띠만큼 transform으로 밀어 올린다 */
 .header-v2{--hdtop:104px;transition:transform .28s ease,box-shadow .2s;will-change:transform}.header-v2.scrolled{transform:translateY(calc(-1 * var(--hdtop)))}
 @media (max-width:1360px){.header-v2{--hdtop:96px}}@media (max-width:1100px){.header-v2{--hdtop:88px}}@media (max-width:900px){.header-v2.scrolled{transform:none}}
+
+/* 함께한 파트너: 로고 2줄(1줄 왼쪽으로, 2줄 오른쪽으로 흐름) */
+.partners .marquee{margin:14px 0}.partners .marquee-track{gap:64px;animation:tick-3 36s linear infinite;align-items:center}.partners .marquee-rev .marquee-track{animation-name:tick-rev}.partners .marquee:hover .marquee-track{animation-play-state:paused}
+.plogo{display:inline-flex;align-items:center;height:48px;flex:0 0 auto}.plogo img{height:40px;width:auto;max-width:none;display:block;opacity:.92}
+@keyframes tick-3{from{transform:translateX(0)}to{transform:translateX(-33.333%)}}@keyframes tick-rev{from{transform:translateX(-33.333%)}to{transform:translateX(0)}}
+.plogo img.wide{height:22px}
+@media (max-width:640px){.partners .marquee-track{gap:40px}.plogo img{height:30px}}

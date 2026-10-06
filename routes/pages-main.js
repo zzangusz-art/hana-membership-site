@@ -172,7 +172,7 @@ ${nb.length ? `<section class="section nblog"><div class="wrap"><div class="sec-
   </form>
 </div></section>
 
-<section class="partners"><div class="wrap"><p class="eyebrow center">함께한 파트너</p><div class="marquee"><div class="marquee-track">${['한국골프회원권경영인협회', 'NEOWIZ', '미래신용정보', '동양생명', 'samyang', 'POSCO ICT', '한글과컴퓨터', 'SEOUL DRAGON CITY', '한국골프회원권경영인협회', 'NEOWIZ', '미래신용정보', '동양생명', 'samyang', 'POSCO ICT', '한글과컴퓨터', 'SEOUL DRAGON CITY'].map(p => `<span>${p}</span>`).join('')}</div></div></div></section>`;
+<section class="partners"><div class="wrap"><p class="eyebrow center">함께한 파트너</p>${(() => { const rows = [[['kgmma', '한국골프회원권경영인협회'], ['neowiz', 'NEOWIZ'], ['mirae', '미래신용정보'], ['dongyang', '동양생명']], [['samyang', '삼양'], ['poscodx', 'POSCO DX'], ['hancom', '한글과컴퓨터'], ['sdc', '서울드래곤시티']]]; const logo = ([k, n]) => `<span class="plogo"><img class="${k === 'sdc' ? 'wide' : ''}" src="/img/partners/${k}.png" alt="${n}" loading="lazy" height="${k === 'sdc' ? 22 : 40}"></span>`; return rows.map((r, i) => `<div class="marquee${i ? ' marquee-rev' : ''}"><div class="marquee-track">${[...r, ...r, ...r].map(logo).join('')}</div></div>`).join(''); })()}</div></section>`;
 
   res.send(page({
     title: `하나회원권거래소 | 골프회원권·무기명 골프회원권·콘도회원권 시세 조회·구매·매입`,
