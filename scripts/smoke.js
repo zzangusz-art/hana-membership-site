@@ -130,7 +130,7 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     rr = await fetch(BASE + '/', { headers: { 'user-agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' } }); ok(!(rr.headers.getSetCookie ? rr.headers.getSetCookie() : []).some(c => /^hsid=/.test(c)), '봇은 방문으로 기록하지 않음');
   }
   // 관리자
-  { const rr = await get('/listings?category=condo'); const m = rr.text.match(/\/img\/listings\/[^"']+-navy\.webp/); ok(rr.status === 200 && m && !rr.text.includes('-blue.webp'), '콘도 썸네일 -navy 경로 사용(옛 -blue 없음)'); if (m) { const ri = await fetch(BASE + m[0]); ok(ri.status === 200 && /image\/webp/.test(ri.headers.get('content-type') || ''), '콘도 썸네일 파일 서빙'); await ri.arrayBuffer(); } }
+  { const rr = await get('/listings?category=condo'); const m = rr.text.match(/\/img\/listings\/[^"']+-v3\.webp/); ok(rr.status === 200 && m && !rr.text.includes('-blue.webp') && !rr.text.includes('-navy.webp'), '콘도 썸네일 -v3 경로 사용(옛 파일 없음)'); if (m) { const ri = await fetch(BASE + m[0]); ok(ri.status === 200 && /image\/webp/.test(ri.headers.get('content-type') || ''), '콘도 썸네일 파일 서빙'); await ri.arrayBuffer(); } }
   r = await fetch(BASE + '/api/admin/dashboard'); ok(r.status === 401, '관리자 미로그인 401');
   r = await fetch(BASE + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'admin', pw: 'hana1234!' }) });
   const cookie = (r.headers.get('set-cookie') || '').split(';')[0]; ok(r.status === 200 && cookie.startsWith('hana_admin='), '관리자 로그인');
