@@ -219,7 +219,16 @@ CREATE TABLE IF NOT EXISTS customers (
   created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_customers_phone ON customers(phone);
+CREATE TABLE IF NOT EXISTS customer_notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id INTEGER NOT NULL, admin_id INTEGER, kind TEXT NOT NULL DEFAULT 'memo', -- memo|inquiry|system
+  body TEXT NOT NULL, created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_cnotes_customer ON customer_notes(customer_id);
 `);
+ensureColumn('customers', 'source', "TEXT NOT NULL DEFAULT 'manual'"); // inquiry|manual
+ensureColumn('customers', 'last_note_at', 'INTEGER');
+ensureColumn('inquiries', 'customer_id', 'INTEGER');
 
 // ── 최초 관리자 ──
 if (db.prepare('SELECT COUNT(*) c FROM admins').get().c === 0) {

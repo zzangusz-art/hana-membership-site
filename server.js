@@ -23,6 +23,7 @@ const { page } = layout;
 seedIfEmpty();
 try { const mg = require('./lib/migrations').run(); if (mg.length) console.log('[migrate] ' + mg.join(' · ')); } catch (e) { console.error('[migrate] 실패', e.message); }
 try { require('./lib/auth').ensureManager(); } catch (e) { console.error('[auth] 업체 관리자 계정 생성 실패', e.message); }
+try { const n = require('./lib/customers').importAll(); if (n) console.log(`[customers] 문의 ${n}건 고객 DB 등록`); } catch (e) { console.error('[customers] 문의 가져오기 실패', e.message); }
 try { const g = require('./lib/clubgroup').sync(); if (g.changed) console.log(`[clubs] 골프장 ${g.clubs}곳 · 회원권 종류 ${g.variants}건 묶음`); } catch (e) { console.error('[clubs] 묶기 실패', e.message); }
 try { const f = require('./lib/content/clubtext').fillAll(); if (f.filled || f.summaries) console.log(`[clubs] 해설 자동 작성 ${f.filled}곳 · 요약 갱신 ${f.summaries}곳`); } catch (e) { console.error('[clubs] 해설 작성 실패', e.message); }
 try { const n = require('./lib/clubdetail').seed(path.join(__dirname, 'data', 'seed', 'club-details.json')); if (n) console.log(`[clubs] 회원권 세부 정보 ${n}곳 반영`); } catch (e) { console.error('[clubs] 세부 정보 반영 실패', e.message); }
@@ -67,7 +68,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.static(PUBLIC_DIR, { maxAge: '7d', index: false, setHeaders: (res, p) => { if (/\.html$/.test(p)) res.setHeader('Cache-Control', 'no-cache'); } }));
+app.use(express.static(PUBLIC_DIR, { maxAge: '7d', index: false, setHeaders: (res, p) => { if (/\.html$/.test(p) || /[\/]admin[\/]/.test(p)) res.setHeader('Cache-Control', 'no-cache'); } }));
 
 // 임시 도메인(Railway *.up.railway.app 등)으로 접속되면 검색엔진 색인 금지 — 정식 도메인 연결 전 중복 색인 방지
 app.use((req, res, next) => {
@@ -127,7 +128,8 @@ app.use('/api', require('./routes/api').router);
 app.use('/api/admin', rateLimit({ windowMs: 60 * 1000, max: 200, standardHeaders: true, legacyHeaders: false }));
 const adminRoutes = require('./routes/admin');
 app.use('/api/admin', adminRoutes.router);
-app.get(['/admin', '/admin/*'], (req, res) => { res.setHeader('X-Robots-Tag', 'noindex'); res.setHeader('Cache-Control', 'no-cache'); res.sendFile(path.join(PUBLIC_DIR, 'admin', 'index.html')); });
+// 관리자 SPA: 스크립트·CSS 주소에 STAMP를 붙여 배포 후 옛 admin.js가 캐시로 남는 문제를 막는다(2026-10-06 계정·담당자 메뉴 오류 원인)
+app.get(['/admin', '/admin/*'], (req, res) => { res.setHeader('X-Robots-Tag', 'noindex'); res.setHeader('Cache-Control', 'no-cache'); const html = fs.readFileSync(path.join(PUBLIC_DIR, 'admin', 'index.html'), 'utf8').replace('/admin/admin.css"', `/admin/admin.css?v=${STAMP}"`).replace('/admin/admin.js"', `/admin/admin.js?v=${STAMP}"`); res.type('html').send(html); });
 
 // 공개 페이지
 app.use(require('./routes/pages-main').router);

@@ -23,6 +23,7 @@ const shot = require('../lib/screenshot');
 const og = require('../lib/og');
 const indexnow = require('../lib/indexnow');
 const donga = require('../lib/donga');
+const customers = require('../lib/customers');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -68,11 +69,13 @@ router.get('/dashboard', (req, res) => {
   const base = {
     today, week: wk, kickoff: report.kickoff(), range: report.weekRange(wk), role: req.admin.role,
     inquiries: { new: q("SELECT COUNT(*) c FROM inquiries WHERE status='new'").c, total: q('SELECT COUNT(*) c FROM inquiries').c, today: q('SELECT COUNT(*) c FROM inquiries WHERE created_at>=?', dayStart(today)).c, unassigned: q("SELECT COUNT(*) c FROM inquiries WHERE status<>'done' AND assignee_id IS NULL").c },
-    customers: { total: q('SELECT COUNT(*) c FROM customers').c, active: q("SELECT COUNT(*) c FROM customers WHERE status IN ('new','contacting')").c },
     listings: { open: q("SELECT COUNT(*) c FROM listings WHERE status='open'").c, byCat: db.prepare("SELECT category, kind, COUNT(*) c FROM listings WHERE status='open' GROUP BY category, kind").all() },
     visitors,
     prices: { golf: g.total, lastUpdated: g.lastUpdated, uploads: q('SELECT COUNT(*) c FROM price_uploads').c, all: db.prepare('SELECT category, COUNT(*) c, MAX(updated_at) u, SUM(manual_lock) locked FROM prices GROUP BY category').all(), donga: { enabled: donga.enabled(), time: donga.syncTime(), last: dongaLast } },
     inflow: (() => { try { const s = inflow.summary(report.weekRange(wk).start, today); return { total: s.total, byChannel: s.byChannel, events: s.events }; } catch (_) { return null; } })(),
+    blog: { published: q("SELECT COUNT(*) c FROM posts WHERE kind='blog' AND status='published'").c, scheduled: q("SELECT COUNT(*) c FROM posts WHERE kind='blog' AND status='scheduled'").c, week: q("SELECT COUNT(*) c FROM posts WHERE kind='blog' AND status='published' AND published_at>=?", dayStart(ad(today, -6))).c, today: q("SELECT COUNT(*) c FROM posts WHERE kind='blog' AND status='published' AND published_at>=?", dayStart(today)).c,
+      recent: db.prepare("SELECT id, title, slug, type, published_at FROM posts WHERE kind='blog' AND status='published' ORDER BY published_at DESC LIMIT 5").all(), next: db.prepare("SELECT id, title, slug, type, published_at FROM posts WHERE kind='blog' AND status='scheduled' ORDER BY published_at LIMIT 5").all() },
+    customers: customers.counts(),
   };
   if (req.admin.role !== 'owner') return res.json(base);
   res.json({
@@ -158,8 +161,7 @@ router.delete('/listings/:id', (req, res) => { if (!listingWritable(req, res, nu
 // ── 콘텐츠(블로그·공지·뉴스) — 블로그는 총괄 전용, 공지·뉴스는 전 권한 ──
 function postKindAllowed(req, res, kind) { if (req.admin.role !== 'owner' && kind === 'blog') { res.status(403).json({ error: '블로그 콘텐츠는 총괄 관리자 전용입니다.' }); return false; } return true; }
 router.get('/posts', (req, res) => {
-  const kind = ['blog', 'notice', 'news'].includes(req.query.kind) ? req.query.kind : 'blog';
-  if (!postKindAllowed(req, res, kind)) return;
+  const kind = ['blog', 'notice', 'news'].includes(req.query.kind) ? req.query.kind : 'blog'; // 블로그는 전 권한 열람 가능(발행 현황), 쓰기는 총괄만
   const status = req.query.status ? ' AND status=?' : ''; const args = [kind]; if (req.query.status) args.push(req.query.status);
   res.json(db.prepare(`SELECT id,kind,type,slug,title,status,source,model,gen_slot,inblog_status,inblog_error,inblog_url,published_at,created_at,updated_at FROM posts WHERE kind=?${status} ORDER BY created_at DESC LIMIT 300`).all(...args));
 });
@@ -210,52 +212,27 @@ router.post('/automation/topics', (req, res) => { const b = req.body || {}; if (
 router.delete('/automation/topics/:id', (req, res) => { db.prepare('DELETE FROM topic_pool WHERE id=?').run(req.params.id); res.json({ ok: true }); });
 router.get('/automation/inblog-test', async (req, res) => { try { res.json({ ok: true, blog: await inblog.me() }); } catch (e) { res.status(400).json({ error: e.message }); } });
 
-// ── 문의·매매신청 (담당자 배정) ──
-router.get('/inquiries', (req, res) => res.json(db.prepare('SELECT i.*, a.name assignee_name, (SELECT id FROM customers c WHERE c.inquiry_id=i.id LIMIT 1) customer_id FROM inquiries i LEFT JOIN admins a ON a.id=i.assignee_id ORDER BY i.id DESC LIMIT 500').all()));
+// ── 문의·고객 통합 관리 (lib/customers.js) ──
+// 홈페이지 문의는 접수 즉시 고객 DB에 자동 등록된다. 구 /inquiries API는 호환용으로 남긴다.
+router.get('/inquiries', (req, res) => res.json(db.prepare('SELECT i.*, a.name assignee_name FROM inquiries i LEFT JOIN admins a ON a.id=i.assignee_id ORDER BY i.id DESC LIMIT 500').all()));
 router.post('/inquiries/:id', (req, res) => {
   const b = req.body || {}; const cur = db.prepare('SELECT * FROM inquiries WHERE id=?').get(req.params.id); if (!cur) return res.status(404).json({ error: 'not found' });
   const assignee = 'assignee_id' in b ? (b.assignee_id ? Number(b.assignee_id) : null) : cur.assignee_id;
-  db.prepare('UPDATE inquiries SET status=?, memo=?, assignee_id=?, updated_at=? WHERE id=?').run(b.status || cur.status || 'new', 'memo' in b ? (b.memo || '') : (cur.memo || ''), assignee, now(), cur.id); res.json({ ok: true });
+  db.prepare('UPDATE inquiries SET status=?, memo=?, assignee_id=?, updated_at=? WHERE id=?').run(b.status || cur.status || 'new', 'memo' in b ? (b.memo || '') : (cur.memo || ''), assignee, now(), cur.id);
+  if (cur.customer_id) { try { customers.quick(cur.customer_id, { assignee_id: assignee }, req.admin.id); } catch (_) { /* no-op */ } }
+  res.json({ ok: true });
 });
 router.delete('/inquiries/:id', (req, res) => { db.prepare('DELETE FROM inquiries WHERE id=?').run(req.params.id); res.json({ ok: true }); });
-// 문의 → 고객 DB 등록(같은 문의로 이미 등록돼 있으면 그 고객 반환)
-router.post('/inquiries/:id/to-customer', (req, res) => {
-  const i = db.prepare('SELECT * FROM inquiries WHERE id=?').get(req.params.id); if (!i) return res.status(404).json({ error: 'not found' });
-  const dup = db.prepare('SELECT id FROM customers WHERE inquiry_id=?').get(i.id); if (dup) return res.json({ ok: true, id: dup.id, existed: true });
-  const ts = now();
-  const r = db.prepare('INSERT INTO customers (name,phone,email,kind,category,item,budget,memo,status,assignee_id,inquiry_id,created_by,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(i.name, i.phone, i.email || '', ['buy', 'sell', 'consult'].includes(i.kind) ? i.kind : 'consult', i.category || '', i.item || '', i.budget || '', i.message ? `[문의 내용] ${i.message}` : '', 'new', i.assignee_id || req.admin.id, i.id, req.admin.id, ts, ts);
-  res.json({ ok: true, id: r.lastInsertRowid });
-});
+router.post('/inquiries/:id/to-customer', (req, res) => { const i = db.prepare('SELECT * FROM inquiries WHERE id=?').get(req.params.id); if (!i) return res.status(404).json({ error: 'not found' }); res.json({ ok: true, ...customers.fromInquiry(i, req.admin.id) }); });
 
-// ── 회원·고객 DB ──
-const CUST_KIND = ['buy', 'sell', 'consult', 'member']; const CUST_STATUS = ['new', 'contacting', 'contract', 'hold', 'closed'];
-router.get('/customers', (req, res) => {
-  const w = []; const a = [];
-  if (req.query.q) { w.push('(c.name LIKE ? OR c.phone LIKE ? OR c.item LIKE ? OR c.memo LIKE ?)'); const q = `%${String(req.query.q).trim()}%`; a.push(q, q, q, q); }
-  if (req.query.status && CUST_STATUS.includes(req.query.status)) { w.push('c.status=?'); a.push(req.query.status); }
-  if (req.query.kind && CUST_KIND.includes(req.query.kind)) { w.push('c.kind=?'); a.push(req.query.kind); }
-  if (req.query.assignee) { w.push(req.query.assignee === 'none' ? 'c.assignee_id IS NULL' : 'c.assignee_id=?'); if (req.query.assignee !== 'none') a.push(Number(req.query.assignee)); }
-  const rows = db.prepare(`SELECT c.*, a.name assignee_name, b.name created_by_name FROM customers c LEFT JOIN admins a ON a.id=c.assignee_id LEFT JOIN admins b ON b.id=c.created_by ${w.length ? 'WHERE ' + w.join(' AND ') : ''} ORDER BY c.updated_at DESC LIMIT 1000`).all(...a);
-  res.json({ rows, total: db.prepare('SELECT COUNT(*) c FROM customers').get().c, byStatus: db.prepare('SELECT status, COUNT(*) c FROM customers GROUP BY status').all() });
-});
-router.post('/customers', (req, res) => {
-  const b = req.body || {}; const name = String(b.name || '').trim(); const phone = String(b.phone || '').trim();
-  if (!name || !phone) return res.status(400).json({ error: '성함·연락처 필요' });
-  const kind = CUST_KIND.includes(b.kind) ? b.kind : 'consult'; const status = CUST_STATUS.includes(b.status) ? b.status : 'new'; const ts = now();
-  const assignee = b.assignee_id ? Number(b.assignee_id) : null;
-  if (b.id) { db.prepare('UPDATE customers SET name=?,phone=?,email=?,kind=?,category=?,item=?,budget=?,memo=?,status=?,assignee_id=?,updated_at=? WHERE id=?').run(name, phone, b.email || '', kind, b.category || '', b.item || '', b.budget || '', b.memo || '', status, assignee, ts, b.id); return res.json({ ok: true, id: Number(b.id) }); }
-  const r = db.prepare('INSERT INTO customers (name,phone,email,kind,category,item,budget,memo,status,assignee_id,inquiry_id,created_by,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(name, phone, b.email || '', kind, b.category || '', b.item || '', b.budget || '', b.memo || '', status, assignee, b.inquiry_id ? Number(b.inquiry_id) : null, req.admin.id, ts, ts);
-  res.json({ ok: true, id: r.lastInsertRowid });
-});
-router.delete('/customers/:id', (req, res) => { db.prepare('DELETE FROM customers WHERE id=?').run(req.params.id); res.json({ ok: true }); });
-router.get('/customers/export.csv', (req, res) => {
-  const K = { buy: '매수', sell: '매도', consult: '상담', member: '보유회원' }; const S = { new: '신규', contacting: '상담중', contract: '계약', hold: '보류', closed: '종료' };
-  const rows = db.prepare('SELECT c.*, a.name assignee_name FROM customers c LEFT JOIN admins a ON a.id=c.assignee_id ORDER BY c.id').all();
-  const q = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"'; const kst = (ts) => new Date(ts * 1000 + 9 * 3600e3).toISOString().slice(0, 16).replace('T', ' ');
-  const head = ['번호', '성함', '연락처', '이메일', '구분', '분류', '관심 종목', '예산', '상태', '담당자', '메모', '등록', '수정'];
-  const csv = [head.map(q).join(','), ...rows.map(r => [r.id, r.name, r.phone, r.email, K[r.kind] || r.kind, r.category, r.item, r.budget, S[r.status] || r.status, r.assignee_name, r.memo, kst(r.created_at), kst(r.updated_at)].map(q).join(','))].join('\r\n');
-  res.setHeader('Content-Type', 'text/csv; charset=utf-8'); res.setHeader('Content-Disposition', `attachment; filename="customers_${kstDate()}.csv"`); res.send('﻿' + csv);
-});
+router.get('/customers', (req, res) => res.json({ rows: customers.list({ q: req.query.q, status: req.query.status, kind: req.query.kind, assignee: req.query.assignee, source: req.query.source }), ...customers.counts(), kinds: customers.KIND, statuses: customers.STATUS }));
+router.get('/customers/export.csv', (req, res) => { res.setHeader('Content-Type', 'text/csv; charset=utf-8'); res.setHeader('Content-Disposition', `attachment; filename="customers_${kstDate()}.csv"`); res.send(customers.csv()); });
+router.get('/customers/:id', (req, res) => { const c = customers.list({ limit: 5000 }).find(x => x.id === Number(req.params.id)); if (!c) return res.status(404).json({ error: 'not found' }); res.json({ customer: c, notes: customers.notes(c.id) }); });
+router.post('/customers', (req, res) => { try { res.json({ ok: true, id: customers.save(req.body || {}, req.admin.id) }); } catch (e) { res.status(400).json({ error: e.message }); } });
+router.post('/customers/:id/quick', (req, res) => { try { customers.quick(req.params.id, req.body || {}, req.admin.id); res.json({ ok: true }); } catch (e) { res.status(400).json({ error: e.message }); } });
+router.post('/customers/:id/notes', (req, res) => { const id = customers.addNote(Number(req.params.id), req.body?.body, req.admin.id, 'memo'); if (!id) return res.status(400).json({ error: '내용을 입력하세요' }); res.json({ ok: true, id, notes: customers.notes(Number(req.params.id)) }); });
+router.delete('/customers/:id/notes/:nid', (req, res) => { db.prepare("DELETE FROM customer_notes WHERE id=? AND customer_id=? AND kind='memo'").run(req.params.nid, req.params.id); res.json({ ok: true }); });
+router.delete('/customers/:id', (req, res) => { customers.remove(req.params.id); res.json({ ok: true }); });
 
 // ── 유튜브 ──
 router.get('/videos', (req, res) => res.json(db.prepare('SELECT * FROM videos ORDER BY sort, id DESC').all()));
@@ -276,7 +253,7 @@ router.get('/audit', (req, res) => res.json({ latest: audit.latest(), history: a
 const ymd = (v, def) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) ? String(v) : def);
 const { addDays } = require('../lib/util');
 router.get('/inflow', (req, res) => { const to = ymd(req.query.to, kstDate()); const from = ymd(req.query.from, addDays(to, -6)); res.json(inflow.summary(from, to)); });
-router.get('/inflow/sessions', (req, res) => { const to = ymd(req.query.to, kstDate()); const from = ymd(req.query.from, addDays(to, -6)); res.json(inflow.sessions({ from, to, channel: String(req.query.channel || ''), source: String(req.query.source || ''), conv: String(req.query.conv || ''), limit: req.query.limit })); });
+router.get('/inflow/sessions', (req, res) => { const to = ymd(req.query.to, kstDate()); const from = ymd(req.query.from, addDays(to, -6)); const g = (k) => String(req.query[k] || ''); res.json(inflow.sessions({ from, to, channel: g('channel'), source: g('source'), conv: g('conv'), keyword: g('keyword'), campaign: g('campaign'), landing: g('landing'), date: ymd(req.query.date, ''), path: g('path'), event: g('event'), device: g('device'), ref: g('ref'), limit: req.query.limit })); });
 router.get('/inflow/session/:id', (req, res) => { const t = inflow.trail(String(req.params.id)); if (!t) return res.status(404).json({ error: '방문 기록이 없습니다.' }); res.json(t); });
 router.get('/inflow/export.csv', (req, res) => {
   const to = ymd(req.query.to, kstDate()); const from = ymd(req.query.from, addDays(to, -6));

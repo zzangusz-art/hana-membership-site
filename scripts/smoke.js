@@ -170,9 +170,12 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     r = await fetch(BASE + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'hanamember', pw: 'smoke-mgr-1234' }) });
     const mck = (r.headers.get('set-cookie') || '').split(';')[0]; ok(r.status === 200 && mck.startsWith('hana_admin='), '업체 관리자 로그인');
     const M = (p, opt = {}) => fetch(BASE + '/api/admin' + p, { ...opt, headers: { 'Content-Type': 'application/json', cookie: mck, ...(opt.headers || {}) } });
-    r = await M('/me'); const mme = await r.json(); ok(mme.admin.role === 'manager' && !mme.views.includes('settings') && !mme.views.includes('auto') && !mme.views.includes('reports') && !mme.views.includes('audit') && !mme.views.includes('plan') && !mme.views.includes('posts') && mme.views.includes('accounts') && mme.views.includes('customers'), '업체 관리자 메뉴에서 개발 메뉴 제외', mme.views.join(','));
-    let blocked = 0; for (const p of ['/settings', '/automation', '/plan', '/reports', '/audit', '/traffic', '/posts?kind=blog']) { const rr = await M(p); if (rr.status === 403) blocked++; await rr.text(); }
-    ok(blocked === 7, '업체 관리자: 개발·운영 API 7개 403', `${blocked}/7`);
+    r = await M('/me'); const mme = await r.json(); ok(mme.admin.role === 'manager' && !mme.views.includes('settings') && !mme.views.includes('auto') && !mme.views.includes('reports') && !mme.views.includes('audit') && !mme.views.includes('plan') && mme.views.includes('posts') && mme.views.includes('accounts') && mme.views.includes('customers'), '업체 관리자 메뉴에서 개발 메뉴 제외', mme.views.join(','));
+    let blocked = 0; for (const p of ['/settings', '/automation', '/plan', '/reports', '/audit', '/traffic']) { const rr = await M(p); if (rr.status === 403) blocked++; await rr.text(); }
+    ok(blocked === 6, '업체 관리자: 개발·운영 API 6개 403', `${blocked}/6`);
+    r = await M('/posts?kind=blog'); const bl = await r.json(); ok(r.status === 200 && bl.length >= 1, '업체 관리자: 블로그 발행 현황 열람');
+    r = await M('/posts', { method: 'POST', body: JSON.stringify({ kind: 'blog', title: 'x', body_html: '<p>x</p>' }) }); ok(r.status === 403, '업체 관리자: 블로그 작성 403');
+    r = await M('/posts/' + bl[0].id + '/publish', { method: 'POST', body: '{}' }); ok(r.status === 403, '업체 관리자: 블로그 발행 403');
     r = await M('/dashboard'); const md = await r.json(); ok(r.status === 200 && md.role === 'manager' && md.visitors && md.visitors.days.length === 14 && md.visitors.today.sessions >= 1 && !md.scheduler && !md.llm, '업체 관리자 대시보드(일간 방문자·문의, 개발 항목 없음)', `오늘 방문 ${md.visitors.today.sessions}`);
     r = await M('/posts?kind=notice'); ok(r.status === 200, '업체 관리자: 공지 목록 허용');
     r = await M('/prices?category=condo'); ok(r.status === 200 && (await r.json()).rows.length > 10, '업체 관리자: 콘도 시세 조회');
@@ -187,11 +190,19 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     r = await M('/accounts', { method: 'POST', body: JSON.stringify({ login_id: 'smokemgr2', pw: 'manager-pass', name: 'X', role: 'manager' }) }); ok(r.status === 400, '업체 관리자: 관리자 권한 계정은 개설 불가');
     r = await M('/accounts/' + db.prepare("SELECT id FROM admins WHERE login_id='admin'").get().id + '/password', { method: 'POST', body: JSON.stringify({ pw: 'hack-hack-hack' }) }); ok(r.status === 400, '업체 관리자: 총괄 비밀번호 변경 불가');
     r = await M('/inquiries/' + inqList[0].id, { method: 'POST', body: JSON.stringify({ status: 'contacted', memo: '배정 테스트', assignee_id: sj.id }) }); ok(r.status === 200 && db.prepare('SELECT assignee_id FROM inquiries WHERE id=?').get(inqList[0].id).assignee_id === sj.id, '문의 담당자 배정');
-    r = await M('/inquiries/' + inqList[0].id + '/to-customer', { method: 'POST' }); const tc = await r.json(); ok(r.status === 200 && tc.id, '문의 → 고객 DB 등록');
-    r = await M('/inquiries/' + inqList[0].id + '/to-customer', { method: 'POST' }); ok((await r.json()).existed === true, '고객 DB 중복 등록 방지');
-    r = await M('/customers', { method: 'POST', body: JSON.stringify({ name: '홍길동', phone: '010-1111-2222', kind: 'member', category: 'golf', item: '88CC 정회원', assignee_id: sj.id }) }); ok(r.status === 200, '고객 직접 등록');
-    r = await M('/customers?assignee=' + sj.id); const cl = await r.json(); ok(r.status === 200 && cl.rows.length === 2 && cl.rows.every(x => x.assignee_name === '직원A'), '고객 DB 담당자 필터', `${cl.rows.length}건`);
-    r = await M('/customers/export.csv'); const ccsv = await r.text(); ok(r.status === 200 && ccsv.includes('홍길동') && ccsv.includes('직원A'), '고객 DB CSV');
+    // 문의·고객 통합: 홈페이지 문의는 접수 즉시 고객으로 자동 등록
+    const auto = db.prepare('SELECT * FROM customers WHERE inquiry_id=?').get(inqList[0].id); ok(auto && auto.source === 'inquiry' && auto.assignee_id === sj.id, '문의 접수 → 고객 자동 등록 + 담당자 동기화');
+    r = await M('/inquiries/' + inqList[0].id + '/to-customer', { method: 'POST' }); ok((await r.json()).existed === true, '같은 문의 중복 등록 방지');
+    r = await fetch(BASE + '/api/inquiry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'sell', name: inqList[0].name, phone: inqList[0].phone, agree: 1, message: '재문의 테스트' }) }); ok(r.status === 200, '같은 연락처 재문의 접수');
+    const merged = db.prepare('SELECT COUNT(*) c FROM customers WHERE phone=?').get(inqList[0].phone).c; const mnotes = db.prepare("SELECT COUNT(*) c FROM customer_notes WHERE customer_id=? AND kind='inquiry'").get(auto.id).c; ok(merged === 1 && mnotes === 2, '재문의는 새 고객을 만들지 않고 기록으로 합침', `고객 ${merged} · 문의 기록 ${mnotes}`);
+    r = await M('/customers', { method: 'POST', body: JSON.stringify({ name: '홍길동', phone: '010-1111-2222', kind: 'member', category: 'golf', item: '88CC 정회원', assignee_id: sj.id, note: '첫 통화: 정회원 선호' }) }); const hj = await r.json(); ok(r.status === 200 && hj.id, '고객 직접 등록(+첫 상담 기록)');
+    r = await M('/customers/' + hj.id + '/notes', { method: 'POST', body: JSON.stringify({ body: '2차 통화: 다음 주 재연락' }) }); ok(r.status === 200 && (await r.json()).notes.filter(n => n.kind === 'memo').length === 2, '상담 기록 추가');
+    r = await M('/customers/' + hj.id + '/quick', { method: 'POST', body: JSON.stringify({ status: 'contacting' }) }); ok(r.status === 200 && db.prepare("SELECT COUNT(*) c FROM customer_notes WHERE customer_id=? AND kind='system'").get(hj.id).c >= 2, '표에서 상태 변경 → 변경 기록 자동');
+    r = await M('/customers/' + auto.id + '/quick', { method: 'POST', body: JSON.stringify({ status: 'closed' }) }); ok(r.status === 200 && db.prepare('SELECT status FROM inquiries WHERE id=?').get(inqList[0].id).status === 'done', '고객 상태 → 문의 상태 동기화');
+    r = await M('/customers?assignee=' + sj.id + '&status='); const cl = await r.json(); ok(r.status === 200 && cl.rows.length === 2 && cl.rows.every(x => x.assignee_name === '직원A') && cl.rows.some(x => x.inquiry_id), '통합 목록(담당자 필터·문의 출처 포함)', `${cl.rows.length}건`);
+    r = await M('/customers/' + hj.id); const cd = await r.json(); ok(r.status === 200 && cd.customer.name === '홍길동' && cd.notes.length >= 3, '고객 상세(상담 기록 시간순)');
+    r = await M('/customers/export.csv'); const ccsv = await r.text(); ok(r.status === 200 && ccsv.includes('홍길동') && ccsv.includes('직원A') && ccsv.includes('홈페이지 문의'), '고객 DB CSV');
+    { const today = require('../lib/util').kstDate(); r = await A(`/inflow/sessions?from=${today}&to=${today}&keyword=${encodeURIComponent('골프회원권 시세')}`); const k1 = await r.json(); r = await A(`/inflow/sessions?from=${today}&to=${today}&path=${encodeURIComponent('/golf')}&event=tel`); const k2 = await r.json(); r = await A(`/inflow/sessions?from=${today}&to=${today}&date=${today}&conv=inq`); const k3 = await r.json(); ok(k1.length >= 1 && k2.length >= 1 && k3.length >= 1, '유입 상세 필터(검색어·페이지+행동·날짜+전환)', `${k1.length}/${k2.length}/${k3.length}`); }
     // 직원 로그인: 계정 메뉴 없음, 계정 API 403, 시세·매물은 가능
     r = await fetch(BASE + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'smokestaff', pw: 'staff-pass-1' }) }); const sck = (r.headers.get('set-cookie') || '').split(';')[0];
     const ST = (p, opt = {}) => fetch(BASE + '/api/admin' + p, { ...opt, headers: { 'Content-Type': 'application/json', cookie: sck, ...(opt.headers || {}) } });

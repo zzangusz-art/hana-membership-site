@@ -45,6 +45,8 @@ router.post('/inquiry', inqLimit, (req, res) => {
   const info = db.prepare('INSERT INTO inquiries (kind,category,name,phone,email,item,budget,message,agree,ip,ua,referrer,created_at,updated_at,session_id,src_channel,src_source,src_medium,src_campaign,src_keyword,src_landing) VALUES (?,?,?,?,?,?,?,?,1,?,?,?,?,?,?,?,?,?,?,?,?)')
     .run(kind, String(b.category || '').slice(0, 20), name, phone, String(b.email || '').slice(0, 80), String(b.item || '').slice(0, 80), String(b.budget || '').slice(0, 60), String(b.message || '').slice(0, 1500), (req.headers['x-forwarded-for'] || req.ip || '').toString().split(',')[0].slice(0, 45), String(req.headers['user-agent'] || '').slice(0, 200), String(req.headers.referer || '').slice(0, 200), ts, ts, at.session_id || '', at.src_channel || '', at.src_source || '', at.src_medium || '', at.src_campaign || '', at.src_keyword || '', at.src_landing || '');
   try { inflow.linkInquiry(req, info.lastInsertRowid); } catch (_) { /* no-op */ }
+  // 접수 즉시 고객 DB에 자동 등록(관리자 → 문의·고객 관리)
+  try { require('../lib/customers').fromInquiry(db.prepare('SELECT * FROM inquiries WHERE id=?').get(info.lastInsertRowid)); } catch (e) { console.error('[customers] 자동 등록 실패', e.message); }
   res.json({ ok: true, id: info.lastInsertRowid, message: '접수되었습니다. 담당 상담사가 곧 연락드리겠습니다.' });
 });
 
