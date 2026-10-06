@@ -75,6 +75,14 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
   // 동아 자동 반영 안전장치: 이름 앞부분만 같은 매칭이 60% 넘게 다르면 반영하지 않음
   { const dg = require('../lib/donga'); const m = dg.matchAll([{ name: '용원', today: 8700, prev: 8700 }], [{ name: '용원(VVIP)', today: 230000, prev: 230000 }]); ok(m.matched.length === 1 && m.matched[0].how === 'base', '동아 base 매칭 확인(용원→용원(VVIP))');
     const pr = db.prepare("SELECT id FROM prices WHERE category='golf' AND name='용원'").get(); if (pr) { db.prepare('UPDATE prices SET today=230000, prev=8700 WHERE id=?').run(pr.id); const r = await dg.sync({ dryRun: false }).catch(e => ({ error: e.message })); const v = db.prepare('SELECT today, prev FROM prices WHERE id=?').get(pr.id); ok(!r.error && v.today < 50000 && (r.suspect || []).some(x => x.startsWith('용원')), '동아 안전장치: 잘못된 값 복구·의심 매칭 제외', `today ${v.today} · suspect ${(r.suspect || []).join(',')}`); } }
+  // 데이터 정정(2026-10-06)
+  { ok(!db.prepare("SELECT 1 FROM clubs WHERE name IN ('청우(12500)','군산','남광주','비발디파크(16000)','세라지오(18000)','우리들리조트','인터불고경산골프클럽','제피로스')").get() && !db.prepare("SELECT 1 FROM prices WHERE name IN ('청우(12500)','군산','제피로스','인터불고경산(25000)')").get(), '삭제·변경 대상 골프장/시세 없음');
+    const h = db.prepare("SELECT * FROM clubs WHERE name='해내다CC'").get(); const gf = db.prepare("SELECT * FROM clubs WHERE name='그린필드'").get();
+    ok(h && !h.parent_id && gf && db.prepare("SELECT 1 FROM prices WHERE category='golf' AND name='그린필드'").get(), '해내다CC·그린필드 이름 변경', `${h && h.slug} / ${gf && gf.slug}`);
+    let rr = await get('/golf/' + encodeURIComponent('해내다cc')); ok(rr.status === 200 && rr.text.includes('해내다CC') && rr.text.includes('23000') && rr.text.includes('27000'), '해내다CC 페이지에 종류(23000·25000·27000)');
+    rr = await fetch(BASE + '/golf/' + encodeURIComponent('인터불고경산골프클럽'), { redirect: 'manual' }); ok(rr.status === 301 && decodeURIComponent(rr.headers.get('location') || '').includes('/golf/해내다cc'), '옛 주소 인터불고경산 → 해내다CC 301');
+    rr = await get('/about/history'); ok(rr.text.includes('2022~2026') && rr.text.includes('디오너스 선불카드 자유CC 분양') && !rr.text.includes('2022~2025'), '연혁 2022~2026 + 2026 항목');
+    rr = await get('/'); ok(rr.text.includes('하나TV유튜브') && !rr.text.includes('하나회원권TV메뉴얼'), '메뉴명 하나TV유튜브'); }
   // 예약 발행
   { const sch = db.prepare("SELECT COUNT(*) c FROM posts WHERE status='scheduled'").get().c; const future = db.prepare("SELECT slug, published_at FROM posts WHERE status='scheduled' ORDER BY published_at LIMIT 1").get();
     ok(sch >= 1 && future && future.published_at > Math.floor(Date.now() / 1000), '미래 날짜 시드 글은 예약 상태', `${sch}건 · 첫 발행 ${new Date(future.published_at * 1000).toISOString().slice(0, 16)}`);

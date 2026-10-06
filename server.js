@@ -21,6 +21,7 @@ const { seedIfEmpty } = require('./scripts/seed');
 const { page } = layout;
 
 seedIfEmpty();
+try { const mg = require('./lib/migrations').run(); if (mg.length) console.log('[migrate] ' + mg.join(' · ')); } catch (e) { console.error('[migrate] 실패', e.message); }
 try { const g = require('./lib/clubgroup').sync(); if (g.changed) console.log(`[clubs] 골프장 ${g.clubs}곳 · 회원권 종류 ${g.variants}건 묶음`); } catch (e) { console.error('[clubs] 묶기 실패', e.message); }
 try { const f = require('./lib/content/clubtext').fillAll(); if (f.filled || f.summaries) console.log(`[clubs] 해설 자동 작성 ${f.filled}곳 · 요약 갱신 ${f.summaries}곳`); } catch (e) { console.error('[clubs] 해설 작성 실패', e.message); }
 try { const n = require('./lib/clubdetail').seed(path.join(__dirname, 'data', 'seed', 'club-details.json')); if (n) console.log(`[clubs] 회원권 세부 정보 ${n}곳 반영`); } catch (e) { console.error('[clubs] 세부 정보 반영 실패', e.message); }
@@ -112,7 +113,8 @@ app.get('/favicon.ico', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'img', 
 
 // 구 사이트 URL → 새 URL 301 (검색 신호 승계)
 const REDIRECTS = { '/market/01': '/market/golf', '/market/02': '/market/corporate', '/market/03': '/market/condo', '/market/04': '/market/fitness', '/membership/01': '/listings?category=golf', '/membership/02': '/listings?category=condo', '/membership/03': '/listings?category=fitness', '/membership/04': '/listings?category=sale', '/membership/05': '/listings?category=tour', '/building/01': '/exclusive/anonymous', '/building/02': '/exclusive/daemyung', '/building/03': '/exclusive/prepaid', '/golf/01': '/golf', '/golf/02': '/market/golf', '/resort/01': '/guide/condo', '/resort/02': '/market/condo', '/fitness/01': '/guide/fitness', '/fitness/02': '/market/fitness', '/application': '/apply', '/community/01': '/notice', '/community/02': '/news', '/community/03': '/faq', '/community/04': '/notice', '/company/01': '/about', '/company/02': '/about', '/company/03': '/about/location', '/company/04': '/about/careers' };
-app.use((req, res, next) => { const p = req.path.replace(/\/$/, ''); if (REDIRECTS[p]) return res.redirect(301, REDIRECTS[p]); next(); });
+const CLUB_REDIRECTS = require('./lib/migrations').REDIRECTS;
+app.use((req, res, next) => { let p = req.path.replace(/\/$/, ''); if (REDIRECTS[p]) return res.redirect(301, REDIRECTS[p]); try { p = decodeURIComponent(p); } catch (_) { /* no-op */ } if (CLUB_REDIRECTS[p]) return res.redirect(301, encodeURI(CLUB_REDIRECTS[p])); next(); });
 app.get(/^\/golf\/01_view\/(\d+)\/?$/, (req, res) => { let c = db.prepare("SELECT slug, parent_id, variant_label, name FROM clubs WHERE old_id=? AND status='published'").get(req.params[0]); if (c && c.parent_id) { const par = db.prepare("SELECT slug FROM clubs WHERE id=?").get(c.parent_id); if (par) return res.redirect(301, '/golf/' + encodeURIComponent(par.slug) + '?type=' + encodeURIComponent(c.variant_label || c.name)); } return res.redirect(301, c ? '/golf/' + encodeURIComponent(c.slug) : '/golf'); });
 app.get(/^\/golf\/02_view\/(\d+)\/?$/, (req, res) => res.redirect(301, '/market/golf'));
 
