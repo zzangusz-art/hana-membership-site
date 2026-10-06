@@ -17,6 +17,7 @@ const ENGINES = {
   google: { url: (q) => `https://www.google.com/search?q=${encodeURIComponent(q)}&hl=ko&gl=kr`, wait: 4000, full: true },
   naver: { url: (q) => `https://search.naver.com/search.naver?query=${encodeURIComponent(q)}`, wait: 4000, full: true },
   bing: { url: (q) => `https://www.bing.com/search?q=${encodeURIComponent(q)}&setlang=ko&cc=KR`, wait: 5000, full: true },
+  naverai: { url: (q) => `https://search.naver.com/search.naver?ssc=tab.ait.all&query=${encodeURIComponent(q)}`, wait: 15000, full: true }, // 네이버 AI탭(로그인 불필요)
   perplexity: { url: (q) => `https://www.perplexity.ai/search?q=${encodeURIComponent(q)}`, wait: 18000, full: true },
 };
 
@@ -50,6 +51,8 @@ const safe = (s) => s.replace(/[^\w가-힣]+/g, '_').replace(/^_|_$/g, '');
         await new Promise(res => setTimeout(res, E.wait));
         // 답변이 늦게 오는 엔진: 본문에 도메인/상호가 보일 때까지 조금 더 대기(최대 +12초)
         if (e === 'perplexity' || e === 'google') { for (let i = 0; i < 6; i++) { const t = await page.evaluate(() => document.body.innerText || ''); if (t.length > 800) break; await new Promise(res => setTimeout(res, 2000)); } }
+        // 네이버 AI탭: 답변이 스트리밍되므로 본문 길이가 더 안 늘 때까지 스크롤하며 대기(최대 +30초)
+        if (e === 'naverai') { let prev = -1; for (let i = 0; i < 10; i++) { const n = await page.evaluate(() => { window.scrollTo(0, document.body.scrollHeight); return (document.body.innerText || '').length; }); if (n === prev && n > 800) break; prev = n; await new Promise(res => setTimeout(res, 3000)); } await page.evaluate(() => window.scrollTo(0, 0)); }
         // Perplexity: 쿠키 배너 닫기 + 긴 뷰포트로 답변 전체가 보이게
         if (e === 'perplexity') { try { const btn = await page.$$('button'); for (const b of btn) { const t = await page.evaluate(el => el.textContent.trim(), b); if (/필수 항목만|Reject|거부/.test(t)) { await b.click(); break; } } } catch (_) { /* no-op */ } await page.setViewport({ width: 1366, height: 2400, deviceScaleFactor: 1 }); await new Promise(res => setTimeout(res, 1500)); }
         const text = await page.evaluate(() => (document.body.innerText || '').slice(0, 200000));
@@ -57,7 +60,7 @@ const safe = (s) => s.replace(/[^\w가-힣]+/g, '_').replace(/^_|_$/g, '');
         if (blocked) { await new Promise(res => setTimeout(res, 20000)); await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {}); await new Promise(res => setTimeout(res, E.wait)); }
         const text2 = blocked ? await page.evaluate(() => (document.body.innerText || '').slice(0, 200000)) : text;
         r.blocked = /unusual traffic|비정상적인 트래픽|robot|보안 확인|verify you are human|Cloudflare/i.test(text2) && text2.length < 3000;
-        { const T = text2; r.site = T.includes(SITE); r.brand = BRAND.some(b => T.includes(b)); r.competitors = COMPETITORS.filter(c => T.includes(c)); r.aiBlock = /AI 개요|AI Overview|AI 브리핑|Copilot 답변|Answer|답변/.test(T.slice(0, 4000)); fs.writeFileSync(path.join(outDir, `${e}_${safe(q)}.txt`), T.slice(0, 20000), 'utf8'); }
+        { const T = text2; r.site = T.includes(SITE); r.brand = BRAND.some(b => T.includes(b)); r.competitors = COMPETITORS.filter(c => T.includes(c)); r.aiBlock = /AI 개요|AI Overview|AI 브리핑|AI Tab|Copilot 답변|Answer|답변/.test(T.slice(0, 4000)); fs.writeFileSync(path.join(outDir, `${e}_${safe(q)}.txt`), T.slice(0, 20000), 'utf8'); }
         r.file = path.join(outDir, `${e}_${safe(q)}.png`);
         await page.screenshot({ path: r.file, fullPage: E.full, captureBeyondViewport: true }).catch(async () => { await page.screenshot({ path: r.file }); });
       } catch (err) { r.error = err.message.slice(0, 200); }
