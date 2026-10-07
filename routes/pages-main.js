@@ -52,7 +52,7 @@ router.get('/', (req, res) => {
   const moved = all.filter(r => r.diff).sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct)).slice(0, 28);
   const ticker = moved.length >= 12 ? moved : [...moved, ...all.filter(r => !r.diff).sort(() => 0.5 - Math.random()).slice(0, 28 - moved.length)];
   const SLIDES = [
-    { key: 'golf', icon: '⛳', kicker: '프리미엄 골프 라이프 · 2004년부터 회원권 거래 전문', tab: '프리미엄 골프 라이프', title: '골프회원권 · 무기명 골프회원권 · 콘도회원권<br><span class="hl">시세 조회·구매·매입</span>, 한 곳에서', sub: `골프회원권 ${g.total}종목 시세, 매주 월요일 갱신`, lead: '매도자가 부르는 값과 실제 계약된 값은 다릅니다. 시세표는 그 둘을 같이 보고 만듭니다. 골프장 회원권 거래는 상담한 담당자가 계약과 명의개서 접수까지 그대로 맡습니다.', href: '/market/golf', img: '/img/hero/golf.jpg', bg: '/img/hero/golf-bg.jpg' },
+    { key: 'golf', icon: '⛳', kicker: '프리미엄 골프 라이프 · 2004년부터 회원권 거래 전문', tab: '프리미엄 골프 라이프', title: '골프회원권 · 무기명 골프회원권 · 콘도회원권 · 휘트니스회원권<br><span class="hl">시세 조회·구매·매입</span>, 한 곳에서', sub: `골프회원권 ${g.total}종목 시세, 매주 월요일 갱신`, lead: '매도자가 부르는 값과 실제 계약된 값은 다릅니다. 시세표는 그 둘을 같이 보고 만듭니다. 골프장 회원권 거래는 상담한 담당자가 계약과 명의개서 접수까지 그대로 맡습니다.', href: '/market/golf', img: '/img/hero/golf.jpg', bg: '/img/hero/golf-bg.jpg' },
     { key: 'condo', icon: '🏔️', kicker: '콘도·리조트 회원권', tab: '휴식과 힐링의 콘도', title: '휴식과 힐링의 <span class="hl">콘도</span>', sub: '공유제인지 회원제인지부터 확인하세요', lead: '등기가 되는 공유제와 입회금을 맡기는 회원제는 세금도, 되팔 때도 다릅니다. 가족 휴가용인지 법인 복지용인지 말씀해 주시면 맞는 쪽을 골라 드립니다.', href: '/market/condo', img: '/img/hero/condo.jpg', bg: '/img/hero/condo-bg.jpg' },
     { key: 'fitness', icon: '🏋️', kicker: '피트니스 회원권', tab: '건강한 피트니스 라이프', title: '건강한 <span class="hl">피트니스 라이프</span>', sub: '호텔 피트니스 개인·부부 회원권', lead: '호텔마다 양도 승인 기간과 연회비가 다릅니다. 시세표에서 확인하시고 매매 신청을 남기시면 당일 연락드립니다.', href: '/market/fitness', img: '/img/hero/fitness.jpg', bg: '/img/hero/fitness-bg.jpg' },
   ];
@@ -97,7 +97,7 @@ router.get('/', (req, res) => {
     <div class="sec-head center"><p class="eyebrow">하는 일</p><h2>회원권 상담과 매매가 본업입니다</h2><p class="sub">분양 대행과 골프장·리조트 예약, 해외 골프투어도 같은 담당자가 봅니다.</p></div>
     <div class="svc-grid">
       ${[['01', '회원권 상담', '지금 예산으로 살 수 있는 종목과, 그 골프장의 주말 부킹이 실제로 되는지까지 말씀드립니다.', '/apply'], ['02', '회원권 매매', '계약서와 정산 내역서를 드리고, 골프장 명의개서가 끝날 때까지 담당자가 바뀌지 않습니다.', '/market/golf'], ['03', '회원권 분양', '2004년부터 28건을 대행했습니다. 분양가만 보지 말고 입회금 반환 조건을 같이 보시도록 안내합니다.', '/listings?category=sale'], ['04', '예약 알선', '회원권이 없는 골프장이나 성수기 리조트 예약을 대신 잡아 드립니다.', '/apply'], ['05', '해외 골프투어', '일정, 티타임, 숙소까지 담당자가 짭니다. 계열사 하나멤버쉽투어가 진행합니다.', '/listings?category=tour']]
-        .map(([ic, t, d, h]) => `<a class="svc reveal" href="${h}"><span class="svc-ic">${ic}</span><h3>${t}</h3><p>${d}</p><span class="more">자세히 →</span></a>`).join('')}
+        .map(([ic, t, d, h]) => `<a class="svc reveal" href="${h}" style="--i:${Number(ic) - 1}"><span class="svc-ic">${ic}</span><h3>${t}</h3><p>${d}</p><span class="more">자세히 <i class="arr">→</i></span></a>`).join('')}
     </div>
   </div>
 </section>
