@@ -28,6 +28,7 @@ try { const g = require('./lib/clubgroup').sync(); if (g.changed) console.log(`[
 try { const f = require('./lib/content/clubtext').fillAll(); if (f.filled || f.summaries) console.log(`[clubs] 해설 자동 작성 ${f.filled}곳 · 요약 갱신 ${f.summaries}곳`); } catch (e) { console.error('[clubs] 해설 작성 실패', e.message); }
 try { const n = require('./lib/clubdetail').seed(path.join(__dirname, 'data', 'seed', 'club-details.json')); if (n) console.log(`[clubs] 회원권 세부 정보 ${n}곳 반영`); } catch (e) { console.error('[clubs] 세부 정보 반영 실패', e.message); }
 try { const m = require('./lib/prices').importHanamarket(path.join(__dirname, 'data', 'seed', 'prices-hanamarket.json')); if (m.inserted || m.updated) console.log(`[prices] 구 사이트 시세 이관: 신규 ${m.inserted} · 정보 보충 ${m.updated}`); } catch (e) { console.error('[prices] 시세 이관 실패', e.message); }
+try { const mc = require('./lib/migrations').mergeCorporate(path.join(__dirname, 'data', 'seed', 'corporate-merge.json')); if (mc.length) console.log('[migrate] ' + mc.join(' · ')); } catch (e) { console.error('[migrate] 법인 통합 실패', e.message); }
 try { const h = require('./lib/prices').importHistory(path.join(__dirname, 'data', 'seed', 'price-history.json')); if (h.rows) console.log(`[prices] 과거 시세 이력 ${h.items}종목 ${h.rows}건 추가`); } catch (e) { console.error('[prices] 이력 가져오기 실패', e.message); }
 
 const app = express();

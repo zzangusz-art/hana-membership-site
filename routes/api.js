@@ -27,7 +27,7 @@ router.get('/prices/:category/:id/history', (req, res) => {
 // 전환 이벤트 수집(전화·카톡 버튼 클릭 등) — 본문 {t:유형, l:라벨, p:경로}. 문의 접수(inquiry)는 서버가 직접 기록하므로 받지 않는다.
 const evLimit = rateLimit({ windowMs: 60 * 1000, max: 40, standardHeaders: true, legacyHeaders: false });
 router.post('/t', evLimit, (req, res) => {
-  try { const b = req.body || {}; const t = String(b.t || ''); if (['tel', 'kakao', 'outbound', 'form'].includes(t)) inflow.track(req, t, String(b.l || ''), String(b.p || '')); } catch (_) { /* no-op */ }
+  try { const b = req.body || {}; const t = String(b.t || ''); if (['tel', 'kakao', 'outbound', 'form', 'consult'].includes(t)) inflow.track(req, t, String(b.l || ''), String(b.p || '')); } catch (_) { /* no-op */ }
   res.status(204).end();
 });
 

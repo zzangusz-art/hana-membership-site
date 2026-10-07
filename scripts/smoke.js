@@ -97,7 +97,7 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     ok(empty === 0 && rr.text.includes('강남300 회원권, 이런 분께 맞습니다') && !rr.text.includes('해설은 아직 쓰는 중') && rr.text.includes('회원과 비회원의 그린피 차이') && rr.text.includes('15만원 차이') && !/현재 회원권 시세는 \d/.test(rr.text), '골프장 해설 자동 작성(요금 차이·시세 숫자 미포함)', `빈 해설 ${empty}`); }
   // 구 사이트 시세 이관 · 종목 상세 · 메뉴
   { const nC = db.prepare("SELECT COUNT(*) c FROM prices WHERE category='condo'").get().c, nF = db.prepare("SELECT COUNT(*) c FROM prices WHERE category='fitness'").get().c, nG = db.prepare("SELECT COUNT(*) c FROM prices WHERE category='golf'").get().c, nCo = db.prepare("SELECT COUNT(*) c FROM prices WHERE category='corporate'").get().c;
-    ok(nC >= 80 && nF >= 50 && nG >= 250 && nCo >= 300, '구 사이트 시세 전체 이관', `골프 ${nG} · 법인 ${nCo} · 콘도 ${nC} · 피트니스 ${nF}`);
+    ok(nC >= 80 && nF >= 50 && nG >= 250 && nCo >= 200 && nCo <= 215, '구 사이트 시세 전체 이관(법인 중복 통합 후 약 207)', `골프 ${nG} · 법인 ${nCo} · 콘도 ${nC} · 피트니스 ${nF}`);
     const cp = db.prepare("SELECT id FROM prices WHERE category='condo' AND name='오크밸리-25'").get(); let rr = await get('/market/condo'); ok(cp && rr.text.includes(`href="/market/condo/${cp.id}"`) && !rr.text.includes('href="#"'), '콘도 시세표 회원권명 링크');
     rr = await get(`/market/condo/${cp.id}`); ok(rr.status === 200 && rr.text.includes('오크밸리-25 회원권 시세') && rr.text.includes('시설 정보') && rr.text.includes('오크밸리 다른 회원권 종류') && rr.text.includes('class="pchart"'), '콘도 종목 상세(시설 정보·다른 종류·차트)');
     const fp = db.prepare("SELECT id FROM prices WHERE category='fitness' AND name='반트-부부'").get(); rr = await get(`/market/fitness/${fp.id}`); ok(rr.status === 200 && rr.text.includes('vantt.com'), '피트니스 종목 상세');
@@ -131,6 +131,12 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
   }
   // 관리자
   { const rr = await get('/listings?category=condo'); const m = rr.text.match(/\/img\/listings\/[^"']+-v3\.webp/); ok(rr.status === 200 && m && !rr.text.includes('-blue.webp') && !rr.text.includes('-navy.webp'), '콘도 썸네일 -v3 경로 사용(옛 파일 없음)'); if (m) { const ri = await fetch(BASE + m[0]); ok(ri.status === 200 && /image\/webp/.test(ri.headers.get('content-type') || ''), '콘도 썸네일 파일 서빙'); await ri.arrayBuffer(); } }
+  { const n88 = db.prepare("SELECT COUNT(*) c FROM prices WHERE category='corporate' AND name LIKE '88(팔팔)%'").get().c; const h1 = db.prepare("SELECT COUNT(*) c FROM prices WHERE category='corporate' AND (name LIKE '%H1%' OR name LIKE '%에이치원%')").get().c; const bl = db.prepare("SELECT COUNT(*) c FROM prices WHERE category='corporate' AND name LIKE '%(법인)%'").get().c; const fw = db.prepare("SELECT COUNT(*) c FROM prices WHERE category='corporate' AND name LIKE '4WELL%'").get().c; const v88 = db.prepare("SELECT today FROM prices WHERE category='corporate' AND name='88(팔팔)'").get();
+    ok(n88 === 1 && h1 === 1 && bl === 0 && fw === 3 && v88 && v88.today === 85000, '법인 시세 중복 통합(88·H1 1건, (법인) 접미사 0, 4WELL 3구좌 유지, 법인 값 유지)', `88 ${n88} · H1 ${h1} · (법인) ${bl} · 4WELL ${fw}`);
+    const rr = await get('/market/corporate'); ok(rr.status === 200 && !rr.text.includes('(법인)') && rr.text.includes('88(팔팔)'), '법인 시세표 페이지에 중복 없음');
+    const corp = db.prepare("SELECT id, name FROM prices WHERE category='corporate' AND name='88(팔팔)'").get(); const dp = await get(`/market/corporate/${corp.id}`); ok(dp.status === 200 && dp.text.includes('class="pchart"'), '법인 종목 상세 차트');
+    const ap = await get('/apply?item=' + encodeURIComponent('88(팔팔)') + '&category=corporate&from=chart'); ok(ap.status === 200 && ap.text.includes('value="corporate" selected') && ap.text.includes('88(팔팔)'), '상담 버튼 링크 → 매매 신청 폼 종목·구분 미리 입력');
+    const rt = await fetch(BASE + '/api/t', { method: 'POST', headers: { 'Content-Type': 'application/json', 'user-agent': 'Mozilla/5.0 (Windows NT 10.0) Chrome/130' }, body: JSON.stringify({ t: 'consult', l: '88(팔팔)', p: '/market/corporate/1' }) }); ok(rt.status === 204, '차트 상담 버튼 클릭 추적(consult) 수집'); }
   r = await fetch(BASE + '/api/admin/dashboard'); ok(r.status === 401, '관리자 미로그인 401');
   r = await fetch(BASE + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'admin', pw: 'hana1234!' }) });
   const cookie = (r.headers.get('set-cookie') || '').split(';')[0]; ok(r.status === 200 && cookie.startsWith('hana_admin='), '관리자 로그인');

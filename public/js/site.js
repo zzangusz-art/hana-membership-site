@@ -55,7 +55,8 @@
   const pchart = (box, startDays) => {
     if (!box || box.dataset.ready) return; box.dataset.ready = '1';
     const cat = box.dataset.cat || 'golf', id = box.dataset.id, name = box.dataset.name || '';
-    box.innerHTML = `<div class="pc-tabs" role="group" aria-label="차트 기간">${RANGES.map(([l, d]) => `<button type="button" class="pc-tab" data-days="${d}">${l}</button>`).join('')}</div><div class="pc-view"></div><p class="note pc-note"></p>`;
+    const ctaCat = { golf: 'golf', corporate: 'corporate', condo: 'condo', fitness: 'fitness' }[cat] || 'golf';
+    box.innerHTML = `<div class="pc-head"><div class="pc-tabs" role="group" aria-label="차트 기간">${RANGES.map(([l, d]) => `<button type="button" class="pc-tab" data-days="${d}">${l}</button>`).join('')}</div><a class="btn btn-green pc-cta" href="/apply?item=${encodeURIComponent(name)}&category=${ctaCat}&from=chart" data-consult="${name.replace(/"/g, '&quot;')}">💬 이 회원권 상담</a></div><div class="pc-view"></div><p class="note pc-note"></p>`;
     const view = $('.pc-view', box), note = $('.pc-note', box); const cache = {};
     const ymd = (s) => s.slice(2).replace(/-/g, '.');
     const draw = (hist, days, since) => {
@@ -180,7 +181,7 @@
 
   // 유입·전환 추적: 전화·카카오톡·외부 채널 클릭, 문의 폼 입력 시작을 서버로 알림(GA4가 있으면 같이 전송)
   const trk = (t, l) => { try { const d = JSON.stringify({ t, l: l || '', p: location.pathname }); if (navigator.sendBeacon) navigator.sendBeacon('/api/t', new Blob([d], { type: 'application/json' })); else fetch('/api/t', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: d, keepalive: true }); if (window.gtag) window.gtag('event', { tel: 'tel_click', kakao: 'kakao_click', outbound: 'outbound_click', form: 'form_start' }[t] || t, { label: l || '', page: location.pathname }); } catch (_) { /* no-op */ } };
-  document.addEventListener('click', (e) => { const a = e.target.closest && e.target.closest('a[href]'); if (!a) return; const h = a.getAttribute('href') || ''; if (/^tel:/i.test(h)) trk('tel', h.slice(4)); else if (/kakao\.com/i.test(h)) trk('kakao', '카카오톡 문의'); else if (/^https?:\/\//i.test(h) && a.hostname && a.hostname !== location.hostname) trk('outbound', a.hostname.replace(/^www\./, '')); }, true);
+  document.addEventListener('click', (e) => { const a = e.target.closest && e.target.closest('a[href]'); if (!a) return; const h = a.getAttribute('href') || ''; if (a.dataset.consult !== undefined) trk('consult', a.dataset.consult || ''); if (/^tel:/i.test(h)) trk('tel', h.slice(4)); else if (/kakao\.com/i.test(h)) trk('kakao', '카카오톡 문의'); else if (/^https?:\/\//i.test(h) && a.hostname && a.hostname !== location.hostname) trk('outbound', a.hostname.replace(/^www\./, '')); }, true);
   $$('form[data-ajax]').forEach(f => f.addEventListener('focusin', function once() { f.removeEventListener('focusin', once); trk('form', f.id || 'apply'); }));
 
   // 매매신청 URL 파라미터 → 폼 프리필

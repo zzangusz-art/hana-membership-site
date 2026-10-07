@@ -182,13 +182,13 @@ ${related.length ? `<div class="side-card"><h3>같은 분류 상품</h3><ul clas
 
 // ── 매매 신청 ──
 router.get('/apply', (req, res) => {
-  const s = settings.all(); const item = String(req.query.item || '').slice(0, 60);
+  const s = settings.all(); const item = String(req.query.item || '').slice(0, 60); const qc = String(req.query.category || ''); const CATS6 = ['golf', 'corporate', 'condo', 'fitness', 'sale', 'tour']; const preCat = CATS6.includes(qc) ? qc : 'golf'; const sel = (v) => v === preCat ? ' selected' : '';
   const body = `<section class="page-head"><div class="wrap"><p class="eyebrow">매매 신청</p><h1>회원권 매매 신청</h1><p class="bluf">종목과 예산을 적어 주시면 담당자가 당일 전화드립니다. 영업시간 기준으로 보통 한 시간 안입니다. 급하시면 ${esc(s.phone)}으로 바로 하셔도 됩니다. 24시간 받습니다.</p></div></section>
 <section class="section"><div class="wrap club-grid2">
   <form class="inq-form big reveal" method="post" action="/api/inquiry" data-ajax>
     <fieldset><legend>신청 구분</legend><div class="radio-row"><label><input type="radio" name="kind" value="buy" checked> 매수(사고 싶어요)</label><label><input type="radio" name="kind" value="sell"> 매도(팔고 싶어요)</label><label><input type="radio" name="kind" value="consult"> 상담만</label></div></fieldset>
     <div class="row"><label>성함 <input name="name" required maxlength="40"></label><label>연락처 <input name="phone" required maxlength="20" inputmode="tel" placeholder="010-0000-0000"></label></div>
-    <div class="row"><label>이메일(선택) <input name="email" type="email" maxlength="80"></label><label>구분 <select name="category"><option value="golf">골프회원권</option><option value="corporate">법인회원권</option><option value="condo">콘도회원권</option><option value="fitness">피트니스회원권</option><option value="sale">분양</option><option value="tour">해외투어</option></select></label></div>
+    <div class="row"><label>이메일(선택) <input name="email" type="email" maxlength="80"></label><label>구분 <select name="category"><option value="golf"${sel('golf')}>골프회원권</option><option value="corporate"${sel('corporate')}>법인회원권</option><option value="condo"${sel('condo')}>콘도회원권</option><option value="fitness"${sel('fitness')}>피트니스회원권</option><option value="sale"${sel('sale')}>분양</option><option value="tour"${sel('tour')}>해외투어</option></select></label></div>
     <div class="row"><label>희망 종목 <input name="item" maxlength="60" value="${attr(item)}" placeholder="예: 아시아나, 남촌, 소노"></label><label>예산 / 희망가 <input name="budget" maxlength="40" placeholder="예: 1억 이내, 9,500만원"></label></div>
     <label>문의 내용 <textarea name="message" rows="5" maxlength="1500" placeholder="이용 패턴(주중/주말), 개인/법인, 연락 가능 시간 등"></textarea></label>
     <label class="agree"><input type="checkbox" name="agree" value="1" required> <a href="/privacy" target="_blank">개인정보 수집·이용</a>에 동의합니다. (수집 항목: 성함·연락처·이메일·문의 내용 / 목적: 회원권 매매 상담 / 보유: 상담 종료 후 1년)</label>
