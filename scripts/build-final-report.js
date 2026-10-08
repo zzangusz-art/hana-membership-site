@@ -32,6 +32,7 @@ const dates = Object.keys(byDate).sort(); const latestDate = dates.filter(d => d
 const trend = dates.map(d => { const m = byDate[d]; const cells = Object.keys(m).length; return { date: d, cells, site: Object.values(m).filter(x => x.site).length, brand: Object.values(m).filter(x => x.brand).length }; });
 const latest = byDate[latestDate] || {};
 const siteNow = Object.values(latest).filter(x => x.site).length, brandNow = Object.values(latest).filter(x => x.brand).length, cellsNow = Object.keys(latest).length;
+const peak = trend.reduce((m, t) => t.site > m.site ? t : m, { site: 0, date: '' });
 const trendSvg = (() => { if (!trend.length) return ''; const W = 640, H = 160, L = 36, R = 12, T = 12, B = 30; const mx = Math.max(10, ...trend.map(t => t.brand)); const x = (i) => L + (trend.length === 1 ? 0 : i / (trend.length - 1)) * (W - L - R); const y = (v) => T + (1 - v / mx) * (H - T - B);
   const ln = (k, col) => `<polyline fill="none" stroke="${col}" stroke-width="2.5" points="${trend.map((t, i) => `${x(i)},${y(t[k])}`).join(' ')}"/>${trend.map((t, i) => `<circle cx="${x(i)}" cy="${y(t[k])}" r="3.5" fill="${col}"/><text x="${x(i)}" y="${y(t[k]) - 7}" font-size="10" text-anchor="middle" fill="${col}">${t[k]}</text>`).join('')}`;
   return `<svg viewBox="0 0 ${W} ${H}" width="100%"><g>${[0, .5, 1].map(f => `<line x1="${L}" x2="${W - R}" y1="${y(mx * f)}" y2="${y(mx * f)}" stroke="#e3e8f0"/><text x="${L - 6}" y="${y(mx * f) + 4}" font-size="10" text-anchor="end" fill="#6b7485">${Math.round(mx * f)}</text>`).join('')}${ln('brand', '#8e44ad')}${ln('site', '#1f3a73')}${trend.map((t, i) => `<text x="${x(i)}" y="${H - 10}" font-size="10" text-anchor="middle" fill="#6b7485">${t.date.slice(5)}</text>`).join('')}</g></svg><p class="small muted">진한 남색: 우리 사이트가 결과·답변에 직접 노출된 건수 / 보라: 상호가 언급된 건수 (6질의 × 엔진 수, 10/6부터 네이버 AI탭 추가로 30건 기준)</p>`; })();
@@ -91,7 +92,7 @@ figure.cap{max-height:95mm;overflow:hidden}figure.cap img{object-fit:cover;objec
 <div class="meta">대상 <b>https://hanamember.co.kr</b> (구 hanamarket.co.kr 대체)<br>기간 <b>2026-09-14 ~ ${DATE}</b> (착수 전 진단 2026-09-02)<br>작성 <b>${DATE}</b> · 총괄 관리자<br><br>이 보고서는 4주 동안 무엇을 만들고 바꿨는지(진행 내역·구축 범위), 기존 홈페이지와 무엇이 달라졌는지(전후 비교), 검색엔진과 AI 검색에서 어떻게 노출되기 시작했는지(실측), 앞으로 어떻게 관리하고 어디로 갈지(향후 관리·방향성)를 한 권으로 정리한 것입니다. 측정 방법은 부록에 있습니다.</div></div>
 
 <section class="first"><h2>1. 한눈에 보기</h2>
-<div class="kpi"><div><b>28 → 100</b><span>기술 감사 점수 (9/2 외부 진단 → 자체 감사 16항목)</span></div><div><b>${n(POSTS)}편</b><span>발행 콘텐츠 (예약 ${A.scheduled}편 대기, 목표 50 달성)</span></div><div><b>230+</b><span>구글 색인 URL (10/5 site: 검색 24쪽 이상, 사이트맵 ${sitemapN || '947'} URL)</span></div><div><b>${siteNow}/${cellsNow}</b><span>AI·검색 노출 (브랜드·카테고리 6질의 × 5엔진, ${latestDate}) · 상호 언급 ${brandNow}</span></div></div>
+<div class="kpi"><div><b>28 → 100</b><span>기술 감사 점수 (9/2 외부 진단 → 자체 감사 16항목)</span></div><div><b>${n(POSTS)}편</b><span>발행 콘텐츠 (예약 ${A.scheduled}편 대기, 목표 50 달성)</span></div><div><b>230+</b><span>구글 색인 URL (10/5 site: 검색 24쪽 이상, 사이트맵 ${sitemapN || '947'} URL)</span></div><div><b>${siteNow}/${cellsNow}</b><span>AI·검색 노출 (6질의 × 5엔진, ${latestDate}) · 최고 ${peak.site} (${peak.date.slice(5)}) · 상호 언급 ${brandNow} · 9/29 첫 측정 4</span></div></div>
 <table><tr><th style="width:18%">항목</th><th style="width:38%">착수 전 (hanamarket.co.kr, 9/2 진단·9/15 실측)</th><th>지금 (hanamember.co.kr, ${DATE})</th></tr>
 <tr><td>기술 SEO</td><td>전 페이지 같은 title "(주)하나회원권", 사이트맵·JSON-LD·llms.txt 없음, canonical 전부 홈, 모바일 속도 45점</td><td>페이지별 title·설명·canonical, 사이트맵·robots·llms.txt·RSS, JSON-LD 6종, 구 URL 301, IndexNow, 모바일 속도 ${lhCell(LH.newM, 'perf')}점</td></tr>
 <tr><td>검색 노출</td><td>새 도메인 색인 0</td><td>구글 230+ URL 색인, 골프장 페이지 스니펫에 시세 범위 표시, 브랜드 질의 5개 엔진 전부 노출</td></tr>
@@ -180,7 +181,7 @@ ${[['페이지별 고유 title', '전부 동일', '통과'], ['meta description 
 <ul><li><b>매일 쌓이는 자산</b>: 시세(자동)·글(예약+템플릿)·골프장 정보(세부 정보 확대)는 멈추지 않게 유지합니다. 검색·AI 노출은 누적량과 갱신 빈도에 반응합니다.</li><li><b>한 회사로 보이게</b>: 홈페이지·네이버 플레이스·유튜브·블로그·구 도메인의 명칭·주소·전화를 통일하고, 약칭 "하나회원권"을 Organization alternateName과 콘텐츠에서 반복해 금융사 오인을 막습니다.</li><li><b>측정이 먼저</b>: 같은 질의·같은 방법으로 매주 캡처해 추이를 보고, 월 1회 베이스라인 4질의와 서치콘솔로 재측정합니다.</li><li><b>전환까지</b>: 노출은 수단입니다. 유입→전화·카톡·문의→고객 DB→상담 기록으로 이어지는 흐름을 관리자에서 끊기지 않게 운영합니다.</li></ul>
 <h3>10-2. 다음 1개월 목표 (10/9 ~ 11/8)</h3>
 <table><tr><th style="width:24%">지표</th><th style="width:22%">기준(${latestDate})</th><th style="width:22%">11/8 목표</th><th>방법</th></tr>
-<tr><td>AI·검색 노출</td><td>${siteNow}/${cellsNow}</td><td>15/30 이상, 카테고리 3개 엔진 이상</td><td>키워드 글 심화, 엔티티 통일, 인용 구조(직답·출처·표)</td></tr>
+<tr><td>AI·검색 노출</td><td>${siteNow}/${cellsNow} (최근 일주일 5~8, 날마다 출렁임)</td><td>15/30 이상, 카테고리 3개 엔진 이상</td><td>키워드 글 심화, 엔티티 통일, 인용 구조(직답·출처·표)</td></tr>
 <tr><td>약칭 "하나회원권" 인식</td><td>Perplexity·구글 자사 인용으로 전환(10/7)</td><td>전 엔진 유지, 네이버 AI탭 자사 인용</td><td>alternateName·sameAs·브랜드 글(10/13)·외부 프로필 명칭 통일</td></tr>
 <tr><td>구글 색인</td><td>230+</td><td>400+</td><td>사이트맵 분할·내부 링크 허브·URL 검사 주 10건</td></tr>
 <tr><td>네이버</td><td>미등록</td><td>등록·수집 완료, 웹사이트 탭 브랜드+카테고리 2개</td><td>서치어드바이저·RSS·블로그 hngolf2 링크</td></tr>
