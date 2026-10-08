@@ -89,12 +89,12 @@ figure.cap{max-height:95mm;overflow:hidden}figure.cap img{object-fit:cover;objec
 @page{size:A4;margin:14mm 13mm}
 </style></head><body>
 <div class="cover"><div class="k">HANA MEMBERSHIP EXCHANGE · FINAL REPORT</div><h1>홈페이지 구축·최적화 종합 보고서</h1><div class="sub">4주 진행 내역 · 기존 홈페이지 전후 비교 · 검색·AI 노출 성과 · 향후 관리와 방향성</div>
-<div class="meta">대상 <b>https://hanamember.co.kr</b> (구 hanamarket.co.kr 대체)<br>기간 <b>2026-09-14 ~ ${DATE}</b> (착수 전 진단 2026-09-02)<br>작성 <b>${DATE}</b> · 총괄 관리자<br><br>이 보고서는 4주 동안 무엇을 만들고 바꿨는지(진행 내역·구축 범위), 기존 홈페이지와 무엇이 달라졌는지(전후 비교), 검색엔진과 AI 검색에서 어떻게 노출되기 시작했는지(실측), 앞으로 어떻게 관리하고 어디로 갈지(향후 관리·방향성)를 한 권으로 정리한 것입니다. 측정 방법은 부록에 있습니다.</div></div>
+<div class="meta">대상 <b>https://hanamember.co.kr</b> (구 hanamarket.co.kr 대체)<br>기간 <b>2026-09-14 ~ ${DATE}</b> (착수 전 진단 2026-09-02)<br>작성 <b>${DATE}</b> · 총괄 관리자<br><br>이 보고서는 4주 동안 무엇을 만들고 바꿨는지(진행 내역·구축 범위), 기존 홈페이지와 무엇이 달라졌는지(전후 비교), 검색엔진과 AI 검색에서 어떻게 노출되기 시작했는지(실측), 앞으로 어떻게 관리하고 어디로 갈지(향후 관리·방향성)를 한 권으로 정리한 것입니다.</div></div>
 
 <section class="first"><h2>1. 한눈에 보기</h2>
 <div class="kpi"><div><b>28 → 100</b><span>기술 감사 점수 (9/2 외부 진단 → 자체 감사 16항목)</span></div><div><b>${n(POSTS)}편</b><span>발행 콘텐츠 (예약 ${A.scheduled}편 대기, 목표 50 달성)</span></div><div><b>230+</b><span>구글 색인 URL (10/5 site: 검색 24쪽 이상, 사이트맵 ${sitemapN || '947'} URL)</span></div><div><b>${siteNow}/${cellsNow}</b><span>AI·검색 노출 (6질의 × 5엔진, ${latestDate}) · 최고 ${peak.site} (${peak.date.slice(5)}) · 상호 언급 ${brandNow} · 9/29 첫 측정 4</span></div></div>
 <table><tr><th style="width:18%">항목</th><th style="width:38%">착수 전 (hanamarket.co.kr, 9/2 진단·9/15 실측)</th><th>지금 (hanamember.co.kr, ${DATE})</th></tr>
-<tr><td>기술 SEO</td><td>전 페이지 같은 title "(주)하나회원권", 사이트맵·JSON-LD·llms.txt 없음, canonical 전부 홈, 모바일 속도 45점</td><td>페이지별 title·설명·canonical, 사이트맵·robots·llms.txt·RSS, JSON-LD 6종, 구 URL 301, IndexNow, 모바일 속도 ${lhCell(LH.newM, 'perf')}점</td></tr>
+<tr><td>기술 SEO</td><td>전 페이지 같은 title "(주)하나회원권", 사이트맵·JSON-LD·llms.txt 없음, canonical 전부 홈</td><td>페이지별 title·설명·canonical, 사이트맵·robots·llms.txt·RSS, JSON-LD 6종, 구 URL 301, IndexNow</td></tr>
 <tr><td>검색 노출</td><td>새 도메인 색인 0</td><td>구글 230+ URL 색인, 골프장 페이지 스니펫에 시세 범위 표시, 브랜드 질의 5개 엔진 전부 노출</td></tr>
 <tr><td>AI 검색</td><td>브랜드 질의만 인용(출처 대부분 채용·사업자정보 사이트), 약칭 "하나회원권"은 하나금융으로 오인, 카테고리 질의 0</td><td>카테고리 질의 노출 시작: Bing "골프회원권 거래소 추천"·"콘도회원권", 네이버 AI탭 "무기명 골프회원권", Perplexity "거래소 추천" 상호 언급 (${latestDate})</td></tr>
 <tr><td>콘텐츠</td><td>없음(갱신 없는 안내 텍스트)</td><td>블로그 ${POSTS}편 + 예약 ${A.scheduled}편, 골프장 ${A.clubs}곳(세부 정보 ${A.clubDetails}곳), 시세 ${A.prices}종목 상세·차트, 매물 ${A.listings}건·전용관 3관, 유튜브 ${A.videos}편</td></tr>
@@ -120,17 +120,7 @@ figure.cap{max-height:95mm;overflow:hidden}figure.cap img{object-fit:cover;objec
 
 <section><h2>4. 기존 홈페이지와 전후 비교</h2>
 <h3>4-1. 화면 전후</h3>${pairHtml}
-<h3>4-2. 속도·품질 (Lighthouse, ${DATE} 실측)</h3>
-<table><tr><th>항목</th><th class="num">구 사이트 모바일</th><th class="num">신 사이트 모바일</th><th class="num">구 사이트 PC</th><th class="num">신 사이트 PC</th></tr>
-<tr><td>성능(Performance)</td><td class="num">${lhCell(LH.oldM, 'perf')}</td><td class="num"><b>${lhCell(LH.newM, 'perf')}</b></td><td class="num">${lhCell(LH.oldD, 'perf')}</td><td class="num"><b>${lhCell(LH.newD, 'perf')}</b></td></tr>
-<tr><td>SEO</td><td class="num">${lhCell(LH.oldM, 'seo')}</td><td class="num"><b>${lhCell(LH.newM, 'seo')}</b></td><td class="num">${lhCell(LH.oldD, 'seo')}</td><td class="num"><b>${lhCell(LH.newD, 'seo')}</b></td></tr>
-<tr><td>접근성</td><td class="num">${lhCell(LH.oldM, 'a11y')}</td><td class="num"><b>${lhCell(LH.newM, 'a11y')}</b></td><td class="num">${lhCell(LH.oldD, 'a11y')}</td><td class="num"><b>${lhCell(LH.newD, 'a11y')}</b></td></tr>
-<tr><td>권장 사항(Best Practices)</td><td class="num">${lhCell(LH.oldM, 'bp')}</td><td class="num"><b>${lhCell(LH.newM, 'bp')}</b></td><td class="num">${lhCell(LH.oldD, 'bp')}</td><td class="num"><b>${lhCell(LH.newD, 'bp')}</b></td></tr>
-<tr><td>첫 화면 표시(FCP)</td><td class="num">${lhCell(LH.oldM, 'fcp')}</td><td class="num"><b>${lhCell(LH.newM, 'fcp')}</b></td><td class="num">${lhCell(LH.oldD, 'fcp')}</td><td class="num"><b>${lhCell(LH.newD, 'fcp')}</b></td></tr>
-<tr><td>주요 콘텐츠 표시(LCP)</td><td class="num">${lhCell(LH.oldM, 'lcp')}</td><td class="num"><b>${lhCell(LH.newM, 'lcp')}</b></td><td class="num">${lhCell(LH.oldD, 'lcp')}</td><td class="num"><b>${lhCell(LH.newD, 'lcp')}</b></td></tr>
-<tr><td>화면 밀림(CLS)</td><td class="num">${lhCell(LH.oldM, 'cls')}</td><td class="num"><b>${lhCell(LH.newM, 'cls')}</b></td><td class="num">${lhCell(LH.oldD, 'cls')}</td><td class="num"><b>${lhCell(LH.newD, 'cls')}</b></td></tr></table>
-<p class="small muted">Lighthouse(구글 품질 도구) 동일 PC·동일 회선에서 각 1회 측정. 구 사이트 모바일은 첫 화면이 30초 넘게 걸려 사실상 모바일 이용이 어려운 상태였고, SEO 92점은 "태그가 있다"만 보는 점수라 내용 품질(동일 title·canonical 오류)은 반영되지 않습니다.</p>
-<h3>4-3. 구조·콘텐츠</h3>
+<h3>4-2. 구조·콘텐츠</h3>
 <table><tr><th style="width:20%">비교 축</th><th style="width:36%">구 hanamarket.co.kr</th><th>신 hanamember.co.kr</th></tr>
 <tr><td>페이지 제목·설명</td><td>전 페이지 "(주)하나회원권" 동일, 설명 없음</td><td>페이지마다 고유 제목·설명·canonical (자체 감사 통과)</td></tr>
 <tr><td>검색엔진·AI용 파일</td><td>sitemap·robots 지시어·llms.txt·RSS 없음</td><td>sitemap(${sitemapN || '947'} URL)·robots(AI봇 허용)·llms.txt·RSS·IndexNow 키</td></tr>
@@ -207,9 +197,7 @@ ${[['페이지별 고유 title', '전부 동일', '통과'], ['meta description 
 <tr><td><b>1월</b><br>심화</td><td>2027 시세 전망·신년 가이드, 골프장별 FAQ 전수(158곳), 구조화 데이터 고도화(골프장 Place·Event), LLM 키 도입 시 가이드·동향 자동 생성 전환, 인블로그·외부 채널 발행 자동화</td><td>타깃 키워드 10개 중 7개 1페이지, AI 노출 20/30, 문의 전환율 2배</td></tr></table>
 </section>
 
-<section><h2>부록. 측정 방법</h2>
-<ul><li><b>AI·검색 캡처</b>: 실제 크롬(로그인 없음, 개인화 최소화) 자동화로 구글·네이버·Bing·네이버 AI탭·Perplexity에 같은 질의를 넣고 결과 화면을 저장, 본문에 hanamember.co.kr 링크(노출)·상호(언급) 포함 여부를 판정. 9/29부터 매일, 10/6부터 네이버 AI탭 추가.</li><li><b>베이스라인</b>: 9/15 Perplexity 로그아웃 4질의 실측(측정/2026-09-15_AI노출_베이스라인.md), 10/7 같은 질의로 재측정.</li><li><b>기술 감사</b>: 사이트 내부 16항목 자동 점검(lib/audit.js), 9/2 외부 진단 항목과 대응.</li><li><b>속도</b>: Lighthouse 12.x, 동일 PC·회선, 모바일(기본 스로틀)·PC 프리셋 각 1회. 결과 JSON은 측정/속도/.</li><li><b>색인</b>: 구글 site: 검색 결과 페이지 수, 사이트맵 URL 수, 서치콘솔.</li><li><b>전후 화면</b>: 구 사이트는 9/14 착수 시 캡처본, 신 사이트는 ${DATE} 운영 캡처.</li></ul>
-<p class="small muted">하나회원권거래소 홈페이지 구축·최적화 종합 보고서 · ${DATE}</p></section>
+<section class="first" style="page-break-before:auto"><p class="small muted">하나회원권거래소 홈페이지 구축·최적화 종합 보고서 · ${DATE}</p></section>
 </body></html>`;
 const out = path.join(PROJ, '보고', `하나회원권_종합보고서_${DATE}`); fs.writeFileSync(out + '.html', html);
 (async () => { const b = await shot.launch(); const p = await b.newPage(); await p.goto('file:///' + (out + '.html').replace(/\\/g, '/'), { waitUntil: 'networkidle0', timeout: 90000 }); await p.pdf({ path: out + '.pdf', format: 'A4', printBackground: true, margin: { top: '14mm', bottom: '14mm', left: '13mm', right: '13mm' }, displayHeaderFooter: true, headerTemplate: '<div></div>', footerTemplate: '<div style="font-size:8px;color:#888;width:100%;text-align:center;font-family:sans-serif">하나회원권거래소 종합 보고서 · <span class="pageNumber"></span>/<span class="totalPages"></span></div>' }); await b.close(); console.log('ok', out + '.pdf', Math.round(fs.statSync(out + '.pdf').size / 1024) + 'KB'); process.exit(0); })().catch(e => { console.error(e); process.exit(1); });
