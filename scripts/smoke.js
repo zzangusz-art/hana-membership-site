@@ -137,6 +137,15 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     const corp = db.prepare("SELECT id, name FROM prices WHERE category='corporate' AND name='88(팔팔)'").get(); const dp = await get(`/market/corporate/${corp.id}`); ok(dp.status === 200 && dp.text.includes('class="pchart"'), '법인 종목 상세 차트');
     const ap = await get('/apply?item=' + encodeURIComponent('88(팔팔)') + '&category=corporate&from=chart'); ok(ap.status === 200 && ap.text.includes('value="corporate" selected') && ap.text.includes('88(팔팔)'), '상담 버튼 링크 → 매매 신청 폼 종목·구분 미리 입력');
     const rt = await fetch(BASE + '/api/t', { method: 'POST', headers: { 'Content-Type': 'application/json', 'user-agent': 'Mozilla/5.0 (Windows NT 10.0) Chrome/130' }, body: JSON.stringify({ t: 'consult', l: '88(팔팔)', p: '/market/corporate/1' }) }); ok(rt.status === 204, '차트 상담 버튼 클릭 추적(consult) 수집'); }
+  { const g = (n) => db.prepare("SELECT name,today,region FROM prices WHERE category='golf' AND name=?").get(n);
+    ok(g('가야 분담금') && g('경주신라') && g('남촌') && g('세레니티') && g('해내다') && !g('가야 우대') && !g('양산') && !g('썬밸리(25000)') && !g('아난티 남해(35평형)') && !g('티클라우드(15000)'), '골프 시세 이름 변경·삭제(1·2차 요청)');
+    ok(g('부곡') && !g('부곡(3250)') && g('동부산플러스') && !g('동부산플러스(6000)'), '골프 시세 통합(부곡·동부산플러스)');
+    ok(g('지산') && g('지산').today === 48500 && g('수원주식') && g('수원주식').today === 37200 && g('아난티가평') && g('아난티가평').today === null, '골프 시세 추가(동아 값 / 값 미정)');
+    const f = db.prepare("SELECT COUNT(*) c FROM prices WHERE category='fitness' AND name IN ('인터-개인','인터-부부')").get().c; const c = db.prepare("SELECT region FROM prices WHERE category='condo' AND name='롯데리조트'").get(); const sono = db.prepare("SELECT 1 FROM prices WHERE category='condo' AND name='소노-노블리안로얄'").get();
+    ok(f === 0 && c && c.region === '전국' && sono, '피트니스 인터 삭제·콘도 지역 전국·소노 노블리안로얄 추가');
+    const pg = await get('/market/golf'); ok(pg.status === 200 && pg.text.includes('상담 문의') && !pg.text.includes('가야 우대'), '시세표에 값 미정 종목은 상담 문의로 표시');
+    const row = db.prepare("SELECT id FROM prices WHERE category='golf' AND name='아난티가평'").get(); const dp = await get('/market/golf/' + row.id); ok([200, 302].includes(dp.status), '값 미정 종목 상세 페이지 오류 없음');
+    const ho = await get('/'); ok(ho.status === 200 && !/아난티가평<\/b> -/.test(ho.text), '홈 시세 띠에 값 미정 종목 제외'); }
   r = await fetch(BASE + '/api/admin/dashboard'); ok(r.status === 401, '관리자 미로그인 401');
   r = await fetch(BASE + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'admin', pw: 'hana1234!' }) });
   const cookie = (r.headers.get('set-cookie') || '').split(';')[0]; ok(r.status === 200 && cookie.startsWith('hana_admin='), '관리자 로그인');

@@ -1,0 +1,623 @@
+{
+ "generated": "2026-10-08",
+ "_note": "시세 종목 정정(클라이언트 요청, 2026-10-08). 서버 시작 때 migrations.applyPriceCorrections가 멱등 실행. 가격이 확인되지 않은 신규 종목은 today=null로 넣고 시세표에는 '상담 문의'로 표시(관리자에서 값 입력 시 정상 표시). 동아회원권에 있는 종목은 그 값으로 추가.",
+ "ops": [
+  {
+   "op": "rename",
+   "category": "golf",
+   "from": "가야 우대",
+   "to": "가야 분담금"
+  },
+  {
+   "op": "rename",
+   "category": "golf",
+   "from": "경주신라 주주",
+   "to": "경주신라"
+  },
+  {
+   "op": "delete",
+   "category": "golf",
+   "names": [
+    "골드레이크 주중"
+   ]
+  },
+  {
+   "op": "rename",
+   "category": "golf",
+   "from": "광주 우대",
+   "to": "광주VIP"
+  },
+  {
+   "op": "rename",
+   "category": "golf",
+   "from": "남촌55000",
+   "to": "남촌"
+  },
+  {
+   "op": "add",
+   "category": "golf",
+   "name": "뉴스프링빌",
+   "today": 21000,
+   "region": "수도권",
+   "note": "동아 뉴스프링빌(12000) 기준"
+  },
+  {
+   "op": "merge",
+   "category": "golf",
+   "keep": "동부산플러스",
+   "drop": [
+    "동부산플러스(6000)",
+    "동부산플러스(8000)"
+   ]
+  },
+  {
+   "op": "add",
+   "category": "golf",
+   "name": "발리오스VVIP",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "op": "merge",
+   "category": "golf",
+   "keep": "부곡",
+   "drop": [
+    "부곡(3250)",
+    "부곡(4000)",
+    "부곡(4800)"
+   ]
+  },
+  {
+   "op": "delete",
+   "category": "golf",
+   "names": [
+    "블랙스톤(15000)"
+   ]
+  },
+  {
+   "op": "rename",
+   "category": "golf",
+   "from": "블랙스톤",
+   "to": "블랙스톤-제주"
+  },
+  {
+   "op": "add",
+   "category": "golf",
+   "name": "블랙스톤이천",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "op": "add",
+   "category": "golf",
+   "name": "블랙스톤-벨포레",
+   "today": null,
+   "region": "충청",
+   "note": "시세 확인 필요"
+  },
+  {
+   "op": "delete",
+   "category": "golf",
+   "names": [
+    "비에이비스타무기명"
+   ]
+  },
+  {
+   "op": "rename",
+   "category": "golf",
+   "from": "샌드파인12000",
+   "to": "샌드파인"
+  },
+  {
+   "op": "delete",
+   "category": "golf",
+   "names": [
+    "설악썬밸리(7600-32평)"
+   ]
+  },
+  {
+   "op": "rename",
+   "category": "golf",
+   "from": "플라자설악",
+   "to": "설악플라자"
+  },
+  {
+   "op": "add",
+   "category": "golf",
+   "name": "설악플라자플러스",
+   "today": null,
+   "region": "강원",
+   "note": "시세 확인 필요"
+  },
+  {
+   "op": "add",
+   "category": "golf",
+   "name": "수원주식",
+   "today": 37200,
+   "region": "수도권",
+   "note": "동아 수원주식(有) 기준"
+  },
+  {
+   "op": "rename",
+   "category": "golf",
+   "from": "시그너스(9000)",
+   "to": "시그너스"
+  },
+  {
+   "op": "rename",
+   "category": "golf",
+   "from": "실크리버(8700)",
+   "to": "세레니티"
+  },
+  {
+   "op": "delete",
+   "category": "golf",
+   "names": [
+    "썬밸리(25000)"
+   ]
+  },
+  {
+   "op": "delete",
+   "category": "golf",
+   "names": [
+    "아난티 남해(35평형)",
+    "아난티 남해(45평형)",
+    "아난티 남해(52평형)",
+    "아난티 남해(78평형)"
+   ]
+  },
+  {
+   "op": "add",
+   "category": "golf",
+   "name": "아난티가평",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "op": "add",
+   "category": "golf",
+   "name": "아난티가족(미납)",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "op": "add",
+   "category": "golf",
+   "name": "아난티개인(미납)",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "op": "delete",
+   "category": "golf",
+   "names": [
+    "아시아드(15000)",
+    "아시아드(20000)"
+   ]
+  },
+  {
+   "op": "rename",
+   "category": "golf",
+   "from": "안성베네스트 나다",
+   "to": "안성베네스트"
+  },
+  {
+   "op": "delete",
+   "category": "golf",
+   "names": [
+    "안성베네스트주중(3500)"
+   ]
+  },
+  {
+   "op": "delete",
+   "category": "golf",
+   "names": [
+    "양산",
+    "양산(18000)",
+    "양산(비즈니스-48000)"
+   ]
+  },
+  {
+   "op": "rename",
+   "category": "golf",
+   "from": "엘리시안강촌(8000)",
+   "to": "엘리시안강촌 주중"
+  },
+  {
+   "op": "add",
+   "category": "golf",
+   "name": "오션힐스포항(18000-로얄)",
+   "today": null,
+   "region": "영남",
+   "note": "시세 확인 필요"
+  },
+  {
+   "op": "add",
+   "category": "golf",
+   "name": "오션힐스포항(25000-비지니스)",
+   "today": null,
+   "region": "영남",
+   "note": "시세 확인 필요"
+  },
+  {
+   "op": "delete",
+   "category": "fitness",
+   "names": [
+    "인터-개인",
+    "인터-부부"
+   ]
+  },
+  {
+   "op": "region",
+   "category": "condo",
+   "names": [
+    "금호-16",
+    "금호-27",
+    "롯데리조트"
+   ],
+   "region": "전국"
+  },
+  {
+   "op": "add",
+   "category": "condo",
+   "name": "소노-노블리안로얄",
+   "today": null,
+   "region": "전국",
+   "note": "시세 확인 필요"
+  },
+  {
+   "op": "fixprev",
+   "category": "condo"
+  },
+  {
+   "category": "golf",
+   "op": "rename",
+   "from": "오크밸리(12000)",
+   "to": "오크밸리"
+  },
+  {
+   "category": "golf",
+   "op": "delete",
+   "names": [
+    "오크밸리(15000)"
+   ]
+  },
+  {
+   "category": "golf",
+   "op": "rename",
+   "from": "오펠(14,000)",
+   "to": "오펠"
+  },
+  {
+   "category": "golf",
+   "op": "rename",
+   "from": "오펠-비즈니스(23000)",
+   "to": "오펠-비즈니스"
+  },
+  {
+   "category": "golf",
+   "op": "rename",
+   "from": "오펠-프리미엄(17000)",
+   "to": "오펠-프리미엄"
+  },
+  {
+   "category": "golf",
+   "op": "delete",
+   "names": [
+    "오펠-프리미엄(19000)"
+   ]
+  },
+  {
+   "category": "golf",
+   "op": "rename",
+   "from": "이스트밸리(59000)",
+   "to": "이스트밸리"
+  },
+  {
+   "category": "golf",
+   "op": "rename",
+   "from": "잭니클라우스",
+   "to": "잭니클라우스(1-4차)"
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "잭니클라우스(5차)",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "rename",
+   "from": "제주",
+   "to": "더시에나제주"
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "지산",
+   "today": 48500,
+   "region": "수도권",
+   "note": "동아 지산일반 기준"
+  },
+  {
+   "category": "golf",
+   "op": "delete",
+   "names": [
+    "지산 주중(5500)"
+   ]
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "지산주중여자",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "지산주중남자",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "지산주중 무기명",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "rename",
+   "from": "지산 하나로(10000)",
+   "to": "지산 하나로 무기명"
+  },
+  {
+   "category": "golf",
+   "op": "delete",
+   "names": [
+    "지산 하나로(6000)"
+   ]
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "지산 하나로 남자",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "지산 하나로 여자",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "지산 하나로 부부",
+   "today": 29500,
+   "region": "수도권",
+   "note": "동아 지산하나로부부(10000) 기준"
+  },
+  {
+   "category": "golf",
+   "op": "rename",
+   "from": "천룡(7000)",
+   "to": "천룡"
+  },
+  {
+   "category": "golf",
+   "op": "rename",
+   "from": "청평마이다스 주중(12500)",
+   "to": "청평마이다스 주중"
+  },
+  {
+   "category": "golf",
+   "op": "rename",
+   "from": "청평마이다스(14,000)",
+   "to": "청평마이다스"
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "코리아 주중",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "rename",
+   "from": "크리스탈밸리(20000)",
+   "to": "크리스탈밸리"
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "태광 무기명",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "delete",
+   "names": [
+    "티클라우드(15000)",
+    "티클라우드(20000)",
+    "티클라우드(25000)"
+   ]
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "티클라우드",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "티클라우드VIP",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "파인리즈",
+   "today": null,
+   "region": "강원",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "rename",
+   "from": "파인크리크(13000)",
+   "to": "파인크리크(2600주)"
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "파인밸리 주중",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "포천아도니스 주중",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "rename",
+   "from": "프리스틴밸리 주중가족(6500)",
+   "to": "프리스틴밸리 주중가족"
+  },
+  {
+   "category": "golf",
+   "op": "rename",
+   "from": "프리스틴밸리 주중개인(4000)",
+   "to": "프리스틴밸리 주중개인"
+  },
+  {
+   "category": "golf",
+   "op": "rename",
+   "from": "플라자용인 주중(3500)",
+   "to": "플라자용인 주중"
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "플라자용인(복합)",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "한림광릉 주중",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "rename",
+   "from": "해내다(23000)",
+   "to": "해내다"
+  },
+  {
+   "category": "golf",
+   "op": "delete",
+   "names": [
+    "해내다(25000)",
+    "해내다(27000)"
+   ]
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "해비치",
+   "today": null,
+   "region": "제주",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "rename",
+   "from": "해비치제주(25000)",
+   "to": "해비치제주"
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "해운대비치",
+   "today": null,
+   "region": "영남",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "해운대비치(레이트필드)",
+   "today": null,
+   "region": "영남",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "휘닉스파크(25000무기명)",
+   "today": null,
+   "region": "강원",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "힐마루 주중개인",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "힐마루 주중가족",
+   "today": null,
+   "region": "수도권",
+   "note": "시세 확인 필요"
+  },
+  {
+   "category": "golf",
+   "op": "add",
+   "name": "휘슬링락",
+   "today": null,
+   "region": "강원",
+   "note": "시세 확인 필요"
+  }
+ ]
+}
