@@ -146,6 +146,7 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     const pg = await get('/market/golf'); ok(pg.status === 200 && pg.text.includes('상담 문의') && !pg.text.includes('가야 우대'), '시세표에 값 미정 종목은 상담 문의로 표시');
     const row = db.prepare("SELECT id FROM prices WHERE category='golf' AND name='아난티가평'").get(); const dp = await get('/market/golf/' + row.id); ok([200, 302].includes(dp.status), '값 미정 종목 상세 페이지 오류 없음');
     const ho = await get('/'); ok(ho.status === 200 && !/아난티가평<\/b> -/.test(ho.text), '홈 시세 띠에 값 미정 종목 제외'); }
+  { const pp = await get('/exclusive/prepaid'); const t = db.prepare("SELECT title, body, image FROM listings WHERE src_id='dioners-expiring'").get(); ok(pp.status === 200 && t && t.title === '디오너스 입회금 소멸형' && t.body === '' && /dioners-expiring-v2\.webp/.test(t.image) && pp.text.includes('디오너스 입회금 소멸형') && !pp.text.includes('그린피 100% 면제 기업 멤버십'), '디오너스 카드 제목 간결·설명 없음·v2 썸네일'); const ri = await fetch(BASE + t.image); ok(ri.status === 200, '디오너스 썸네일 서빙'); await ri.arrayBuffer(); }
   r = await fetch(BASE + '/api/admin/dashboard'); ok(r.status === 401, '관리자 미로그인 401');
   r = await fetch(BASE + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'admin', pw: 'hana1234!' }) });
   const cookie = (r.headers.get('set-cookie') || '').split(';')[0]; ok(r.status === 200 && cookie.startsWith('hana_admin='), '관리자 로그인');
