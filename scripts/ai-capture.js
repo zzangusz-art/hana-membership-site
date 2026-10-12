@@ -10,6 +10,8 @@ const { kstDate } = require('../lib/util');
 
 const ROOT_OUT = path.join(__dirname, '..', '..', '측정', 'AI검색');
 const SITE = 'hanamember.co.kr';
+// Perplexity 등은 출처를 'hanamember.co' 처럼 줄여 보여 주므로 도메인 앞부분으로 판정(2026-10-12 수정: 이전엔 .kr까지 요구해 Perplexity 인용을 놓침)
+const SITE_RE = /hanamember\.co(\.kr)?|hanamember\.co\s|hanamember\.co$/i;
 const BRAND = ['하나회원권거래소', '하나회원권'];
 const COMPETITORS = ['동아회원권', '에이스회원권', '토탈골프', '회원권마켓', '프리미엄회원권', '신세계회원권', '동부회원권', '한솔회원권', '골프클럽119'];
 const QUERIES = ['하나회원권거래소', '골프회원권', '무기명 골프회원권', '콘도회원권', '골프회원권 시세', '골프회원권 거래소 추천'];
@@ -60,7 +62,7 @@ const safe = (s) => s.replace(/[^\w가-힣]+/g, '_').replace(/^_|_$/g, '');
         if (blocked) { await new Promise(res => setTimeout(res, 20000)); await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {}); await new Promise(res => setTimeout(res, E.wait)); }
         const text2 = blocked ? await page.evaluate(() => (document.body.innerText || '').slice(0, 200000)) : text;
         r.blocked = /unusual traffic|비정상적인 트래픽|robot|보안 확인|verify you are human|Cloudflare/i.test(text2) && text2.length < 3000;
-        { const T = text2; r.site = T.includes(SITE); r.brand = BRAND.some(b => T.includes(b)); r.competitors = COMPETITORS.filter(c => T.includes(c)); r.aiBlock = /AI 개요|AI Overview|AI 브리핑|AI Tab|Copilot 답변|Answer|답변/.test(T.slice(0, 4000)); fs.writeFileSync(path.join(outDir, `${e}_${safe(q)}.txt`), T.slice(0, 20000), 'utf8'); }
+        { const T = text2; r.site = T.includes(SITE) || SITE_RE.test(T) || /hanamember\.co/i.test(T); r.brand = BRAND.some(b => T.includes(b)); r.competitors = COMPETITORS.filter(c => T.includes(c)); r.aiBlock = /AI 개요|AI Overview|AI 브리핑|AI Tab|Copilot 답변|Answer|답변/.test(T.slice(0, 4000)); fs.writeFileSync(path.join(outDir, `${e}_${safe(q)}.txt`), T.slice(0, 20000), 'utf8'); }
         r.file = path.join(outDir, `${e}_${safe(q)}.png`);
         await page.screenshot({ path: r.file, fullPage: E.full, captureBeyondViewport: true }).catch(async () => { await page.screenshot({ path: r.file }); });
       } catch (err) { r.error = err.message.slice(0, 200); }
