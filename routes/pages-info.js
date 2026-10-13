@@ -202,7 +202,7 @@ router.get('/apply', (req, res) => {
 // ── 회사소개 ──
 router.get('/about', (req, res) => {
   const s = settings.all(); const g = prices.stats('golf'); const years = new Date().getFullYear() - 2004;
-  const body = `<section class="page-head"><div class="wrap"><p class="eyebrow">회사소개</p><h1>${esc(s.legal_name)} 소개</h1><p class="bluf">${esc(s.legal_name)}는 2004년부터 골프·콘도·피트니스 회원권을 중개해 온 회사입니다. 회원권 상담과 매매가 본업이고, 분양 대행 28건, 골프장·리조트 예약 알선, 해외 골프투어도 합니다. 하나카드 '하나멤버스'나 하나금융그룹과는 관계가 없습니다.</p></div></section>
+  const body = `<section class="page-head"><div class="wrap"><p class="eyebrow">회사소개</p><h1>${esc(s.legal_name)} 소개</h1><p class="bluf">${esc(s.legal_name)}는 2004년부터 골프·콘도·피트니스 회원권을 중개해 온 회원권거래소입니다. 회원권 상담과 매매가 본업이고, 분양 대행 28건, 골프장·리조트 예약 알선, 해외 골프투어도 합니다. 하나카드 '하나멤버스'나 하나금융그룹과는 관계가 없습니다.</p></div></section>
 <section class="section"><div class="wrap club-grid2"><div class="club-main"><article class="prose">
 <h2>회사 소개</h2><p>서울 강남구 압구정에 있습니다. 2004년 에이원회원권거래소로 시작해 2008년 비전회원권거래소와 합치고 2014년 지금 이름이 됐습니다. 대표이사 ${esc(s.ceo)}(연세대학교 경제대학원, 전 비전회원권거래소·에이원회원권거래소 대표이사)가 ${years}년째 회원권을 중개하고 있습니다.</p>
 <h2>하는 일</h2><table><thead><tr><th>서비스</th><th>내용</th></tr></thead><tbody><tr><td>회원권 상담</td><td>예산에 맞는 종목과 그 골프장의 실제 부킹 사정 안내</td></tr><tr><td>회원권 매매</td><td>계약서·정산 내역서 발급, 골프장 명의개서 접수와 등록 확인</td></tr><tr><td>회원권 분양</td><td>신규 분양 회원권의 분양가·입회금 반환 조건 안내, 분양 대행(2004년부터 28건)</td></tr><tr><td>예약 알선</td><td>골프장·리조트 예약 대행</td></tr><tr><td>해외 골프투어</td><td>일정·티타임·숙소 수배(계열사 하나멤버쉽투어)</td></tr></tbody></table>

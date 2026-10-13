@@ -176,7 +176,7 @@ ${nb.length ? `<section class="section nblog"><div class="wrap"><div class="sec-
 
   res.send(page({
     title: `하나회원권거래소 | 골프회원권·무기명 골프회원권·콘도회원권 시세 조회·구매·매입`,
-    description: `골프회원권 시세 조회와 구매·매입·판매, 콘도·피트니스 회원권 거래. 2004년부터 회원권 거래 전문, 24시간 상담 ${s.phone}.`,
+    description: `2004년부터 운영한 회원권거래소 하나회원권거래소. 골프회원권 시세 ${g.total}종목·콘도회원권 시세·피트니스회원권 시세 매일 갱신, 회원권 구매·매입·판매 상담 ${s.phone}.`,
     path: '/', body, bodyClass: 'home',
     jsonld: [faqLd(faqs), datasetLd('golf', all, g.lastUpdated)],
     dateModified: g.lastUpdated ? isoFromTs(g.lastUpdated) : undefined,
@@ -185,10 +185,10 @@ ${nb.length ? `<section class="section nblog"><div class="wrap"><div class="sec-
 
 // ── 시세표 ──
 const MARKET_META = {
-  golf: { h1: '골프회원권 시세 조회', intro: (n) => `전국 회원제 골프장 ${n}종목의 회원권 시세입니다. 실거래와 매도·매수 호가를 반영해 매주 월요일 갱신하며, 표의 가격은 만원 단위 회원권 시세(명의개서료·수수료 별도)입니다.`, desc: (n, d) => `골프회원권 시세 조회: ${n}종목 금일·전일 시세와 시세 변동, 지역별 필터, 90일 추이. ${d} 갱신, 실거래 기준.` },
+  golf: { h1: '골프회원권 시세 조회', intro: (n) => `전국 회원제 골프장 ${n}종목의 회원권 시세입니다. 실거래와 매도·매수 호가를 반영해 매주 월요일 갱신하며, 표의 가격은 만원 단위 회원권 시세(명의개서료·수수료 별도)입니다.`, desc: (n, d) => `골프회원권 시세 조회: ${n}종목 금일·전일 시세와 시세 변동, 지역별 필터, 90일~10년 추이. ${d} 갱신. 회원권거래소 하나회원권거래소.` },
   corporate: { h1: '법인회원권 시세표', intro: (n) => `법인 명의로 등록·이용하는 골프회원권 ${n}종목의 시세입니다. 법인 회원권은 지정 등록자 수·무기명 여부에 따라 같은 골프장이라도 개인 회원권과 가격이 다릅니다.`, desc: (n, d) => `법인 골프회원권 시세표, ${n}종목 금일·전일 시세와 등락률. ${d} 갱신. 법인 명의 등록·취득세·무기명 조건 상담.` },
-  condo: { h1: '콘도회원권 시세표', intro: (n) => `전국 콘도·리조트 회원권 ${n}종목의 시세입니다. 공유제(등기)·회원제(입회금) 여부, 성수기 이용일수, 객실 타입에 따라 가격이 달라지므로 매수 전 이용 조건을 함께 확인하세요.`, desc: (n, d) => `콘도회원권 시세표, 소노(대명)·한화·용평 등 리조트 회원권 ${n}종목 금일·전일 시세. ${d} 갱신. 하나회원권거래소.` },
-  fitness: { h1: '피트니스회원권 시세표', intro: (n) => `호텔 피트니스(헬스) 개인·부부 회원권 ${n}종목의 시세입니다. 호텔 피트니스 회원권은 연회비·부대시설 이용 범위가 가격에 반영됩니다.`, desc: (n, d) => `피트니스회원권 시세표, 그랜드인터컨티넨탈·노보텔·롯데 등 호텔 헬스 회원권 ${n}종목 시세. ${d} 갱신.` },
+  condo: { h1: '콘도회원권 시세표', intro: (n) => `전국 콘도·리조트 회원권 ${n}종목의 시세입니다. 공유제(등기)·회원제(입회금) 여부, 성수기 이용일수, 객실 타입에 따라 가격이 달라지므로 매수 전 이용 조건을 함께 확인하세요.`, desc: (n, d) => `콘도회원권 시세 ${n}종목: 소노(대명)·용평·아난티·한화·오크밸리 등 리조트 회원권 금일·전일 시세와 평형·등급별 가격. ${d} 갱신. 회원권거래소 하나회원권거래소.` },
+  fitness: { h1: '피트니스회원권 시세표', intro: (n) => `호텔 피트니스(헬스) 개인·부부 회원권 ${n}종목의 시세입니다. 호텔 피트니스 회원권은 연회비·부대시설 이용 범위가 가격에 반영됩니다.`, desc: (n, d) => `피트니스회원권 시세 ${n}종목: 서울드래곤시티·파르나스·반얀트리·그랜드인터컨티넨탈·하얏트·신라 등 호텔 헬스 회원권 개인·부부·가족 시세. ${d} 갱신. 회원권거래소 하나회원권거래소.` },
 };
 // 시세표 회원권명 → 이동할 주소. 골프는 골프장 페이지(회원권 종류까지), 그 외는 종목 상세.
 function priceLinks(cat) {
@@ -239,6 +239,8 @@ router.get('/market/:category', (req, res, next) => {
   const cat = req.params.category; const meta = MARKET_META[cat]; if (!meta) return next();
   const q = String(req.query.q || '').trim().slice(0, 40); const region = String(req.query.region || '').trim().slice(0, 20); const sort = req.query.sort === 'price' ? 'price' : 'name';
   const rows = prices.list(cat, { q, region, sort }); const all = prices.list(cat); const st = prices.stats(cat); const regions = prices.regions(cat);
+  // 키워드 직답(2026-10-13): "OO회원권 시세는 어디서 확인하나요?" — 실제 시세표 수치로 답한다
+  const kwFaq = (() => { const ps = all.filter(r => r.today != null && r.today > 0).sort((a, b) => a.today - b.today); const lbl = { golf: '골프회원권', corporate: '법인회원권', condo: '콘도회원권', fitness: '피트니스회원권' }[cat]; if (!ps.length) return { q: `${lbl} 시세는 어디서 확인하나요?`, a: `회원권거래소 하나회원권거래소 시세표에서 확인할 수 있습니다.` }; const mid = ps[Math.floor(ps.length / 2)].today; return { q: `${lbl} 시세는 어디서 확인하나요?`, a: `회원권거래소 하나회원권거래소의 ${lbl} 시세표에서 ${ps.length}종목의 금일·전일 시세와 90일~10년 추이를 확인할 수 있습니다. ${st.lastUpdated ? kstDate(new Date(st.lastUpdated * 1000)) : kstDate()} 기준 최저 ${ps[0].name} ${fmtMan(ps[0].today)}, 최고 ${ps[ps.length - 1].name} ${fmtMan(ps[ps.length - 1].today)}, 중간값 ${fmtMan(mid)}이며 표의 가격은 명의개서료·수수료를 뺀 회원권 시세입니다. 매물·호가 상담 02-583-0583.` }; })();
   const updated = st.lastUpdated ? kstDate(new Date(st.lastUpdated * 1000)) : kstDate();
   const label = prices.CATS[cat];
   const tabs = Object.entries(prices.CATS).map(([k, v]) => `<a class="tab${k === cat ? ' active' : ''}" href="/market/${k}">${v}</a>`).join('');
@@ -270,9 +272,9 @@ router.get('/market/:category', (req, res, next) => {
   <ul><li><strong>계절</strong>: 봄·가을 성수기 앞뒤로 매수 수요가 늘어 강세, 한겨울·장마철은 약세 경향.</li><li><strong>골프장 정책</strong>: 회원수 조정, 입회금 인상·반환, 주말 부킹 제도 변경은 즉시 시세에 반영됩니다.</li><li><strong>금리·경기</strong>: 법인 접대 수요와 자산 시장 흐름이 고가 종목에 먼저 반영됩니다.</li><li><strong>신규 분양</strong>: 인근 신규 골프장 분양은 기존 종목 시세를 흔드는 요인입니다.</li></ul>
   <h2>매수·매도 판단은 이렇게</h2>
   <p>한 주 등락만 보지 마시고 <a href="/blog?type=report">주간 시세 리포트</a>에서 4주 흐름과 <a href="/golf">골프장별 입회 조건</a>을 같이 보세요. 지금 나온 매물과 호가는 ${esc(settings.cfg('phone'))}으로 물어보시는 게 가장 정확합니다.</p>
-  ${faqHtml([{ q: '시세는 언제 갱신되나요?', a: '매주 월요일 오전 실거래·호가를 반영해 갱신합니다. 급변 시 주중에도 수시 반영합니다.' }, { q: '표의 가격에 수수료가 포함되나요?', a: '아니요. 회원권 자체 시세이며 거래소 수수료와 골프장 명의개서료는 별도입니다.' }, { q: '표에 없는 종목도 거래할 수 있나요?', a: '네. 표는 주요 종목이며 그 외 종목은 상담 시 시세를 안내해 드립니다.' }])}
+  ${faqHtml([kwFaq, { q: '시세는 언제 갱신되나요?', a: '매주 월요일 오전 실거래·호가를 반영해 갱신합니다. 급변 시 주중에도 수시 반영합니다.' }, { q: '표의 가격에 수수료가 포함되나요?', a: '아니요. 회원권 자체 시세이며 거래소 수수료와 골프장 명의개서료는 별도입니다.' }, { q: '표에 없는 종목도 거래할 수 있나요?', a: '네. 표는 주요 종목이며 그 외 종목은 상담 시 시세를 안내해 드립니다.' }])}
 </div></section>`;
-  res.send(page({ title: `${meta.h1} ${updated} 갱신: ${all.length}종목 금일·전일 시세와 시세 변동 | 하나회원권거래소`, description: meta.desc(all.length, updated), path: `/market/${cat}`, body, breadcrumbs: [{ name: '회원권 시세', href: '/market/golf' }, { name: label, href: `/market/${cat}` }], jsonld: [datasetLd(cat, all, st.lastUpdated), faqLd([{ q: '시세는 언제 갱신되나요?', a: '매주 월요일 오전 실거래·호가를 반영해 갱신합니다.' }, { q: '표의 가격에 수수료가 포함되나요?', a: '회원권 자체 시세이며 거래소 수수료와 골프장 명의개서료는 별도입니다.' }])], dateModified: st.lastUpdated ? isoFromTs(st.lastUpdated) : undefined, bodyClass: 'market-page', ogImage: `/og/page/market-${cat}.png` }));
+  res.send(page({ title: `${meta.h1} ${updated} 갱신: ${all.length}종목 금일·전일 시세와 시세 변동 | 하나회원권거래소`, description: meta.desc(all.length, updated), path: `/market/${cat}`, body, breadcrumbs: [{ name: '회원권 시세', href: '/market/golf' }, { name: label, href: `/market/${cat}` }], jsonld: [datasetLd(cat, all, st.lastUpdated), faqLd([kwFaq, { q: '시세는 언제 갱신되나요?', a: '매주 월요일 오전 실거래·호가를 반영해 갱신합니다.' }, { q: '표의 가격에 수수료가 포함되나요?', a: '회원권 자체 시세이며 거래소 수수료와 골프장 명의개서료는 별도입니다.' }])], dateModified: st.lastUpdated ? isoFromTs(st.lastUpdated) : undefined, bodyClass: 'market-page', ogImage: `/og/page/market-${cat}.png` }));
 });
 
 // ── 골프장 목록 ──

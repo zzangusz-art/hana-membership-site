@@ -147,6 +147,12 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     const row = db.prepare("SELECT id FROM prices WHERE category='golf' AND name='아난티가평'").get(); const dp = await get('/market/golf/' + row.id); ok([200, 302].includes(dp.status), '값 미정 종목 상세 페이지 오류 없음');
     const ho = await get('/'); ok(ho.status === 200 && !/아난티가평<\/b> -/.test(ho.text), '홈 시세 띠에 값 미정 종목 제외'); }
   { const pp = await get('/exclusive/prepaid'); const t = db.prepare("SELECT title, body, image FROM listings WHERE src_id='dioners-expiring'").get(); ok(pp.status === 200 && t && t.title === '디오너스 입회금 소멸형' && t.body === '' && /dioners-expiring-v3\.webp/.test(t.image) && pp.text.includes('디오너스 입회금 소멸형') && !pp.text.includes('그린피 100% 면제 기업 멤버십'), '디오너스 카드 제목 간결·설명 없음·v2 썸네일'); const ri = await fetch(BASE + t.image); ok(ri.status === 200, '디오너스 썸네일 서빙'); await ri.arrayBuffer(); }
+  { const sch2 = require('../lib/scheduler'); ok(sch2.inblogRank('회원권거래소란? 하는 일과 고르는 기준 7가지, 하나회원권거래소는 어떻게 하나') === 0 && sch2.inblogRank('콘도회원권 시세 한눈에') === 2 && sch2.inblogRank('골프회원권 시세 10년 추이') === 4 && sch2.inblogRank('보라컨트리클럽 회원권 시세와 매수 가이드') === 99, '인블로그 백필 우선순위(회원권거래소→하나→콘도→피트니스→골프 시세)');
+    const pc = await get('/market/condo'); ok(pc.text.includes('콘도회원권 시세는 어디서 확인하나요?') && /회원권거래소 하나회원권거래소/.test(pc.text) && pc.text.includes('<title>콘도회원권 시세표'), '콘도 시세표 키워드 직답 FAQ·설명(타이틀 유지)');
+    const pf = await get('/market/fitness'); ok(pf.text.includes('피트니스회원권 시세는 어디서 확인하나요?'), '피트니스 시세표 키워드 직답 FAQ');
+    const ho = await get('/'); ok(ho.text.includes('<title>하나회원권거래소 | 골프회원권·무기명 골프회원권·콘도회원권 시세 조회·구매·매입') && ho.text.includes('회원권거래소는 어디를 골라야 하나요?') && /2004년부터 운영한 회원권거래소/.test(ho.text), '홈 타이틀 유지·회원권거래소 설명·FAQ');
+    const ll = await get('/llms.txt'); ok(ll.text.indexOf('회원권거래소란') > 0 && ll.text.indexOf('회원권거래소란') < ll.text.indexOf('골프회원권이란'), 'llms.txt 우선 키워드 답변이 맨 앞');
+    const ar = await get('/blog/what-is-membership-exchange-how-to-choose'); ok(ar.status === 200 && ar.text.includes('고르는 기준 7가지'), '회원권거래소 안내 글 발행'); }
   r = await fetch(BASE + '/api/admin/dashboard'); ok(r.status === 401, '관리자 미로그인 401');
   r = await fetch(BASE + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'admin', pw: 'hana1234!' }) });
   const cookie = (r.headers.get('set-cookie') || '').split(';')[0]; ok(r.status === 200 && cookie.startsWith('hana_admin='), '관리자 로그인');

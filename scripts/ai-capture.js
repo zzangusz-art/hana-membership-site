@@ -14,7 +14,7 @@ const SITE = 'hanamember.co.kr';
 const SITE_RE = /hanamember\.co(\.kr)?|hanamember\.co\s|hanamember\.co$/i;
 const BRAND = ['하나회원권거래소', '하나회원권'];
 const COMPETITORS = ['동아회원권', '에이스회원권', '토탈골프', '회원권마켓', '프리미엄회원권', '신세계회원권', '동부회원권', '한솔회원권', '골프클럽119'];
-const QUERIES = ['하나회원권거래소', '골프회원권', '무기명 골프회원권', '콘도회원권', '골프회원권 시세', '골프회원권 거래소 추천'];
+const QUERIES = ['회원권거래소', '하나회원권거래소', '콘도회원권 시세', '피트니스회원권 시세', '골프회원권 시세', '골프회원권', '무기명 골프회원권', '콘도회원권', '골프회원권 거래소 추천'];
 const ENGINES = {
   google: { url: (q) => `https://www.google.com/search?q=${encodeURIComponent(q)}&hl=ko&gl=kr`, wait: 4000, full: true },
   naver: { url: (q) => `https://search.naver.com/search.naver?query=${encodeURIComponent(q)}`, wait: 4000, full: true },

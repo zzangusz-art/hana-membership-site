@@ -8,7 +8,7 @@ const DATE = process.argv[2] && /^\d{4}-\d{2}-\d{2}$/.test(process.argv[2]) ? pr
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const safe = (q) => q.replace(/[\\/:*?"<>|\s]+/g, '_');
 const ENG = [['google', '구글'], ['naver', '네이버'], ['bing', 'Bing'], ['naverai', '네이버 AI탭'], ['perplexity', 'Perplexity']];
-const KW = [['골프회원권', '골프회원권 (대표 키워드)', '/guide/golf · /market/golf · /golf'], ['무기명 골프회원권', '무기명 골프회원권', '/guide/anonymous · /exclusive/anonymous'], ['콘도회원권', '콘도회원권', '/guide/condo · /market/condo'], ['골프회원권 시세', '골프회원권 시세', '/market/golf · 시세 리포트 글'], ['골프회원권 거래소 추천', '골프회원권 거래소 추천', '거래소 추천 글 2편(10/7) · 회사소개'], ['하나회원권거래소', '하나회원권거래소 (브랜드)', '/ · /about']];
+const KW = [['회원권거래소', '회원권거래소 (우선 1)', '회원권거래소 고르는 법 글 · /about · 홈'], ['콘도회원권 시세', '콘도회원권 시세 (우선 3)', '/market/condo · 콘도 시세 글 3편'], ['피트니스회원권 시세', '피트니스회원권 시세 (우선 4)', '/market/fitness · 피트니스 시세 글'], ['골프회원권', '골프회원권 (대표 키워드)', '/guide/golf · /market/golf · /golf'], ['무기명 골프회원권', '무기명 골프회원권', '/guide/anonymous · /exclusive/anonymous'], ['콘도회원권', '콘도회원권', '/guide/condo · /market/condo'], ['골프회원권 시세', '골프회원권 시세', '/market/golf · 시세 리포트 글'], ['골프회원권 거래소 추천', '골프회원권 거래소 추천', '거래소 추천 글 2편(10/7) · 회사소개'], ['하나회원권거래소', '하나회원권거래소 (브랜드)', '/ · /about']];
 const BASEQ = ['하나회원권거래소는 어떤 회사야?', '하나회원권은 어떤 회사야?', '골프회원권 거래소 추천해줘. 시세도 확인하고 싶어', '골프회원권 시세 어디서 확인해? 신뢰할 만한 거래소도 알려줘'];
 
 // 추이.csv
