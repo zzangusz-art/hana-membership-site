@@ -10,10 +10,12 @@
   const onScroll = () => { const y = window.scrollY; if (header) { if (!hdOn && y > 120) { hdOn = true; header.classList.add('scrolled'); } else if (hdOn && y < 30) { hdOn = false; header.classList.remove('scrolled'); } } toTop && toTop.classList.toggle('show', y > 500); };
   window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
   // 드로어 내비(우측 슬라이드) — 백드롭 클릭·ESC·닫기 버튼으로 닫힘, 열릴 때 스크롤 잠금
-  const bd = $('#drawerBd'); const setDrawer = (open) => { if (!mnav) return; mnav.classList.toggle('open', open); bd && bd.classList.toggle('open', open); burger && burger.setAttribute('aria-expanded', String(open)); document.body.style.overflow = open ? 'hidden' : ''; if (open) { const f = $('#drawerClose'); f && f.focus(); } };
+  const bd = $('#drawerBd'); const setDrawer = (open) => { if (!mnav) return; mnav.classList.toggle('open', open); bd && bd.classList.toggle('open', open); burger && burger.setAttribute('aria-expanded', String(open)); document.body.style.overflow = open ? 'hidden' : ''; if (open) { const f = $('#drawerClose'); f && f.focus({ preventScroll: true }); } };
   burger && burger.addEventListener('click', () => setDrawer(!mnav.classList.contains('open')));
   bd && bd.addEventListener('click', () => setDrawer(false)); const dc = $('#drawerClose'); dc && dc.addEventListener('click', () => setDrawer(false));
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setDrawer(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && mnav && mnav.classList.contains('open')) setDrawer(false); });
+  mnav && mnav.addEventListener('click', (e) => { if (e.target.closest('a')) setDrawer(false); }); // 메뉴 링크 이동 시 스크롤 잠금 해제
+  window.addEventListener('pageshow', () => setDrawer(false)); // 뒤로가기(bfcache) 복귀 시 열린 채 남지 않게
   // 스크롤 진행바
   const prog = $('#progress'); const onProg = () => { if (!prog) return; const h = document.documentElement; const p = h.scrollHeight - h.clientHeight; prog.style.width = p > 0 ? (h.scrollTop / p * 100) + '%' : '0'; }; window.addEventListener('scroll', onProg, { passive: true }); onProg();
   // 토스트
