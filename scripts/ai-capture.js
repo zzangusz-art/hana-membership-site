@@ -21,7 +21,34 @@ const ENGINES = {
   bing: { url: (q) => `https://www.bing.com/search?q=${encodeURIComponent(q)}&setlang=ko&cc=KR`, wait: 5000, full: true },
   naverai: { url: (q) => `https://search.naver.com/search.naver?ssc=tab.ait.all&query=${encodeURIComponent(q)}`, wait: 15000, full: true }, // 네이버 AI탭(로그인 불필요)
   perplexity: { url: (q) => `https://www.perplexity.ai/search?q=${encodeURIComponent(q)}`, wait: 18000, full: true },
+  // 대화형 AI: 질의를 입력창에 넣고 답변이 멈출 때까지 대기. Claude·Gemini는 캡처용 프로필(.chrome-profile)에 한 번 로그인해 둬야 한다(안 돼 있으면 '로그인 필요'로 기록)
+  chatgpt: { url: (q) => `https://chatgpt.com/?q=${encodeURIComponent(q)}&hints=search`, wait: 6000, chat: true, area: 'main', input: '#prompt-textarea, div[contenteditable="true"], textarea' },
+  claude: { url: (q) => `https://claude.ai/new?q=${encodeURIComponent(q)}`, wait: 6000, chat: true, area: 'main', input: 'div[contenteditable="true"], textarea' },
+  gemini: { url: () => 'https://gemini.google.com/app?hl=ko', wait: 6000, chat: true, area: 'chat-window', input: 'rich-textarea div[contenteditable="true"], div[contenteditable="true"], textarea' },
 };
+const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+const LOGIN_RE = /\/login|signin|accounts\.google\.com|\/auth/i;
+// 대화 영역(사이드바 제외) 텍스트 — 캡처 프로필이 개인 계정이면 사이드바에 지난 대화 제목이 보이므로 판정·저장·스크린샷 모두 이 영역만 쓴다
+const areaText = (page, E) => page.evaluate(sel => ((document.querySelector(sel) || document.body).innerText || '').slice(0, 200000), E.area);
+// 대화형 AI 한 건: 자동 전송이 안 됐으면 직접 입력·전송 → 본문 길이가 3회 연속 그대로일 때까지(최대 약 2분) 대기. 반환: '' | 'login'
+async function runChat(page, E, q) {
+  if (LOGIN_RE.test(page.url())) return 'login';
+  const input = await page.waitForSelector(E.input, { visible: true, timeout: 25000 }).catch(() => null);
+  if (!input) return LOGIN_RE.test(page.url()) ? 'login' : 'noinput';
+  await sleep(2500);
+  const mainText = () => areaText(page, E).catch(() => ''); // 자동 전송 직후 /c/… 로 이동하면 컨텍스트가 바뀌므로 실패는 빈 값
+  const cur = await page.evaluate(el => (el.value !== undefined ? el.value : el.innerText || '').trim(), input).catch(() => '');
+  const already = (await mainText()).split(q).length > 2; // 질의가 대화 영역에 이미 올라갔으면 자동 전송된 것
+  if (!already) {
+    if (cur !== q) { await input.click(); if (cur) { await page.keyboard.down('Control'); await page.keyboard.press('KeyA'); await page.keyboard.up('Control'); await page.keyboard.press('Backspace'); } await page.keyboard.type(q, { delay: 60 }); }
+    await sleep(800); await page.keyboard.press('Enter');
+  }
+  await sleep(8000);
+  let prev = -1, same = 0;
+  for (let i = 0; i < 40 && same < 3; i++) { const n = (await mainText()).length; same = n === prev ? same + 1 : 0; prev = n; await sleep(3000); }
+  if (LOGIN_RE.test(page.url())) return 'login';
+  return '';
+}
 
 function arg(name, def) { const i = process.argv.indexOf('--' + name); return i > 0 && process.argv[i + 1] ? process.argv[i + 1] : def; }
 const engines = arg('engines', Object.keys(ENGINES).join(',')).split(',').map(s => s.trim()).filter(e => ENGINES[e]);
@@ -55,16 +82,23 @@ const safe = (s) => s.replace(/[^\w가-힣]+/g, '_').replace(/^_|_$/g, '');
         if (e === 'perplexity' || e === 'google') { for (let i = 0; i < 6; i++) { const t = await page.evaluate(() => document.body.innerText || ''); if (t.length > 800) break; await new Promise(res => setTimeout(res, 2000)); } }
         // 네이버 AI탭: 답변이 스트리밍되므로 본문 길이가 더 안 늘 때까지 스크롤하며 대기(최대 +30초)
         if (e === 'naverai') { let prev = -1; for (let i = 0; i < 10; i++) { const n = await page.evaluate(() => { window.scrollTo(0, document.body.scrollHeight); return (document.body.innerText || '').length; }); if (n === prev && n > 800) break; prev = n; await new Promise(res => setTimeout(res, 3000)); } await page.evaluate(() => window.scrollTo(0, 0)); }
+        if (E.chat) { const st = await runChat(page, E, q); if (st === 'login') { r.blocked = true; r.error = '로그인 필요'; } else if (st === 'noinput') r.error = '입력창 없음'; await page.setViewport({ width: 1366, height: 2400, deviceScaleFactor: 1 }); await page.addStyleTag({ content: 'nav,aside,[role=navigation],bard-sidenav{display:none!important}' }).catch(() => {}); await sleep(1500); } // 사이드바(지난 대화 목록) 숨김
         // Perplexity: 쿠키 배너 닫기 + 긴 뷰포트로 답변 전체가 보이게
         if (e === 'perplexity') { try { const btn = await page.$$('button'); for (const b of btn) { const t = await page.evaluate(el => el.textContent.trim(), b); if (/필수 항목만|Reject|거부/.test(t)) { await b.click(); break; } } } catch (_) { /* no-op */ } await page.setViewport({ width: 1366, height: 2400, deviceScaleFactor: 1 }); await new Promise(res => setTimeout(res, 1500)); }
-        const text = await page.evaluate(() => (document.body.innerText || '').slice(0, 200000));
-        let blocked = /unusual traffic|비정상적인 트래픽|robot|보안 확인|verify you are human|Cloudflare/i.test(text) && text.length < 3000;
+        // 대화형 AI는 사이드바(지난 대화 제목) 오탐을 막으려 main 영역만, 질의 문구(사용자 말풍선)는 지우고 판정
+        const text = E.chat ? (await areaText(page, E)).split(q).join(' ')
+          : await page.evaluate(() => (document.body.innerText || '').slice(0, 200000));
+        let blocked = !E.chat && /unusual traffic|비정상적인 트래픽|robot|보안 확인|verify you are human|Cloudflare/i.test(text) && text.length < 3000;
         if (blocked) { await new Promise(res => setTimeout(res, 20000)); await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {}); await new Promise(res => setTimeout(res, E.wait)); }
         const text2 = blocked ? await page.evaluate(() => (document.body.innerText || '').slice(0, 200000)) : text;
-        r.blocked = /unusual traffic|비정상적인 트래픽|robot|보안 확인|verify you are human|Cloudflare/i.test(text2) && text2.length < 3000;
+        r.blocked = r.blocked || (/unusual traffic|비정상적인 트래픽|robot|보안 확인|verify you are human|Cloudflare/i.test(text2) && text2.length < 3000);
         { const T = text2; r.site = T.includes(SITE) || SITE_RE.test(T) || /hanamember\.co/i.test(T); r.brand = BRAND.some(b => T.includes(b)); r.competitors = COMPETITORS.filter(c => T.includes(c)); r.aiBlock = /AI 개요|AI Overview|AI 브리핑|AI Tab|Copilot 답변|Answer|답변/.test(T.slice(0, 4000)); fs.writeFileSync(path.join(outDir, `${e}_${safe(q)}.txt`), T.slice(0, 20000), 'utf8'); }
         r.file = path.join(outDir, `${e}_${safe(q)}.png`);
-        await page.screenshot({ path: r.file, fullPage: E.full, captureBeyondViewport: true }).catch(async () => { await page.screenshot({ path: r.file }); });
+        // 우리 링크(없으면 상호)가 화면 어디에 있는지 기록 → 주간 신규 노출 리포트가 그 위치를 잘라 증빙으로 쓴다
+        if (r.site || r.brand) r.hit = await page.evaluate((sel) => { const root = (sel && document.querySelector(sel)) || document.body; const top0 = sel ? root.getBoundingClientRect().top + window.scrollY : 0; const H = sel ? root.scrollHeight : document.documentElement.scrollHeight; const pos = (el) => ({ y: Math.round(el.getBoundingClientRect().top + window.scrollY - top0), h: H }); const a = root.querySelector('a[href*="hanamember.co"]'); if (a && a.getBoundingClientRect().height) return pos(a); for (const re of [/hanamember\.co/i, /하나회원권/]) { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) if (re.test(n.textContent) && n.parentElement.getBoundingClientRect().height) return pos(n.parentElement); } return null; }, E.chat ? E.area : null).catch(() => null);
+        const areaEl = E.chat ? await page.$(E.area) : null;
+        if (areaEl) await areaEl.screenshot({ path: r.file }).catch(async () => { await page.screenshot({ path: r.file }); });
+        else await page.screenshot({ path: r.file, fullPage: E.full, captureBeyondViewport: true }).catch(async () => { await page.screenshot({ path: r.file }); });
       } catch (err) { r.error = err.message.slice(0, 200); }
       finally { await page.close(); }
       results.push(r);
@@ -75,7 +109,7 @@ const safe = (s) => s.replace(/[^\w가-힣]+/g, '_').replace(/^_|_$/g, '');
   fs.writeFileSync(path.join(outDir, 'result.json'), JSON.stringify(results, null, 1), 'utf8');
   // 요약 md
   const lines = [`# AI 검색·검색 노출 캡처 — ${date}`, '', '| 질의 | 엔진 | 우리 사이트 | 상호 언급 | 경쟁 거래소 | 비고 |', '|---|---|---|---|---|---|'];
-  for (const r of results) lines.push(`| ${r.query} | ${r.engine} | ${r.site ? '✅' : '—'} | ${r.brand ? '✅' : '—'} | ${r.competitors.join(', ') || '—'} | ${r.blocked ? '봇 차단 화면' : ''}${r.error ? '오류: ' + r.error : ''} |`);
+  for (const r of results) lines.push(`| ${r.query} | ${r.engine} | ${r.site ? '✅' : '—'} | ${r.brand ? '✅' : '—'} | ${r.competitors.join(', ') || '—'} | ${r.blocked ? (r.error === '로그인 필요' ? '' : '봇 차단 화면') : ''}${r.error ? '오류: ' + r.error : ''} |`);
   const hit = results.filter(r => !r.error && !r.blocked); const siteN = hit.filter(r => r.site).length, brandN = hit.filter(r => r.brand).length;
   lines.push('', `- 유효 캡처 ${hit.length}/${results.length} · 우리 사이트 노출 ${siteN} · 상호 언급 ${brandN}`, `- 스크린샷: \`측정/AI검색/${date}/\``);
   fs.writeFileSync(path.join(outDir, `요약_${date}.md`), lines.join('\n'), 'utf8');
