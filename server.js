@@ -40,12 +40,12 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", 'https://www.googletagmanager.com', 'https://www.youtube.com', 'https://wcs.naver.net', 'https://wcs.pstatic.net'],
+      scriptSrc: ["'self'", "'unsafe-inline'", 'https://www.googletagmanager.com', 'https://www.youtube.com', 'https://wcs.naver.net', 'https://wcs.pstatic.net', 'https://static.cloudflareinsights.com'],
       styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
       fontSrc: ["'self'", 'https://cdn.jsdelivr.net', 'data:'],
       imgSrc: ["'self'", 'data:', 'https://i.ytimg.com', 'https://www.google-analytics.com', 'https://*.googleusercontent.com', 'https://wcs.naver.com', 'https://wcs.naver.net'],
       frameSrc: ["'self'", 'https://www.youtube.com', 'https://www.youtube-nocookie.com', 'https://www.google.com', 'https://maps.google.com'],
-      connectSrc: ["'self'", 'https://www.google-analytics.com', 'https://region1.google-analytics.com', 'https://*.google-analytics.com', 'https://wcs.naver.com', 'https://wcs.naver.net'],
+      connectSrc: ["'self'", 'https://www.google-analytics.com', 'https://region1.google-analytics.com', 'https://*.google-analytics.com', 'https://wcs.naver.com', 'https://wcs.naver.net', 'https://cloudflareinsights.com'],
       objectSrc: ["'none'"], baseUri: ["'self'"], formAction: ["'self'"], upgradeInsecureRequests: null,
     },
   },

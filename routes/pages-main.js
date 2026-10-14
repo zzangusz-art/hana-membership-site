@@ -176,7 +176,7 @@ ${nb.length ? `<section class="section nblog"><div class="wrap"><div class="sec-
 
   res.send(page({
     title: `하나회원권거래소 | 골프회원권·무기명 골프회원권·콘도회원권 시세 조회·구매·매입`,
-    description: `2004년부터 운영한 회원권거래소 하나회원권거래소. 골프회원권 시세 ${g.total}종목·콘도회원권 시세·피트니스회원권 시세 매일 갱신, 회원권 구매·매입·판매 상담 ${s.phone}.`,
+    description: `2004년부터 운영한 회원권거래소 하나회원권거래소. 콘도회원권 시세·피트니스회원권 시세·골프회원권 시세 ${g.total}종목 매일 갱신, 회원권 구매·매입·판매 상담 ${s.phone}.`,
     path: '/', body, bodyClass: 'home',
     jsonld: [faqLd(faqs), datasetLd('golf', all, g.lastUpdated)],
     dateModified: g.lastUpdated ? isoFromTs(g.lastUpdated) : undefined,
@@ -186,7 +186,7 @@ ${nb.length ? `<section class="section nblog"><div class="wrap"><div class="sec-
 // ── 시세표 ──
 const MARKET_META = {
   golf: { h1: '골프회원권 시세 조회', intro: (n) => `전국 회원제 골프장 ${n}종목의 회원권 시세입니다. 실거래와 매도·매수 호가를 반영해 매주 월요일 갱신하며, 표의 가격은 만원 단위 회원권 시세(명의개서료·수수료 별도)입니다.`, desc: (n, d) => `골프회원권 시세 조회: ${n}종목 금일·전일 시세와 시세 변동, 지역별 필터, 90일~10년 추이. ${d} 갱신. 회원권거래소 하나회원권거래소.` },
-  corporate: { h1: '법인회원권 시세표', intro: (n) => `법인 명의로 등록·이용하는 골프회원권 ${n}종목의 시세입니다. 법인 회원권은 지정 등록자 수·무기명 여부에 따라 같은 골프장이라도 개인 회원권과 가격이 다릅니다.`, desc: (n, d) => `법인 골프회원권 시세표, ${n}종목 금일·전일 시세와 등락률. ${d} 갱신. 법인 명의 등록·취득세·무기명 조건 상담.` },
+  corporate: { h1: '법인회원권 시세표', intro: (n) => `법인 명의로 등록·이용하는 골프회원권 ${n}종목의 시세입니다. 법인 회원권은 지정 등록자 수·무기명 여부에 따라 같은 골프장이라도 개인 회원권과 가격이 다릅니다.`, desc: (n, d) => `법인회원권 시세 ${n}종목: 법인 골프회원권 금일·전일 시세와 등락률, 지명인 등록·취득세·무기명 조건. ${d} 갱신. 회원권거래소 하나회원권거래소.` },
   condo: { h1: '콘도회원권 시세표', intro: (n) => `전국 콘도·리조트 회원권 ${n}종목의 시세입니다. 공유제(등기)·회원제(입회금) 여부, 성수기 이용일수, 객실 타입에 따라 가격이 달라지므로 매수 전 이용 조건을 함께 확인하세요.`, desc: (n, d) => `콘도회원권 시세 ${n}종목: 소노(대명)·용평·아난티·한화·오크밸리 등 리조트 회원권 금일·전일 시세와 평형·등급별 가격. ${d} 갱신. 회원권거래소 하나회원권거래소.` },
   fitness: { h1: '피트니스회원권 시세표', intro: (n) => `호텔 피트니스(헬스) 개인·부부 회원권 ${n}종목의 시세입니다. 호텔 피트니스 회원권은 연회비·부대시설 이용 범위가 가격에 반영됩니다.`, desc: (n, d) => `피트니스회원권 시세 ${n}종목: 서울드래곤시티·파르나스·반얀트리·그랜드인터컨티넨탈·하얏트·신라 등 호텔 헬스 회원권 개인·부부·가족 시세. ${d} 갱신. 회원권거래소 하나회원권거래소.` },
 };
@@ -316,7 +316,7 @@ router.get('/golf', (req, res) => {
   <div class="club-grid">${clubs.map(c => `<a class="club-card reveal" href="/golf/${encodeURIComponent(c.slug)}" data-sido="${attr(c.sido || sido(c.address))}">${c.logo ? `<img class="cc-logo" src="${attr(c.logo)}" alt="" loading="lazy" width="56" height="56">` : ''}<div class="cc-top"><span class="tag">${esc(c.region || '')}</span>${c.nvar > 1 ? `<span class="tag tag-soft">회원권 ${c.nvar}종</span>` : ''}</div><h2>${esc(c.title)}</h2><p class="cc-addr">${esc(c.address || '')}</p><div class="cc-price">${c.range ? `<b>${c.range}</b>${c.nvar > 1 ? '' : chg(c.price)}` : '<span class="note">시세 상담 문의</span>'}</div></a>`).join('') || '<p>검색 결과가 없습니다.</p>'}</div>
 </div></section>
 <section class="section explain"><div class="wrap narrow"><h2>골프장 소개 페이지에 있는 것</h2><p>시세·지역·규모 표, 회원권 종류별 시세와 추이 그래프, 어떤 분께 맞는 회원권인지 상담 경험으로 쓴 해설, 상담에서 자주 받는 질문의 답이 있습니다. 골프장이 회원 수나 입회금, 부킹 제도를 바꾸면 내용을 고칩니다.</p><h2>원하는 골프장이 없다면?</h2><p>표시된 골프장 외에도 전국 회원제 골프장 회원권을 중개합니다. <a href="/apply">매매 신청</a> 또는 ${esc(settings.cfg('phone'))}으로 문의하시면 시세와 매물을 안내해 드립니다.</p></div></section>`;
-  res.send(page({ title: `골프장 회원권 거래·입회권 안내: 골프장별 시세·혜택·추천 (${total}개 골프장)`, description: `전국 ${total}개 골프장 회원권 시세와 입회권·명의개서 조건, 회원권 혜택, 어떤 분께 맞는지 골프장별 추천. 지역 지도 검색.`, path: '/golf', body, breadcrumbs: [{ name: '골프장 소개', href: '/golf' }], ogImage: '/og/page/golf.png', jsonld: [{ '@context': 'https://schema.org', '@type': 'ItemList', name: '골프장별 회원권 안내', numberOfItems: clubs.length, itemListElement: clubs.slice(0, 100).map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.title, url: `${site}/golf/${encodeURIComponent(c.slug)}` })) }] }));
+  res.send(page({ title: `골프장 회원권 거래·입회권 안내: 골프장별 시세·혜택·추천 (${total}개 골프장)`, description: `전국 ${total}개 골프장 골프회원권 시세와 입회권·명의개서 조건, 회원권 혜택, 골프장별 추천과 지역 지도 검색. 회원권거래소 하나회원권거래소.`, path: '/golf', body, breadcrumbs: [{ name: '골프장 소개', href: '/golf' }], ogImage: '/og/page/golf.png', jsonld: [{ '@context': 'https://schema.org', '@type': 'ItemList', name: '골프장별 회원권 안내', numberOfItems: clubs.length, itemListElement: clubs.slice(0, 100).map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.title, url: `${site}/golf/${encodeURIComponent(c.slug)}` })) }] }));
 });
 
 // ── 골프장 상세 ──
