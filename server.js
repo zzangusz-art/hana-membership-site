@@ -108,6 +108,7 @@ app.get('/robots.txt', (req, res) => res.type('text/plain').send(seo.robots()));
 app.get(/^\/(google[a-f0-9]{16})\.html$/, (req, res, next) => { const f = settings.cfg('google_verification_file'); if (req.params[0] + '.html' !== f) return next(); res.type('text/html').send(`google-site-verification: ${f}`); });
 // IndexNow 키 파일(네이버·Bing 소유 확인용)
 const indexnow = require('./lib/indexnow');
+setTimeout(() => indexnow.weeklyFull().then(r => { if (!r.skipped) console.log('[indexnow] 전체 URL 알림', r.status || r.reason); }).catch(() => {}), 60e3).unref();
 require('./lib/naverblog').refresh().catch(e => console.error('[naverblog]', e.message));
 if (!process.env.DISABLE_SCHEDULER && process.env.NODE_ENV !== 'test') setTimeout(() => og.warmPosts().catch(e => console.error('[og] warm', e.message)), 15000);
 app.get(/^\/([a-f0-9]{32})\.txt$/, (req, res, next) => { if (req.params[0] !== indexnow.key()) return next(); res.type('text/plain').send(indexnow.key()); });
