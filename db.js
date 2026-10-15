@@ -207,6 +207,7 @@ for (const c of ['session_id', 'src_channel', 'src_source', 'src_medium', 'src_c
 // ── 관리자 권한(2026-10-06): owner(개발·운영 전체) / manager(업체 관리자: 직원 계정 개설 가능) / staff(직원) ──
 for (const [c, t] of [['role', "TEXT NOT NULL DEFAULT 'staff'"], ['phone', 'TEXT'], ['dept', 'TEXT'], ['active', 'INTEGER NOT NULL DEFAULT 1'], ['created_by', 'INTEGER']]) ensureColumn('admins', c, t);
 ensureColumn('inquiries', 'assignee_id', 'INTEGER');   // 담당자(admins.id)
+ensureColumn('inquiries', 'contact_time', 'TEXT');   // 고객이 고른 상담 희망 시간대(2026-10-15)
 ensureColumn('prices', 'manual_lock', 'INTEGER NOT NULL DEFAULT 0'); // 1이면 동아 자동 반영 제외(수기 관리)
 db.exec(`
 CREATE TABLE IF NOT EXISTS customers (

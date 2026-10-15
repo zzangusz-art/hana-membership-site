@@ -4,7 +4,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const { db } = require('../db');
-const { page, faqLd } = require('../lib/layout');
+const { page, faqLd, contactTimeField } = require('../lib/layout');
 const settings = require('../lib/settings');
 const prices = require('../lib/prices');
 const { esc, attr, fmtNum, fmtMan, kstDate, isoFromTs, fmtKoDate, truncate } = require('../lib/util');
@@ -190,7 +190,8 @@ router.get('/apply', (req, res) => {
     <div class="row"><label>성함 <input name="name" required maxlength="40"></label><label>연락처 <input name="phone" required maxlength="20" inputmode="tel" placeholder="010-0000-0000"></label></div>
     <div class="row"><label>이메일(선택) <input name="email" type="email" maxlength="80"></label><label>구분 <select name="category"><option value="golf"${sel('golf')}>골프회원권</option><option value="corporate"${sel('corporate')}>법인회원권</option><option value="condo"${sel('condo')}>콘도회원권</option><option value="fitness"${sel('fitness')}>피트니스회원권</option><option value="sale"${sel('sale')}>분양</option><option value="tour"${sel('tour')}>해외투어</option></select></label></div>
     <div class="row"><label>희망 종목 <input name="item" maxlength="60" value="${attr(item)}" placeholder="예: 아시아나, 남촌, 소노"></label><label>예산 / 희망가 <input name="budget" maxlength="40" placeholder="예: 1억 이내, 9,500만원"></label></div>
-    <label>문의 내용 <textarea name="message" rows="5" maxlength="1500" placeholder="이용 패턴(주중/주말), 개인/법인, 연락 가능 시간 등"></textarea></label>
+    ${contactTimeField()}
+    <label>문의 내용 <textarea name="message" rows="5" maxlength="1500" placeholder="이용 패턴(주중/주말), 개인/법인 등"></textarea></label>
     <label class="agree"><input type="checkbox" name="agree" value="1" required> <a href="/privacy" target="_blank">개인정보 수집·이용</a>에 동의합니다. (수집 항목: 성함·연락처·이메일·문의 내용 / 목적: 회원권 매매 상담 / 보유: 상담 종료 후 1년)</label>
     <button class="btn btn-green block" type="submit">매매 신청하기</button><p class="form-msg" aria-live="polite"></p>
   </form>

@@ -4,7 +4,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const { db } = require('../db');
-const { page, faqLd } = require('../lib/layout');
+const { page, faqLd, contactTimeField } = require('../lib/layout');
 const settings = require('../lib/settings');
 const prices = require('../lib/prices');
 const { esc, attr, fmtNum, fmtMan, kstDate, isoFromTs, fmtKoDate, truncate, stripHtml } = require('../lib/util');
@@ -165,7 +165,8 @@ ${nb.length ? `<section class="section nblog"><div class="wrap"><div class="sec-
     <input type="hidden" name="kind" value="consult">
     <div class="row"><label>성함 <input name="name" required maxlength="40" placeholder="홍길동"></label><label>연락처 <input name="phone" required maxlength="20" placeholder="010-0000-0000" inputmode="tel"></label></div>
     <div class="row"><label>구분 <select name="category"><option value="golf">골프회원권</option><option value="condo">콘도회원권</option><option value="fitness">피트니스회원권</option><option value="corporate">법인회원권</option><option value="sale">분양</option><option value="tour">해외투어</option></select></label><label>희망 종목 <input name="item" maxlength="60" placeholder="예: 아시아나, 남촌"></label></div>
-    <label>문의 내용 <textarea name="message" rows="3" maxlength="1000" placeholder="예산, 매수/매도 여부, 연락 가능 시간"></textarea></label>
+    ${contactTimeField()}
+    <label>문의 내용 <textarea name="message" rows="3" maxlength="1000" placeholder="예산, 매수/매도 여부 등"></textarea></label>
     <label class="agree"><input type="checkbox" name="agree" value="1" required> <a href="/privacy" target="_blank">개인정보 수집·이용</a>에 동의합니다 (상담 목적, 1년 보관)</label>
     <button class="btn btn-green block" type="submit">상담 신청</button>
     <p class="form-msg" aria-live="polite"></p>

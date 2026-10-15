@@ -60,6 +60,14 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
   r = await get(`/api/prices/golf/${j.items[0].id}/history`); ok(JSON.parse(r.text).history.length >= 1, 'API 시세 이력');
   r = await fetch(BASE + '/api/inquiry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'buy', name: '테스트', phone: '010-1234-5678', agree: 1, item: '아시아나', category: 'golf' }) }); ok(r.status === 200 && (await r.json()).ok, 'POST /api/inquiry');
   r = await fetch(BASE + '/api/inquiry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'x' }) }); ok(r.status === 400, 'POST /api/inquiry 검증(400)');
+  // 상담 시간 선택(2026-10-15): 폼 두 곳 노출 · 허용 목록만 저장 · 고객 DB 상담 기록에 반영
+  { const h = await get('/'), ap = await get('/apply'); ok(h.text.includes('name="contact_time"') && ap.text.includes('name="contact_time"') && (ap.text.match(/class="tchip"/g) || []).length === 5, '문의 폼 상담 시간 선택(홈·매매 신청)');
+    let x = await (await fetch(BASE + '/api/inquiry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'consult', name: '시간테스트', phone: '010-7777-1414', agree: 1, contact_time: '오후 14~18시' }) })).json();
+    let y = await (await fetch(BASE + '/api/inquiry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'consult', name: '시간테스트2', phone: '010-7777-1415', agree: 1, contact_time: '<script>' }) })).json();
+    const ri = db.prepare('SELECT contact_time, customer_id FROM inquiries WHERE id=?').get(x.id), rj = db.prepare('SELECT contact_time FROM inquiries WHERE id=?').get(y.id);
+    const note = db.prepare("SELECT body FROM customer_notes WHERE customer_id=? AND kind='inquiry' ORDER BY id DESC").get(ri.customer_id);
+    const lr = require('../lib/customers').list({ q: '010-7777-1414' })[0];
+    ok(ri.contact_time === '오후 14~18시' && rj.contact_time === '' && note && note.body.includes('상담 희망 오후 14~18시') && lr && lr.contact_time === '오후 14~18시', '상담 시간 저장·검증·고객 DB 반영'); }
   // 골프장 회원권 종류 통합 · 차트 기간
   { const cg = require('../lib/clubgroup'); ok(cg.baseKey('강남300 주중가족') === cg.baseKey('강남300') && cg.baseKey('부곡(3250)') === cg.baseKey('부곡컨트리클럽') && cg.baseKey('남촌55000') === '남촌' && cg.baseKey('센추리21(10000)') === '센추리21' && cg.baseKey('골드레이크 주중') !== cg.baseKey('골드 주주'), '골프장 이름 묶기 규칙');
     const par = db.prepare("SELECT * FROM clubs WHERE name='강남300'").get(); const kid = db.prepare("SELECT * FROM clubs WHERE name='강남300 주중가족'").get();
