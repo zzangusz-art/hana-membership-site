@@ -62,13 +62,21 @@ const safe = (s) => s.replace(/[^\w가-힣]+/g, '_').replace(/^_|_$/g, '');
   // 구글·Perplexity는 헤드리스를 봇으로 막으므로, 창을 띄운 실제 크롬 + 전용 프로필(쿠키 유지)로 연다
   const puppeteer = require('puppeteer-core');
   const profileDir = path.join(ROOT_OUT, '.chrome-profile'); fs.mkdirSync(profileDir, { recursive: true });
+  // 동시 실행 방지(10/14·10/16: 늦게 시작한 예약 캡처가 아래 '크롬 정리' 단계에서 실행 중이던 다른 캡처의 크롬을 꺼 버림)
+  const lockFile = path.join(ROOT_OUT, '.capture.lock');
+  try { const pid = Number(fs.readFileSync(lockFile, 'utf8')); if (pid && pid !== process.pid) { try { process.kill(pid, 0); console.log(`다른 캡처가 실행 중입니다(pid ${pid}). 끝난 뒤 다시 실행하세요.`); process.exit(0); } catch (_) { /* 죽은 잠금 — 이어서 진행 */ } } } catch (_) { /* 잠금 없음 */ }
+  fs.writeFileSync(lockFile, String(process.pid)); process.on('exit', () => { try { if (Number(fs.readFileSync(lockFile, 'utf8')) === process.pid) fs.unlinkSync(lockFile); } catch (_) { /* no-op */ } });
   // 이전 실행이 남긴 캡처용 크롬(같은 프로필)을 정리 — 남아 있으면 프로필 잠금 때문에 새 크롬이 뜨지 않는다
   if (process.platform === 'win32') { try { const { execSync } = require('child_process'); const cmd = "Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'chrome.exe' -and $_.CommandLine -like '*.chrome-profile*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"; execSync('powershell -NoProfile -EncodedCommand ' + Buffer.from(cmd, 'utf16le').toString('base64'), { stdio: 'ignore', timeout: 20000 }); } catch (_) { /* no-op */ } }
-  const browser = await puppeteer.launch({ executablePath: shot.findChrome(), headless: process.argv.includes('--headless') ? true : false, userDataDir: profileDir, defaultViewport: null,
+  // 첫 실행 중 크롬이 통째로 닫히는 일이 있어(10/14·10/16 네이버 AI탭 단계, 재실행하면 정상) 끊기면 다시 띄워 그 항목부터 이어 간다
+  const launch = () => puppeteer.launch({ executablePath: shot.findChrome(), headless: process.argv.includes('--headless') ? true : false, userDataDir: profileDir, defaultViewport: null,
     args: ['--disable-blink-features=AutomationControlled', '--window-size=1366,900', '--lang=ko-KR', '--no-first-run', '--no-default-browser-check', '--disable-infobars'], ignoreDefaultArgs: ['--enable-automation'] });
+  let browser = await launch();
   const results = [];
   for (const q of queries) {
     for (const e of engines) {
+      for (let attempt = 0; attempt < 2; attempt++) {
+      if (!browser.isConnected()) { console.log('(크롬 연결 끊김 — 다시 띄움)'); await new Promise(res => setTimeout(res, 5000)); browser = await launch(); }
       const E = ENGINES[e]; const page = await browser.newPage();
       const r = { date, engine: e, query: q, url: E.url(q), file: '', site: false, brand: false, competitors: [], blocked: false, aiBlock: false, error: '' };
       try {
@@ -100,12 +108,14 @@ const safe = (s) => s.replace(/[^\w가-힣]+/g, '_').replace(/^_|_$/g, '');
         if (areaEl) await areaEl.screenshot({ path: r.file }).catch(async () => { await page.screenshot({ path: r.file }); });
         else await page.screenshot({ path: r.file, fullPage: E.full, captureBeyondViewport: true }).catch(async () => { await page.screenshot({ path: r.file }); });
       } catch (err) { r.error = err.message.slice(0, 200); }
-      finally { await page.close(); }
+      finally { await page.close().catch(() => {}); }
+      if (r.error && !browser.isConnected() && attempt === 0) continue; // 크롬이 죽어서 난 오류면 한 번 더
       results.push(r);
       console.log(`${e} | ${q} | 우리사이트 ${r.site ? 'O' : '-'} | 상호 ${r.brand ? 'O' : '-'} | 경쟁 ${r.competitors.join(',') || '-'}${r.blocked ? ' | 차단' : ''}${r.error ? ' | ERR ' + r.error : ''}`);
+      break; }
     }
   }
-  await browser.close();
+  await browser.close().catch(() => {});
   fs.writeFileSync(path.join(outDir, 'result.json'), JSON.stringify(results, null, 1), 'utf8');
   // 요약 md
   const lines = [`# AI 검색·검색 노출 캡처 — ${date}`, '', '| 질의 | 엔진 | 우리 사이트 | 상호 언급 | 경쟁 거래소 | 비고 |', '|---|---|---|---|---|---|'];
