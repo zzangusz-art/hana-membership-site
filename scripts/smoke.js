@@ -148,7 +148,8 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
   { const g = (n) => db.prepare("SELECT name,today,region FROM prices WHERE category='golf' AND name=?").get(n);
     ok(g('가야 분담금') && g('경주신라') && g('남촌') && g('세레니티') && g('해내다') && !g('가야 우대') && !g('양산') && !g('썬밸리(25000)') && !g('아난티 남해(35평형)') && !g('티클라우드(15000)'), '골프 시세 이름 변경·삭제(1·2차 요청)');
     ok(g('부곡') && !g('부곡(3250)') && g('동부산플러스') && !g('동부산플러스(6000)'), '골프 시세 통합(부곡·동부산플러스)');
-    ok(g('지산') && g('지산').today === 48500 && g('수원주식') && g('수원주식').today === 37200 && g('아난티가평') && g('아난티가평').today === null, '골프 시세 추가(동아 값 / 값 미정)');
+    // 동아 시세는 매일 바뀌므로 값 고정 대신 '시세 있음'만 확인(10/16 수원주식 37,200→36,700 실제 변동으로 깨졌던 항목)
+    ok(g('지산') && g('지산').today > 0 && g('수원주식') && g('수원주식').today > 0 && g('아난티가평') && g('아난티가평').today === null, '골프 시세 추가(동아 값 / 값 미정)');
     const f = db.prepare("SELECT COUNT(*) c FROM prices WHERE category='fitness' AND name IN ('인터-개인','인터-부부')").get().c; const c = db.prepare("SELECT region FROM prices WHERE category='condo' AND name='롯데리조트'").get(); const sono = db.prepare("SELECT 1 FROM prices WHERE category='condo' AND name='소노-노블리안로얄'").get();
     ok(f === 0 && c && c.region === '전국' && sono, '피트니스 인터 삭제·콘도 지역 전국·소노 노블리안로얄 추가');
     const pg = await get('/market/golf'); ok(pg.status === 200 && pg.text.includes('상담 문의') && !pg.text.includes('가야 우대'), '시세표에 값 미정 종목은 상담 문의로 표시');
