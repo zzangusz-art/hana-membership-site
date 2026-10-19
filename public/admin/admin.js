@@ -42,7 +42,7 @@
     $('#who').innerHTML = `<b>${esc(ME.admin.name || ME.admin.login_id)}</b> <span class="rolepill ${esc(ME.admin.role)}">${esc(ROLE_LABEL()[ME.admin.role] || ME.admin.role)}</span>`;
     $('#login').hidden = true; $('#app').hidden = false; go(location.hash.slice(1) || 'dash');
     // 초기 비밀번호 그대로면 모든 화면 위에 경고(바꾸면 사라짐)
-    let pwb = $('#pwWarn'); if (ME.defaultPw) { if (!pwb) { pwb = document.createElement('div'); pwb.id = 'pwWarn'; pwb.style.cssText = 'background:#c0392b;color:#fff;padding:10px 16px;font-weight:700;position:sticky;top:0;z-index:50'; $('#app').prepend(pwb); } pwb.innerHTML = '⚠ 이 계정은 초기 비밀번호를 쓰고 있습니다. 누구나 알 수 있는 값이므로 지금 <a href="#account" id="pwWarnGo" style="color:#fff;text-decoration:underline">내 계정</a>에서 바꿔 주세요.'; $('#pwWarnGo').onclick = (e) => { e.preventDefault(); go('account'); }; } else if (pwb) pwb.remove();
+    let pwb = $('#pwWarn'); if (ME.defaultPw) { if (!pwb) { pwb = document.createElement('div'); pwb.id = 'pwWarn'; pwb.style.cssText = 'background:#c0392b;color:#fff;padding:10px 16px;font-weight:700;border-radius:8px;margin-bottom:14px'; $('.main').prepend(pwb); } pwb.innerHTML = '⚠ 이 계정은 초기 비밀번호를 쓰고 있습니다. 누구나 알 수 있는 값이므로 지금 <a href="#account" id="pwWarnGo" style="color:#fff;text-decoration:underline">내 계정</a>에서 바꿔 주세요.'; $('#pwWarnGo').onclick = (e) => { e.preventDefault(); go('account'); }; } else if (pwb) pwb.remove();
   }
 
   // ── 대시보드 ──
@@ -424,7 +424,7 @@ ${grp('label', '채널')}${grp('source', '출처')}${grp('keyword', '검색어')
 <div class="card"><h3 style="margin-top:0">관리자 비밀번호 변경</h3><div class="row"><label>새 비밀번호(8자 이상) <input id="newpw" type="password" autocomplete="new-password"></label><button type="button" class="btn" id="pwBtn" style="align-self:end">변경</button></div></div>
 <button class="btn primary">설정 저장</button></form>`;
     $('#sform').onsubmit = async (e) => { e.preventDefault(); try { await api('/settings', { method: 'POST', body: Object.fromEntries(new FormData(e.target)) }); toast('저장 완료 — 공개 페이지에 즉시 반영'); } catch (err) { toast(err.message, true); } };
-    $('#pwBtn').onclick = async () => { try { await api('/password', { method: 'POST', body: { pw: $('#newpw').value } }); toast('비밀번호 변경'); $('#newpw').value = ''; } catch (e) { toast(e.message, true); } };
+    $('#pwBtn').onclick = async () => { try { await api('/password', { method: 'POST', body: { pw: $('#newpw').value } }); toast('비밀번호 변경'); $('#newpw').value = ''; const w = $('#pwWarn'); if (w) w.remove(); } catch (e) { toast(e.message, true); } };
   };
 
   window.addEventListener('hashchange', () => go(location.hash.slice(1) || 'dash'));
