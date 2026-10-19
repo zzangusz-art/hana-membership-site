@@ -21,7 +21,9 @@ const mode = process.argv[2] || 'after';
   } else if (mode === 'after') {
     const base = process.argv[3] || `http://127.0.0.1:${process.env.PORT || 3000}`;
     let cookie = null;
-    try {
+    // 관리자 화면은 로컬 서버에서만 캡처한다 — 운영 등 외부 주소에 기본 계정으로 로그인하지 않는다(2026-10-19)
+    const isLocal = ['localhost', '127.0.0.1', '[::1]'].includes(new URL(base).hostname);
+    if (isLocal) try {
       const r = await fetch(base + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: process.env.ADMIN_ID || 'admin', pw: process.env.ADMIN_PW || 'hana1234!' }) });
       const sc = r.headers.get('set-cookie') || ''; const m = sc.match(/hana_admin=([^;]+)/); cookie = m ? m[1] : null;
     } catch (_) { /* 관리자 캡처 생략 */ }

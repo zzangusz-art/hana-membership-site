@@ -40,7 +40,10 @@ router.post('/login', (req, res) => {
 router.post('/logout', (req, res) => { res.clearCookie(auth.COOKIE); res.json({ ok: true }); });
 router.use(auth.requireAdmin);
 router.use(auth.requireRole); // 권한별 API 차단(총괄 전용 구간 403)
-router.get('/me', (req, res) => res.json({ admin: req.admin, views: auth.allowedViews(req.admin.role), roles: auth.ROLES }));
+// 초기 비밀번호(코드에 공개된 기본값) 사용 여부 — 관리자 화면 상단 경고용(2026-10-19 운영 계정에서 확인됨)
+const DEFAULT_PWS = ['hana1234!'];
+const usesDefaultPw = (id) => { try { const a = db.prepare('SELECT pw_hash FROM admins WHERE id=?').get(id); return !!a && DEFAULT_PWS.some(p => require('bcryptjs').compareSync(p, a.pw_hash)); } catch (_) { return false; } };
+router.get('/me', (req, res) => res.json({ admin: req.admin, views: auth.allowedViews(req.admin.role), roles: auth.ROLES, defaultPw: usesDefaultPw(req.admin.id) }));
 router.post('/password', (req, res) => { const pw = String(req.body?.pw || ''); if (pw.length < 8) return res.status(400).json({ error: '8자 이상' }); auth.changePw(req.admin.id, pw); res.json({ ok: true }); });
 router.post('/me', (req, res) => { try { auth.updateAccount(req.admin.id, { name: req.body?.name, phone: req.body?.phone, dept: req.body?.dept }, req.admin); res.json({ ok: true }); } catch (e) { res.status(400).json({ error: e.message }); } });
 

@@ -41,6 +41,8 @@
     const pm = $('#menu a[data-v="posts"]'); if (pm) { pm.textContent = isOwner() ? '📝 콘텐츠(블로그)' : '📝 블로그 발행 현황'; pm.classList.toggle('dev', isOwner()); }
     $('#who').innerHTML = `<b>${esc(ME.admin.name || ME.admin.login_id)}</b> <span class="rolepill ${esc(ME.admin.role)}">${esc(ROLE_LABEL()[ME.admin.role] || ME.admin.role)}</span>`;
     $('#login').hidden = true; $('#app').hidden = false; go(location.hash.slice(1) || 'dash');
+    // 초기 비밀번호 그대로면 모든 화면 위에 경고(바꾸면 사라짐)
+    let pwb = $('#pwWarn'); if (ME.defaultPw) { if (!pwb) { pwb = document.createElement('div'); pwb.id = 'pwWarn'; pwb.style.cssText = 'background:#c0392b;color:#fff;padding:10px 16px;font-weight:700;position:sticky;top:0;z-index:50'; $('#app').prepend(pwb); } pwb.innerHTML = '⚠ 이 계정은 초기 비밀번호를 쓰고 있습니다. 누구나 알 수 있는 값이므로 지금 <a href="#account" id="pwWarnGo" style="color:#fff;text-decoration:underline">내 계정</a>에서 바꿔 주세요.'; $('#pwWarnGo').onclick = (e) => { e.preventDefault(); go('account'); }; } else if (pwb) pwb.remove();
   }
 
   // ── 대시보드 ──
@@ -281,7 +283,7 @@
     $('#view').innerHTML = `<h1>내 계정</h1><div class="grid g2"><div class="card"><h3 style="margin-top:0">내 정보</h3><p>아이디 <b>${esc(me.login_id)}</b> · 권한 <span class="rolepill ${esc(me.role)}">${esc(ROLE_LABEL()[me.role] || me.role)}</span></p><form class="form" id="meform"><label>이름 <input name="name" value="${esc(me.name || '')}" required></label><label>소속·담당 업무 <input name="dept" value="${esc(me.dept || '')}"></label><label>연락처 <input name="phone" value="${esc(me.phone || '')}"></label><button class="btn primary">저장</button></form></div>
 <div class="card"><h3 style="margin-top:0">비밀번호 변경</h3><form class="form" id="pwform"><label>새 비밀번호(8자 이상) <input name="pw" type="password" required minlength="8" autocomplete="new-password"></label><label>새 비밀번호 확인 <input name="pw2" type="password" required minlength="8" autocomplete="new-password"></label><button class="btn primary">변경</button></form></div></div>`;
     $('#meform').onsubmit = async (e) => { e.preventDefault(); try { await api('/me', { method: 'POST', body: Object.fromEntries(new FormData(e.target)) }); toast('저장'); ME = await api('/me'); $('#who').innerHTML = `<b>${esc(ME.admin.name || ME.admin.login_id)}</b> <span class="rolepill ${esc(ME.admin.role)}">${esc(ROLE_LABEL()[ME.admin.role] || ME.admin.role)}</span>`; } catch (err) { toast(err.message, true); } };
-    $('#pwform').onsubmit = async (e) => { e.preventDefault(); const f = e.target; if (f.pw.value !== f.pw2.value) return toast('두 비밀번호가 다릅니다', true); try { await api('/password', { method: 'POST', body: { pw: f.pw.value } }); toast('비밀번호 변경 완료'); f.reset(); } catch (err) { toast(err.message, true); } };
+    $('#pwform').onsubmit = async (e) => { e.preventDefault(); const f = e.target; if (f.pw.value !== f.pw2.value) return toast('두 비밀번호가 다릅니다', true); try { await api('/password', { method: 'POST', body: { pw: f.pw.value } }); toast('비밀번호 변경 완료'); f.reset(); const w = $('#pwWarn'); if (w) w.remove(); } catch (err) { toast(err.message, true); } };
   };
 
   // ── 공지·뉴스·유튜브 ──
