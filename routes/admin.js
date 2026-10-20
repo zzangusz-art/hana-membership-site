@@ -230,6 +230,9 @@ router.post('/inquiries/:id/to-customer', (req, res) => { const i = db.prepare('
 
 router.get('/customers', (req, res) => res.json({ rows: customers.list({ q: req.query.q, status: req.query.status, kind: req.query.kind, assignee: req.query.assignee, source: req.query.source }), ...customers.counts(), kinds: customers.KIND, statuses: customers.STATUS }));
 router.get('/customers/export.csv', (req, res) => { res.setHeader('Content-Type', 'text/csv; charset=utf-8'); res.setHeader('Content-Disposition', `attachment; filename="customers_${kstDate()}.csv"`); res.send(customers.csv()); });
+router.get('/customers/spam', (req, res) => { const spam = require('../lib/spam'); res.json({ rows: spam.list(req.query.limit), stats: spam.stats() }); });
+router.post('/customers/spam/:id/restore', (req, res) => { try { res.json({ ok: true, ...require('../lib/spam').restore(Number(req.params.id), req.admin.id) }); } catch (e) { res.status(400).json({ error: e.message }); } });
+router.delete('/customers/spam/:id', (req, res) => { res.json({ ok: true, removed: require('../lib/spam').remove(Number(req.params.id)) }); });
 router.get('/customers/:id', (req, res) => { const c = customers.list({ limit: 5000 }).find(x => x.id === Number(req.params.id)); if (!c) return res.status(404).json({ error: 'not found' }); res.json({ customer: c, notes: customers.notes(c.id) }); });
 router.post('/customers', (req, res) => { try { res.json({ ok: true, id: customers.save(req.body || {}, req.admin.id) }); } catch (e) { res.status(400).json({ error: e.message }); } });
 router.post('/customers/:id/quick', (req, res) => { try { customers.quick(req.params.id, req.body || {}, req.admin.id); res.json({ ok: true }); } catch (e) { res.status(400).json({ error: e.message }); } });

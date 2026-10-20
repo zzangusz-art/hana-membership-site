@@ -226,11 +226,23 @@
   const custState = { q: '', status: 'open', kind: '', assignee: '', source: '' };
   const trailModal = async (sid) => { try { const t = await api('/inflow/session/' + sid); const N = { view: '페이지 열람', tel: '전화 클릭', kakao: '카카오톡 문의 클릭', inquiry: '문의 접수', outbound: '외부 채널 클릭', form: '문의 폼 입력 시작' }; modal(`<h2>문의 고객의 방문 경로</h2><p><b>${esc(t.visit.label)}</b> · ${esc(t.visit.source)}${t.visit.keyword ? ' · 검색어 ' + esc(t.visit.keyword) : ''}</p><table><thead><tr><th>시각</th><th>행동</th><th>페이지</th></tr></thead><tbody>${t.events.map(x => `<tr><td class="small">${dt(x.ts)}</td><td>${esc(N[x.type] || x.type)} ${esc(x.label || '')}</td><td class="small">${esc(decodeURIComponent(x.path || ''))}</td></tr>`).join('')}</tbody></table>`); } catch (err) { toast(err.message, true); } };
   views.inquiries = () => views.customers();
+  // 스팸 탭: 자동으로 걸러진 문의 확인 · 잘못 걸린 건 '정상 문의로 복구'(고객 목록으로 이동) · 확실한 스팸은 삭제
+  const spamView = async () => {
+    const d = await api('/customers/spam'); const S = custState;
+    $('#view').innerHTML = `<h1>문의·고객 관리 <span class="muted small">스팸 ${fmt(d.stats.total)}건 · 최근 7일 ${fmt(d.stats.last7)}건</span></h1>
+<p class="small muted">국내 전화번호가 아니거나 본문에 링크가 있어 자동으로 걸러진 문의입니다. 고객 목록·대시보드 집계에는 들어가지 않습니다. 실제 고객이 잘못 걸렸다면 「정상 문의로 복구」를 누르세요. 원래 접수 시각 그대로 고객 목록(신규 접수)에 등록됩니다.</p>
+<div class="toolbar"><button class="btn sm" data-back="open">← 문의·고객 목록으로</button><button class="btn sm primary">🚫 스팸 <span class="muted">${fmt(d.stats.total)}</span></button></div>
+<div class="tbl"><table><thead><tr><th>접수</th><th>성함·연락처</th><th>문의 내용</th><th>걸린 이유</th><th></th></tr></thead><tbody>${d.rows.map(r => `<tr><td class="small">${dt(r.created_at)}</td><td><b>${esc(r.name || '')}</b><br><span class="small">${esc(r.phone || '')}</span>${r.email ? '<br><span class="small">' + esc(r.email) + '</span>' : ''}</td><td class="small" style="max-width:420px;white-space:pre-wrap">${esc((r.message || '').slice(0, 300))}</td><td class="small"><span class="pill muted">${esc(r.reason || '')}</span></td><td style="white-space:nowrap"><button class="btn sm primary" data-restore="${r.id}">정상 문의로 복구</button> <button class="btn sm danger" data-sdel="${r.id}">삭제</button></td></tr>`).join('') || '<tr><td colspan="5" class="muted">걸러진 스팸이 없습니다.</td></tr>'}</tbody></table></div>`;
+    $('[data-back]').forEach(b => b.onclick = () => { S.status = b.dataset.back; views.customers(); });
+    $('[data-restore]').forEach(b => b.onclick = async () => { if (!confirm('이 문의를 정상 문의로 복구해 고객 목록에 등록할까요?')) return; try { await api('/customers/spam/' + b.dataset.restore + '/restore', { method: 'POST' }); toast('복구했습니다 — 신규 접수에 등록됨'); spamView(); } catch (e) { toast(e.message, true); } });
+    $('[data-sdel]').forEach(b => b.onclick = async () => { if (!confirm('이 스팸 기록을 삭제할까요? 되돌릴 수 없습니다.')) return; try { await api('/customers/spam/' + b.dataset.sdel, { method: 'DELETE' }); toast('삭제'); spamView(); } catch (e) { toast(e.message, true); } });
+  };
   views.customers = async () => {
-    const S = custState; const qs = `q=${encodeURIComponent(S.q)}&status=${S.status}&kind=${S.kind}&assignee=${S.assignee}&source=${S.source}`;
+    const S = custState; if (S.status === 'spam') return spamView();
+    const qs = `q=${encodeURIComponent(S.q)}&status=${S.status}&kind=${S.kind}&assignee=${S.assignee}&source=${S.source}`;
     const [d] = await Promise.all([api('/customers?' + qs), loadAssignees()]);
     const bs = (k) => d.byStatus[k] || 0;
-    const tabs = [['open', '진행 중', bs('new') + bs('contacting')], ['new', '신규 접수', bs('new')], ['contacting', '상담중', bs('contacting')], ['contract', '계약', bs('contract')], ['hold', '보류', bs('hold')], ['closed', '종료', bs('closed')], ['', '전체', d.total]];
+    const tabs = [['open', '진행 중', bs('new') + bs('contacting')], ['new', '신규 접수', bs('new')], ['contacting', '상담중', bs('contacting')], ['contract', '계약', bs('contract')], ['hold', '보류', bs('hold')], ['closed', '종료', bs('closed')], ['', '전체', d.total], ['spam', '🚫 스팸', d.spam ? d.spam.total : 0]];
     $('#view').innerHTML = `<h1>문의·고객 관리 <span class="muted small">전체 ${fmt(d.total)} · 홈페이지 문의 ${fmt(d.fromInquiry)} · 담당자 미배정 ${fmt(d.unassigned)}${d.spam ? ` · 스팸 자동 차단 최근 7일 ${fmt(d.spam.last7)}건` : ''}</span></h1>
 <p class="small muted">홈페이지 매매신청·상담 문의는 접수되는 즉시 여기에 자동 등록됩니다. 보유 회원·전화 문의 고객은 「+ 고객 등록」으로 직접 추가하세요. 표에서 담당자·상태를 바로 바꿀 수 있고, 「상담 기록」에서 상담 메모를 시간순으로 남깁니다.</p>
 <div class="toolbar">${tabs.map(([k, v, n]) => `<button class="btn sm ${S.status === k ? 'primary' : ''}" data-tab="${k}">${v} <span class="muted">${n}</span></button>`).join('')}</div>
