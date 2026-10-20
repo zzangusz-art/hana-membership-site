@@ -39,6 +39,11 @@ router.post('/inquiry', inqLimit, (req, res) => {
   if (!/^[\d\s\-+().]{8,25}$/.test(phone)) return res.status(400).json({ error: '연락처 형식을 확인해 주세요.' });
   if (!b.agree) return res.status(400).json({ error: '개인정보 수집·이용에 동의해 주세요.' });
   if (b.website) return res.json({ ok: true }); // honeypot
+  // 스팸 필터(lib/spam.js): 국내 번호가 아니면 연락처 확인 요청, 본문 링크는 조용히 걸러 냄 — 둘 다 문의·고객 DB에 넣지 않고 spam_log에만 기록
+  { const spam = require('../lib/spam'); const sp = spam.check({ name, phone, message: b.message || '' });
+    if (sp) { try { spam.log(sp.reason, { ...b, name, phone }, { ip: (req.headers['x-forwarded-for'] || req.ip || '').toString().split(',')[0].slice(0, 45), ua: String(req.headers['user-agent'] || '').slice(0, 200) }); } catch (_) { /* no-op */ }
+      if (sp.action === 'reject') return res.status(400).json({ error: '연락처를 다시 확인해 주세요. 국내 전화번호(예: 010-1234-5678)로 남겨 주시면 바로 연락드립니다.' });
+      return res.json({ ok: true, message: '접수되었습니다. 담당 상담사가 곧 연락드리겠습니다.' }); } }
   const kind = ['buy', 'sell', 'consult'].includes(b.kind) ? b.kind : 'consult';
   const contactTime = require('../lib/layout').CONTACT_TIMES.includes(b.contact_time) ? b.contact_time : '';
   const ts = now();

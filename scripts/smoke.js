@@ -76,6 +76,11 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     const notesN = db.prepare("SELECT COUNT(*) c FROM customer_notes WHERE customer_id=? AND body LIKE '[재문의%'").get(cid).c;
     const p3 = await post('삭제롤백', '010-4444-2021'); const did = db.prepare('SELECT customer_id FROM inquiries WHERE id=?').get(p3.id).customer_id; C.remove(did); C.importAll();
     ok(db.prepare('SELECT status FROM customers WHERE id=?').get(cid).status === 'closed' && notesN === 1 && !db.prepare("SELECT 1 FROM customers WHERE phone='010-4444-2021'").get(), '고객 상태·삭제가 재시작 후에도 유지(재문의 중복 처리 없음)'); }
+  // 스팸 필터(2026-10-20): 국내 번호 아님 → 400·DB 미등록, 링크 → 조용히 거름, 정상 한글·외국인(국내 번호) 문의는 통과, 기존 스팸 정리
+  { const spam = require('../lib/spam'); const before = db.prepare('SELECT COUNT(*) c FROM inquiries').get().c, logBefore = db.prepare('SELECT COUNT(*) c FROM spam_log').get().c;
+    const rr = await fetch(BASE + '/api/inquiry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'consult', name: 'Edwina', phone: '231139496', agree: 1, message: 'Okurken bazı kısımlar' }) });
+    const unit = !spam.check({ name: '정인철', phone: '010-9346-8821', message: '매수하고 싶습니다' }) && !spam.check({ name: 'John', phone: '010-1234-5678', message: 'I want to buy' }) && spam.check({ name: '홍', phone: '02-583-0583', message: 'visit https://x.com' }).action === 'drop' && spam.check({ name: 'Q', phone: '8059190061', message: 'x' }).action === 'reject';
+    ok(rr.status === 400 && db.prepare('SELECT COUNT(*) c FROM inquiries').get().c === before && db.prepare('SELECT COUNT(*) c FROM spam_log').get().c === logBefore + 1 && unit, '스팸 문의 차단(외국 번호 400·링크 거름·정상 문의 통과)'); }
   // 골프장 회원권 종류 통합 · 차트 기간
   { const cg = require('../lib/clubgroup'); ok(cg.baseKey('강남300 주중가족') === cg.baseKey('강남300') && cg.baseKey('부곡(3250)') === cg.baseKey('부곡컨트리클럽') && cg.baseKey('남촌55000') === '남촌' && cg.baseKey('센추리21(10000)') === '센추리21' && cg.baseKey('골드레이크 주중') !== cg.baseKey('골드 주주'), '골프장 이름 묶기 규칙');
     const par = db.prepare("SELECT * FROM clubs WHERE name='강남300'").get(); const kid = db.prepare("SELECT * FROM clubs WHERE name='강남300 주중가족'").get();

@@ -24,6 +24,7 @@ seedIfEmpty();
 try { const mg = require('./lib/migrations').run(); if (mg.length) console.log('[migrate] ' + mg.join(' · ')); } catch (e) { console.error('[migrate] 실패', e.message); }
 try { require('./lib/auth').ensureManager(); } catch (e) { console.error('[auth] 업체 관리자 계정 생성 실패', e.message); }
 try { const r = require('./lib/customers').repairRollback(); if (r) console.log('[customers] 상태 되돌림 복구', JSON.stringify(r)); } catch (e) { console.error('[customers] 복구 실패', e.message); }
+try { const r = require('./lib/spam').cleanupExisting(); if (r) console.log('[spam] 기존 스팸 문의 정리', JSON.stringify(r)); } catch (e) { console.error('[spam] 정리 실패', e.message); }
 try { const n = require('./lib/customers').importAll(); if (n) console.log(`[customers] 문의 ${n}건 고객 DB 등록`); } catch (e) { console.error('[customers] 문의 가져오기 실패', e.message); }
 try { const g = require('./lib/clubgroup').sync(); if (g.changed) console.log(`[clubs] 골프장 ${g.clubs}곳 · 회원권 종류 ${g.variants}건 묶음`); } catch (e) { console.error('[clubs] 묶기 실패', e.message); }
 try { const f = require('./lib/content/clubtext').fillAll(); if (f.filled || f.summaries) console.log(`[clubs] 해설 자동 작성 ${f.filled}곳 · 요약 갱신 ${f.summaries}곳`); } catch (e) { console.error('[clubs] 해설 작성 실패', e.message); }
