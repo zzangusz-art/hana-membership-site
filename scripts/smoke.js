@@ -253,6 +253,7 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
       sl = await (await M('/customers/spam')).json(); const cu = db.prepare('SELECT * FROM customers WHERE id=?').get(rr.customer_id);
       const note = db.prepare("SELECT COUNT(*) c FROM customer_notes WHERE customer_id=? AND body LIKE '스팸에서 복구%'").get(rr.customer_id).c;
       ok(rr.ok && cu && cu.kind === 'buy' && cu.item === '88CC' && note === 1 && !sl.rows.some(x => x.id === rid || x.id === did), '스팸 탭: 목록·정상 문의로 복구·삭제'); }
+    { const js = require('fs').readFileSync(require('path').join(__dirname, '..', 'public', 'admin', 'admin.js'), 'utf8'); const bad = js.match(/[^$]\$\('[^']*'\)\.forEach/g) || []; ok(!bad.length, '관리자 화면: 단일 선택자($)에 forEach 사용 없음', bad.join(' ')); }
     r = await M('/customers/' + hj.id + '/quick', { method: 'POST', body: JSON.stringify({ status: 'contacting' }) }); ok(r.status === 200 && db.prepare("SELECT COUNT(*) c FROM customer_notes WHERE customer_id=? AND kind='system'").get(hj.id).c >= 2, '표에서 상태 변경 → 변경 기록 자동');
     r = await M('/customers/' + auto.id + '/quick', { method: 'POST', body: JSON.stringify({ status: 'closed' }) }); ok(r.status === 200 && db.prepare('SELECT status FROM inquiries WHERE id=?').get(inqList[0].id).status === 'done', '고객 상태 → 문의 상태 동기화');
     r = await M('/customers?assignee=' + sj.id + '&status='); const cl = await r.json(); ok(r.status === 200 && cl.rows.length === 2 && cl.rows.every(x => x.assignee_name === '직원A') && cl.rows.some(x => x.inquiry_id), '통합 목록(담당자 필터·문의 출처 포함)', `${cl.rows.length}건`);
