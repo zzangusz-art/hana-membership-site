@@ -68,6 +68,14 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     const note = db.prepare("SELECT body FROM customer_notes WHERE customer_id=? AND kind='inquiry' ORDER BY id DESC").get(ri.customer_id);
     const lr = require('../lib/customers').list({ q: '010-7777-1414' })[0];
     ok(ri.contact_time === '오후 14~18시' && rj.contact_time === '' && note && note.body.includes('상담 희망 오후 14~18시') && lr && lr.contact_time === '오후 14~18시', '상담 시간 저장·검증·고객 DB 반영'); }
+  // 재문의 고객의 종료 상태가 서버 재시작(문의 가져오기) 때 신규로 되돌아가지 않는지 · 삭제 고객이 되살아나지 않는지(2026-10-20)
+  { const C = require('../lib/customers'); const post = async (name, phone) => { const ts = Math.floor(Date.now() / 1000); const id = db.prepare("INSERT INTO inquiries (kind,name,phone,agree,status,created_at,updated_at) VALUES ('buy',?,?,1,'new',?,?)").run(name, phone, ts, ts).lastInsertRowid; C.fromInquiry(db.prepare('SELECT * FROM inquiries WHERE id=?').get(id)); return { id }; }; // API는 접수 횟수 제한이 있어 DB로 직접
+    const p1 = await post('롤백테스트', '010-4444-2020'); await post('롤백테스트', '010-4444-2020');
+    const cid = db.prepare('SELECT customer_id FROM inquiries WHERE id=?').get(p1.id).customer_id; C.quick(cid, { status: 'closed' }, null);
+    C.importAll(); C.importAll();
+    const notesN = db.prepare("SELECT COUNT(*) c FROM customer_notes WHERE customer_id=? AND body LIKE '[재문의%'").get(cid).c;
+    const p3 = await post('삭제롤백', '010-4444-2021'); const did = db.prepare('SELECT customer_id FROM inquiries WHERE id=?').get(p3.id).customer_id; C.remove(did); C.importAll();
+    ok(db.prepare('SELECT status FROM customers WHERE id=?').get(cid).status === 'closed' && notesN === 1 && !db.prepare("SELECT 1 FROM customers WHERE phone='010-4444-2021'").get(), '고객 상태·삭제가 재시작 후에도 유지(재문의 중복 처리 없음)'); }
   // 골프장 회원권 종류 통합 · 차트 기간
   { const cg = require('../lib/clubgroup'); ok(cg.baseKey('강남300 주중가족') === cg.baseKey('강남300') && cg.baseKey('부곡(3250)') === cg.baseKey('부곡컨트리클럽') && cg.baseKey('남촌55000') === '남촌' && cg.baseKey('센추리21(10000)') === '센추리21' && cg.baseKey('골드레이크 주중') !== cg.baseKey('골드 주주'), '골프장 이름 묶기 규칙');
     const par = db.prepare("SELECT * FROM clubs WHERE name='강남300'").get(); const kid = db.prepare("SELECT * FROM clubs WHERE name='강남300 주중가족'").get();
