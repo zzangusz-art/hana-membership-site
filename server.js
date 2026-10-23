@@ -34,6 +34,7 @@ try { const dp = require('./lib/migrations').dedupePosts(); if (dp.length) conso
 try { const mc = require('./lib/migrations').mergeCorporate(path.join(__dirname, 'data', 'seed', 'corporate-merge.json')); if (mc.length) console.log('[migrate] ' + mc.join(' · ')); } catch (e) { console.error('[migrate] 법인 통합 실패', e.message); }
 try { const pc = require('./lib/migrations').applyPriceCorrections(path.join(__dirname, 'data', 'seed', 'price-corrections.json')); if (pc.length) console.log('[migrate] ' + pc.join(' · ')); } catch (e) { console.error('[migrate] 시세 정정 실패', e.message); }
 try { const h = require('./lib/prices').importHistory(path.join(__dirname, 'data', 'seed', 'price-history.json')); if (h.rows) console.log(`[prices] 과거 시세 이력 ${h.items}종목 ${h.rows}건 추가`); } catch (e) { console.error('[prices] 이력 가져오기 실패', e.message); }
+try { const l = require('./lib/hanamarket').importSeed(); if (!l.skipped) console.log('[hanamarket] 구 사이트 시세 시드 반영', JSON.stringify(l)); } catch (e) { console.error('[hanamarket] 시드 반영 실패', e.message); }
 
 const app = express();
 app.set('trust proxy', 1);
