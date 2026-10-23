@@ -52,6 +52,8 @@ app.use(helmet({
     },
   },
   crossOriginEmbedderPolicy: false, crossOriginResourcePolicy: { policy: 'cross-origin' },
+  // YouTube 퍼가기 재생은 Referer(출처)를 요구한다 — no-referrer면 '오류 153'으로 재생 불가(2026-10-23). 다른 사이트로는 도메인만 보낸다.
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 app.use(compression());
 app.use(express.json({ limit: '5mb' }));

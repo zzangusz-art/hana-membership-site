@@ -116,7 +116,7 @@
   }));
 
   // 유튜브 지연 로드
-  $$('.yt').forEach(box => box.addEventListener('click', () => { const id = box.dataset.id; box.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0" title="YouTube" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`; }));
+  $$('.yt').forEach(box => box.addEventListener('click', () => { const id = box.dataset.id; box.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0" title="YouTube" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe>`; }));
 
   // 연혁 v2 — 상단 그리드 카드 클릭 → 연표 해당 시기로; 연표는 뷰포트 중앙에 가까운 카드가 포커스, 연도 배지가 따라오고 척추선이 채워짐
   const tl2 = $('#tl2');
