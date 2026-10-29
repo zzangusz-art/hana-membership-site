@@ -169,6 +169,11 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     const row = db.prepare("SELECT id FROM prices WHERE category='golf' AND name='아난티가평'").get(); const dp = await get('/market/golf/' + row.id); ok([200, 302].includes(dp.status), '값 미정 종목 상세 페이지 오류 없음');
     const ho = await get('/'); ok(ho.status === 200 && !/아난티가평<\/b> -/.test(ho.text), '홈 시세 띠에 값 미정 종목 제외'); }
   { const pp = await get('/exclusive/prepaid'); const t = db.prepare("SELECT title, body, image FROM listings WHERE src_id='dioners-expiring'").get(); ok(pp.status === 200 && t && t.title === '디오너스 입회금 소멸형' && t.body === '' && /dioners-expiring-v3\.webp/.test(t.image) && pp.text.includes('디오너스 입회금 소멸형') && !pp.text.includes('그린피 100% 면제 기업 멤버십'), '디오너스 카드 제목 간결·설명 없음·v2 썸네일'); const ri = await fetch(BASE + t.image); ok(ri.status === 200, '디오너스 썸네일 서빙'); await ri.arrayBuffer(); }
+  // 벨루토는 '무기명' 표현을 쓰지 않는다(2026-10-29 요청), 더시에나 특별회원권 상품 등록
+  { const bl = db.prepare("SELECT id, title, desc_html, info_json, image FROM listings WHERE src_id='membership04-46'").get(); const sp = db.prepare("SELECT id FROM listings WHERE src_id='thesiena-special-2026' AND status='open'").get();
+    const pg = await get('/listings/' + bl.id); const main = (pg.text.match(/<main[\s\S]*<\/main>/) || [''])[0];
+    const spg = sp && await get('/listings/' + sp.id); const brow = spg ? (spg.text.match(/더시에나 벨루토CC<br>[\s\S]*?<\/tr>/) || [''])[0] : '';
+    ok(!/무기명/.test(bl.title + bl.desc_html + bl.info_json + bl.image) && !/무기명/.test(main) && sp && spg.status === 200 && brow && !/무기명/.test(brow), '벨루토 매물·특별회원권 벨루토 행에 무기명 표현 없음, 더시에나 특별회원권 등록'); }
   { const sch2 = require('../lib/scheduler'); ok(sch2.inblogRank('회원권거래소란? 하는 일과 고르는 기준 7가지, 하나회원권거래소는 어떻게 하나') === 0 && sch2.inblogRank('콘도회원권 시세 한눈에') === 2 && sch2.inblogRank('골프회원권 시세 10년 추이') === 4 && sch2.inblogRank('보라컨트리클럽 회원권 시세와 매수 가이드') === 99, '인블로그 백필 우선순위(회원권거래소→하나→콘도→피트니스→골프 시세)');
     const pc = await get('/market/condo'); ok(pc.text.includes('콘도회원권 시세는 어디서 확인하나요?') && /회원권거래소 하나회원권거래소/.test(pc.text) && pc.text.includes('<title>콘도회원권 시세표'), '콘도 시세표 키워드 직답 FAQ·설명(타이틀 유지)');
     const pf = await get('/market/fitness'); ok(pf.text.includes('피트니스회원권 시세는 어디서 확인하나요?'), '피트니스 시세표 키워드 직답 FAQ');
