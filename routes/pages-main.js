@@ -52,7 +52,7 @@ router.get('/', (req, res) => {
   const moved = all.filter(r => r.diff).sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct)).slice(0, 28);
   const ticker = (moved.length >= 12 ? moved : [...moved, ...all.filter(r => !r.diff).sort(() => 0.5 - Math.random()).slice(0, 28 - moved.length)]).filter(r => r.today != null);
   const SLIDES = [
-    { key: 'golf', icon: '⛳', kicker: '프리미엄 골프 라이프 · 2004년부터 회원권 거래 전문', tab: '프리미엄 골프 라이프', title: '골프회원권 · 무기명 골프회원권 · 콘도회원권 · 휘트니스회원권<br><span class="hl">시세 조회·구매·매입</span>, 한 곳에서', sub: `골프회원권 ${g.total}종목 시세, 매주 월요일 갱신`, lead: '매도자가 부르는 값과 실제 계약된 값은 다릅니다. 시세표는 그 둘을 같이 보고 만듭니다. 골프장 회원권 거래는 상담한 담당자가 계약과 명의개서 접수까지 그대로 맡습니다.', href: '/market/golf', img: '/img/hero/golf.jpg', bg: '/img/hero/golf-bg.jpg' },
+    { key: 'golf', icon: '⛳', kicker: '프리미엄 골프 라이프 · 2004년부터 회원권 거래 전문', tab: '프리미엄 골프 라이프', title: '골프회원권 · 무기명 골프회원권 · 콘도회원권 · 휘트니스회원권<br><span class="hl">시세 조회·구매·매입</span>, 한 곳에서', sub: `골프회원권 ${g.total}종목 시세, 매일 갱신`, lead: '매도자가 부르는 값과 실제 계약된 값은 다릅니다. 시세표는 그 둘을 같이 보고 만듭니다. 골프장 회원권 거래는 상담한 담당자가 계약과 명의개서 접수까지 그대로 맡습니다.', href: '/market/golf', img: '/img/hero/golf.jpg', bg: '/img/hero/golf-bg.jpg' },
     { key: 'condo', icon: '🏔️', kicker: '콘도·리조트 회원권', tab: '휴식과 힐링의 콘도', title: '휴식과 힐링의 <span class="hl">콘도</span>', sub: '공유제인지 회원제인지부터 확인하세요', lead: '등기가 되는 공유제와 입회금을 맡기는 회원제는 세금도, 되팔 때도 다릅니다. 가족 휴가용인지 법인 복지용인지 말씀해 주시면 맞는 쪽을 골라 드립니다.', href: '/market/condo', img: '/img/hero/condo.jpg', bg: '/img/hero/condo-bg.jpg' },
     { key: 'fitness', icon: '🏋️', kicker: '피트니스 회원권', tab: '건강한 피트니스 라이프', title: '건강한 <span class="hl">피트니스 라이프</span>', sub: '호텔 피트니스 개인·부부 회원권', lead: '호텔마다 양도 승인 기간과 연회비가 다릅니다. 시세표에서 확인하시고 매매 신청을 남기시면 당일 연락드립니다.', href: '/market/fitness', img: '/img/hero/fitness.jpg', bg: '/img/hero/fitness-bg.jpg' },
   ];
@@ -108,7 +108,7 @@ router.get('/', (req, res) => {
       <p class="eyebrow">2004년부터</p>
       <h2>22년째 같은 일을 하고 있습니다</h2>
       <p>2004년 에이원회원권거래소로 시작해 2008년 비전회원권거래소와 합치고 2014년 지금 이름이 됐습니다. 그동안 블루버드, 서원밸리, 엘리시안 강촌, 프리스틴밸리, 레이크힐스, 서울드래곤시티 등 골프장·리조트·피트니스 회원권 분양 28건을 대행했습니다. 시세표에 올리는 숫자는 그 주에 실제로 오간 호가와 계약가에서 나옵니다.</p>
-      <ul class="checks"><li>시세표는 매주 월요일 갱신</li><li>상담한 담당자가 명의개서 접수까지 그대로 맡음</li><li>법인·무기명·분담금 회원권도 다룸</li><li>등록 뒤 부킹 문의도 받음</li></ul>
+      <ul class="checks"><li>골프회원권 시세는 매일 갱신</li><li>상담한 담당자가 명의개서 접수까지 그대로 맡음</li><li>법인·무기명·분담금 회원권도 다룸</li><li>등록 뒤 부킹 문의도 받음</li></ul>
       <a class="btn btn-primary" href="/about">회사소개 보기</a>
     </div>
     <div class="timeline reveal">
@@ -186,7 +186,7 @@ ${nb.length ? `<section class="section nblog"><div class="wrap"><div class="sec-
 
 // ── 시세표 ──
 const MARKET_META = {
-  golf: { h1: '골프회원권 시세 조회', intro: (n) => `전국 회원제 골프장 ${n}종목의 회원권 시세입니다. 실거래와 매도·매수 호가를 반영해 매주 월요일 갱신하며, 표의 가격은 만원 단위 회원권 시세(명의개서료·수수료 별도)입니다.`, desc: (n, d) => `골프회원권 시세 조회: ${n}종목 금일·전일 시세와 시세 변동, 지역별 필터, 90일~10년 추이. ${d} 갱신. 회원권거래소 하나회원권거래소.` },
+  golf: { h1: '골프회원권 시세 조회', intro: (n) => `전국 회원제 골프장 ${n}종목의 회원권 시세입니다. 실거래와 매도·매수 호가를 반영해 매일 갱신하며, 표의 가격은 만원 단위 회원권 시세(명의개서료·수수료 별도)입니다.`, desc: (n, d) => `골프회원권 시세 조회: ${n}종목 금일·전일 시세와 시세 변동, 지역별 필터, 90일~10년 추이. ${d} 갱신. 회원권거래소 하나회원권거래소.` },
   corporate: { h1: '법인회원권 시세표', intro: (n) => `법인 명의로 등록·이용하는 골프회원권 ${n}종목의 시세입니다. 법인 회원권은 지정 등록자 수·무기명 여부에 따라 같은 골프장이라도 개인 회원권과 가격이 다릅니다.`, desc: (n, d) => `법인회원권 시세 ${n}종목: 법인 골프회원권 금일·전일 시세와 등락률, 지명인 등록·취득세·무기명 조건. ${d} 갱신. 회원권거래소 하나회원권거래소.` },
   condo: { h1: '콘도회원권 시세표', intro: (n) => `전국 콘도·리조트 회원권 ${n}종목의 시세입니다. 공유제(등기)·회원제(입회금) 여부, 성수기 이용일수, 객실 타입에 따라 가격이 달라지므로 매수 전 이용 조건을 함께 확인하세요.`, desc: (n, d) => `콘도회원권 시세 ${n}종목: 소노(대명)·용평·아난티·한화·오크밸리 등 리조트 회원권 금일·전일 시세와 평형·등급별 가격. ${d} 갱신. 회원권거래소 하나회원권거래소.` },
   fitness: { h1: '피트니스회원권 시세표', intro: (n) => `호텔 피트니스(헬스) 개인·부부 회원권 ${n}종목의 시세입니다. 호텔 피트니스 회원권은 연회비·부대시설 이용 범위가 가격에 반영됩니다.`, desc: (n, d) => `피트니스회원권 시세 ${n}종목: 서울드래곤시티·파르나스·반얀트리·그랜드인터컨티넨탈·하얏트·신라 등 호텔 헬스 회원권 개인·부부·가족 시세. ${d} 갱신. 회원권거래소 하나회원권거래소.` },
@@ -214,6 +214,14 @@ router.get('/market/:category/:id(\\d+)', (req, res, next) => {
   const lcat = { condo: 'condo', fitness: 'fitness', corporate: 'golf', golf: 'golf' }[cat];
   const lst = base.length >= 2 ? db.prepare("SELECT id,title,image,kind,price,link FROM listings WHERE status='open' AND category=? AND (title LIKE ? OR title LIKE ?) ORDER BY id DESC LIMIT 6").all(lcat, `${base}%`, `% ${base}%`) : [];
   const guide = { condo: ['/guide/condo', '콘도회원권 안내'], fitness: ['/guide/fitness', '피트니스회원권 안내'], corporate: ['/guide/golf', '골프회원권 안내'], golf: ['/guide/golf', '골프회원권 안내'] }[cat];
+  // AEO: '○○ 회원권 시세' 질문에 바로 답하는 흐름 문장과 FAQ(2026-11-02 — 시세 상세 344곳에 FAQ가 없고 본문이 빈약했음)
+  const trend = r.today == null ? '' : require('../lib/clubdetail').trendOf(r);
+  const kind = { condo: '리조트', fitness: '호텔', corporate: '골프장' }[cat] || '골프장';
+  const faqs = r.today == null ? [] : [
+    { q: `${r.name} ${label} 시세는 얼마인가요?`, a: `${updated} 기준 ${fmtMan(r.today)}입니다${r.prev != null && r.prev !== r.today ? `(전일 ${fmtMan(r.prev)}에서 ${r.diff > 0 ? '올랐습니다' : '내렸습니다'})` : ''}. 회원권 자체 시세이며 명의변경료·거래 수수료는 별도입니다.` },
+    ...(trend && /1년 전|최저/.test(trend) ? [{ q: `${r.name} ${label} 시세는 최근 어떻게 움직였나요?`, a: trend }] : []),
+    { q: `${r.name} ${label}은 어떻게 사고파나요?`, a: `하나회원권거래소(${s.phone})에 매수·매도를 의뢰하면 지금 매물과 호가를 확인한 뒤 계약하고, ${kind} 명의변경 절차까지 대행합니다. 필요 서류와 비용은 상담 때 안내합니다.` },
+  ];
   const rows = [['현재 시세', r.today == null ? '상담 시 안내' : `<b>${fmtMan(r.today)}</b> ${chg(r)}`], ['전일 시세', r.today == null ? '-' : fmtMan(r.prev ?? r.today)], ['시세 갱신', updated], ...(r.region ? [['지역', esc(r.region)]] : []), ...(r.members ? [['회원 수', `${Number(r.members).toLocaleString('ko-KR')}명`]] : []), ['분류', esc(label)]];
   const infoRows = [['대표이사', info['대표이사']], ['주소', info['주소']], ['대표전화', info['대표전화']], ['예약전화', info['예약전화']], ['팩스', info['팩스']], ['홈페이지', info['URL'] ? `<a href="${attr(/^https?:/.test(info['URL']) ? info['URL'] : 'http://' + info['URL'])}" target="_blank" rel="noopener nofollow">${esc(info['URL'].replace(/^https?:\/\//, ''))}</a>` : ''], ['개장일', info['개장일']], ['부대시설', info['부대시설']]].filter(([, v]) => v).map(([k, v]) => [k, /^<a /.test(v) ? v : esc(v)]);
   const body = `
@@ -221,18 +229,19 @@ router.get('/market/:category/:id(\\d+)', (req, res, next) => {
 <div class="club-actions"><a class="btn btn-green" href="/apply?item=${encodeURIComponent(r.name)}">이 회원권 매매 상담</a><a class="btn btn-ghost" href="tel:${attr(s.phone)}">📞 ${esc(s.phone)}</a><a class="btn btn-ghost" href="/market/${cat}">${esc(label)} 시세표</a></div></div></section>
 <section class="section club-body"><div class="wrap club-grid2">
   <div class="club-main">
-    <div class="spec-card"><h2>${esc(r.name)} 시세</h2><table class="spec"><tbody>${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</tbody></table><div class="spec-chart"><h3>시세 추이</h3>${chartBox(r, cat)}<noscript>${sparkline(prices.history(r.id, 365), 600, 120)}</noscript></div></div>
+    <div class="spec-card"><h2>${esc(r.name)} 시세</h2><table class="spec"><tbody>${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</tbody></table><div class="spec-chart"><h3>시세 추이</h3>${chartBox(r, cat)}<noscript>${sparkline(prices.history(r.id, 365), 600, 120)}</noscript></div>${trend ? `<p class="trend-sum"><b>시세 흐름</b> ${esc(trend)}</p>` : ''}</div>
     ${infoRows.length ? `<div class="spec-card"><h2>${esc(base)} 시설 정보</h2><table class="spec dt-table"><tbody>${infoRows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</tbody></table><p class="note">시설 정보는 등록 시점 기준이며 바뀔 수 있습니다.</p></div>` : ''}
     ${sib.length ? `<div class="spec-card"><h2>${esc(base)} 다른 회원권 종류</h2><table class="price-table"><thead><tr><th>회원권명</th><th class="num">금일시세</th><th class="num">전일 대비</th></tr></thead><tbody>${sib.map(x => `<tr><td><a href="/market/${cat}/${x.id}">${esc(x.name)}</a></td><td class="num"><b>${fmtNum(x.today)}</b></td><td class="num">${chg(x)}</td></tr>`).join('')}</tbody></table></div>` : ''}
     ${lst.length ? `<div class="spec-card"><h2>${esc(base)} 관련 매물·상품</h2><ul class="side-list">${lst.map(l => `<li><a href="${attr(l.link || '/listings/' + l.id)}"${l.link ? ' target="_blank" rel="noopener"' : ''}>${esc(l.title)}</a>${l.price ? `<span>${fmtNum(l.price)}</span>` : ''}</li>`).join('')}</ul></div>` : ''}
     <div class="prose"><h2>${esc(label)} 거래 전에 확인할 것</h2><p>${cat === 'condo' ? '콘도·리조트 회원권은 공유제(등기)인지 회원제(입회금 예치)인지, 성수기 이용 일수와 객실 타입, 연 관리비가 가격에 반영됩니다. 같은 리조트라도 구좌(평형)에 따라 시세가 다릅니다.' : cat === 'fitness' ? '호텔 피트니스 회원권은 개인·부부·가족 등 등록 인원, 연회비, 수영장·사우나 등 이용 범위가 가격에 반영됩니다. 양도 시 호텔 승인 절차와 명의변경료를 확인하세요.' : '법인 회원권은 지정 등록자 수와 무기명 여부에 따라 같은 골프장이라도 가격이 다릅니다. 등록자 변경 조건과 명의개서료를 계약 전에 확인하세요.'} 자세한 내용은 <a href="${guide[0]}">${guide[1]}</a>를 참고하세요.</p></div>
+    ${faqs.length ? `<div class="prose faq-block"><h2>${esc(r.name)} 자주 묻는 질문</h2>${faqs.map(f => `<h3>${esc(f.q)}</h3><p>${esc(f.a)}</p>`).join('')}</div>` : ''}
   </div>
   <aside class="club-side">
     <div class="side-card"><h3>매매 상담</h3><p>${esc(r.name)} 매수·매도 호가와 매물을 확인해 드립니다.</p><a class="btn btn-green block" href="/apply?item=${encodeURIComponent(r.name)}">매매 신청</a><a class="btn btn-ghost block" href="tel:${attr(s.phone)}">${esc(s.phone)}</a></div>
     <div class="side-card author"><h3>안내</h3><p><b>${esc(s.legal_name)}</b> 회원권 상담팀<br>2004년부터 회원권 매매 중개<br><a href="/about">회사소개</a></p></div>
   </aside>
 </div></section>`;
-  const ld = [{ '@context': 'https://schema.org', '@type': 'Product', name: `${r.name} ${label}`, description: r.today == null ? `${r.name} ${label} 시세 안내 (상담 문의)` : `${r.name} ${label} 시세 ${fmtMan(r.today)} (${updated} 기준)`, category: label, ...(r.today == null ? {} : { offers: { '@type': 'Offer', priceCurrency: 'KRW', price: r.today * 10000, availability: 'https://schema.org/InStock', url: site + url, seller: { '@id': site + '/#org' }, priceValidUntil: kstDate(new Date(Date.now() + 7 * 86400000)) } }) }];
+  const ld = [{ '@context': 'https://schema.org', '@type': 'Product', name: `${r.name} ${label}`, description: r.today == null ? `${r.name} ${label} 시세 안내 (상담 문의)` : `${r.name} ${label} 시세 ${fmtMan(r.today)} (${updated} 기준)`, category: label, ...(r.today == null ? {} : { offers: { '@type': 'Offer', priceCurrency: 'KRW', price: r.today * 10000, availability: 'https://schema.org/InStock', url: site + url, seller: { '@id': site + '/#org' }, priceValidUntil: kstDate(new Date(Date.now() + 7 * 86400000)) } }) }, ...(faqs.length ? [faqLd(faqs)] : [])];
   res.send(page({ title: `${r.name} ${label} 시세${r.today == null ? '' : ' ' + fmtMan(r.today)} · 추이·상담`, description: truncate(`${r.name} ${label} 시세 ${fmtMan(r.today)}(${updated} 갱신), 전일 대비 ${r.pct}%. ${info['주소'] ? '소재지 ' + info['주소'] + '. ' : ''}시세 추이 그래프와 매매 상담. 하나회원권거래소 ${s.phone}.`, 158), path: url, body, breadcrumbs: [{ name: '회원권 시세', href: '/market/golf' }, { name: label, href: `/market/${cat}` }, { name: r.name, href: url }], jsonld: ld, dateModified: isoFromTs(r.updated_at), bodyClass: 'club-page' }));
 });
 
@@ -273,9 +282,9 @@ router.get('/market/:category', (req, res, next) => {
   <ul><li><strong>계절</strong>: 봄·가을 성수기 앞뒤로 매수 수요가 늘어 강세, 한겨울·장마철은 약세 경향.</li><li><strong>골프장 정책</strong>: 회원수 조정, 입회금 인상·반환, 주말 부킹 제도 변경은 즉시 시세에 반영됩니다.</li><li><strong>금리·경기</strong>: 법인 접대 수요와 자산 시장 흐름이 고가 종목에 먼저 반영됩니다.</li><li><strong>신규 분양</strong>: 인근 신규 골프장 분양은 기존 종목 시세를 흔드는 요인입니다.</li></ul>
   <h2>매수·매도 판단은 이렇게</h2>
   <p>한 주 등락만 보지 마시고 <a href="/blog?type=report">주간 시세 리포트</a>에서 4주 흐름과 <a href="/golf">골프장별 입회 조건</a>을 같이 보세요. 지금 나온 매물과 호가는 ${esc(settings.cfg('phone'))}으로 물어보시는 게 가장 정확합니다.</p>
-  ${faqHtml([kwFaq, { q: '시세는 언제 갱신되나요?', a: '매주 월요일 오전 실거래·호가를 반영해 갱신합니다. 급변 시 주중에도 수시 반영합니다.' }, { q: '표의 가격에 수수료가 포함되나요?', a: '아니요. 회원권 자체 시세이며 거래소 수수료와 골프장 명의개서료는 별도입니다.' }, { q: '표에 없는 종목도 거래할 수 있나요?', a: '네. 표는 주요 종목이며 그 외 종목은 상담 시 시세를 안내해 드립니다.' }])}
+  ${faqHtml([kwFaq, { q: '시세는 언제 갱신되나요?', a: cat === 'golf' ? '골프회원권 시세는 매일 오전·낮·저녁에 반영해 갱신합니다. 표 위의 날짜가 마지막 갱신일입니다.' : '정기적으로 갱신하며, 표 위의 날짜와 종목별 페이지의 「시세 갱신」이 마지막 갱신일입니다.' }, { q: '표의 가격에 수수료가 포함되나요?', a: '아니요. 회원권 자체 시세이며 거래소 수수료와 골프장 명의개서료는 별도입니다.' }, { q: '표에 없는 종목도 거래할 수 있나요?', a: '네. 표는 주요 종목이며 그 외 종목은 상담 시 시세를 안내해 드립니다.' }])}
 </div></section>`;
-  res.send(page({ title: `${meta.h1} ${updated} 갱신: ${all.length}종목 금일·전일 시세와 시세 변동 | 하나회원권거래소`, description: meta.desc(all.length, updated), path: `/market/${cat}`, body, breadcrumbs: [{ name: '회원권 시세', href: '/market/golf' }, { name: label, href: `/market/${cat}` }], jsonld: [datasetLd(cat, all, st.lastUpdated), faqLd([kwFaq, { q: '시세는 언제 갱신되나요?', a: '매주 월요일 오전 실거래·호가를 반영해 갱신합니다.' }, { q: '표의 가격에 수수료가 포함되나요?', a: '회원권 자체 시세이며 거래소 수수료와 골프장 명의개서료는 별도입니다.' }])], dateModified: st.lastUpdated ? isoFromTs(st.lastUpdated) : undefined, bodyClass: 'market-page', ogImage: `/og/page/market-${cat}.png` }));
+  res.send(page({ title: `${meta.h1} ${updated} 갱신: ${all.length}종목 금일·전일 시세와 시세 변동 | 하나회원권거래소`, description: meta.desc(all.length, updated), path: `/market/${cat}`, body, breadcrumbs: [{ name: '회원권 시세', href: '/market/golf' }, { name: label, href: `/market/${cat}` }], jsonld: [datasetLd(cat, all, st.lastUpdated), faqLd([kwFaq, { q: '시세는 언제 갱신되나요?', a: cat === 'golf' ? '골프회원권 시세는 매일 오전·낮·저녁에 반영해 갱신합니다. 표 위의 날짜가 마지막 갱신일입니다.' : '정기적으로 갱신하며, 표 위의 날짜와 종목별 페이지의 「시세 갱신」이 마지막 갱신일입니다.' }, { q: '표의 가격에 수수료가 포함되나요?', a: '회원권 자체 시세이며 거래소 수수료와 골프장 명의개서료는 별도입니다.' }])], dateModified: st.lastUpdated ? isoFromTs(st.lastUpdated) : undefined, bodyClass: 'market-page', ogImage: `/og/page/market-${cat}.png` }));
 });
 
 // ── 골프장 목록 ──

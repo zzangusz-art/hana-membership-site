@@ -38,7 +38,7 @@ router.get('/guide/golf', (req, res) => {
   const g = prices.stats('golf');
   const faqs = [faqBy(/시세는 어떻게 결정/), faqBy(/싸게 사는 법/), faqBy(/수수료/), faqBy(/명의개서\(명의이전\) 절차/), faqBy(/회원권 혜택/)].filter(Boolean);
   const fm = require('../lib/util').fmtMan; const gu = g.lastUpdated ? require('../lib/util').kstDate(new Date(g.lastUpdated * 1000)) : '';
-  const keyFacts = [['시세 종목', `${g.total}종목`], ['평균 시세', fm(g.avg)], ['이번 주', `상승 ${g.up} · 하락 ${g.down} · 보합 ${g.flat}`], ['갱신', gu || '매주 월요일']];
+  const keyFacts = [['시세 종목', `${g.total}종목`], ['평균 시세', fm(g.avg)], ['이번 주', `상승 ${g.up} · 하락 ${g.down} · 보합 ${g.flat}`], ['갱신', gu || '매일']];
   const sections = `
 <h2>골프회원권이란 무엇인가요?</h2>
 <p>골프회원권은 회원제 골프장에 입회금을 예치하고 회원 자격을 얻어 <strong>우선 예약권과 회원 그린피 혜택</strong>을 받는 권리입니다. 회원권은 골프장의 승인을 거쳐 제3자에게 양도할 수 있어 시장에서 거래되며, 그 거래 가격이 "회원권 시세"입니다. 하나회원권거래소는 ${g.total}종목의 시세를 매주 갱신합니다.</p>
@@ -61,13 +61,13 @@ router.get('/guide/golf', (req, res) => {
 <h2>매수·매도 절차는 어떻게 되나요?</h2>
 <p><a href="/guide/process">거래 절차·수수료 안내</a>에서 단계별 절차와 서류를 확인하실 수 있습니다. 요약하면 상담 → 시세·매물 확인 → 계약·정산 → 골프장 명의개서 접수 → 심사·등록 완료 순이며, 전 과정을 하나회원권거래소가 대행합니다.</p>
 <p class="cta">지금 시세를 보려면 <a href="/market/golf">골프회원권 시세표</a>, 골프장별 조건은 <a href="/golf">골프장 소개</a>를 참고하세요.</p>`;
-  res.send(page({ title: '골프회원권이란? 종류·시세·구매·매도 가이드', description: `골프회원권의 뜻과 종류(정회원·주중·법인·무기명), 골프회원권 시세 결정 요인, 구매·매도 절차, 싸게 사는 법, 회원권 혜택. 회원권거래소 하나회원권거래소.`, path: '/guide/golf', body: guideShell({ eyebrow: '회원권 안내', h1: '골프회원권 안내: 뜻·종류·시세·구매 방법', bluf: `골프회원권은 회원제 골프장에 입회금을 내고 회원 자격을 얻어 <strong>주말 우선 예약과 회원 그린피</strong>를 받는, 골프장 승인을 거쳐 양도할 수 있는 권리입니다. 그 양도 가격이 회원권 시세이며 하나회원권거래소는 ${g.total}종목을 매주 월요일 갱신합니다. 종류(정회원·주중·법인·무기명)와 구매·매도 절차, 세금까지 이 페이지에서 설명합니다.`, sections, faqs, side: sideStats(), keyFacts, byline: true }), breadcrumbs: [{ name: '회원권 안내', href: '/guide/golf' }, { name: '골프회원권 안내', href: '/guide/golf' }], jsonld: [].concat(articleLd({ title: '골프회원권 안내', desc: '골프회원권 종류·혜택·확인사항·절차', url: '/guide/golf', faqs }), definedTermLd('골프회원권', '회원제 골프장에 입회금을 내고 얻는 회원 자격으로, 주말 우선 예약권과 회원 그린피 혜택이 있으며 골프장 승인을 거쳐 양도할 수 있는 권리', '/guide/golf'), speakableLd('/guide/golf', '골프회원권 안내')) }));
+  res.send(page({ title: '골프회원권이란? 종류·시세·구매·매도 가이드', description: `골프회원권의 뜻과 종류(정회원·주중·법인·무기명), 골프회원권 시세 결정 요인, 구매·매도 절차, 싸게 사는 법, 회원권 혜택. 회원권거래소 하나회원권거래소.`, path: '/guide/golf', body: guideShell({ eyebrow: '회원권 안내', h1: '골프회원권 안내: 뜻·종류·시세·구매 방법', bluf: `골프회원권은 회원제 골프장에 입회금을 내고 회원 자격을 얻어 <strong>주말 우선 예약과 회원 그린피</strong>를 받는, 골프장 승인을 거쳐 양도할 수 있는 권리입니다. 그 양도 가격이 회원권 시세이며 하나회원권거래소는 ${g.total}종목을 매일 갱신합니다. 종류(정회원·주중·법인·무기명)와 구매·매도 절차, 세금까지 이 페이지에서 설명합니다.`, sections, faqs, side: sideStats(), keyFacts, byline: true }), breadcrumbs: [{ name: '회원권 안내', href: '/guide/golf' }, { name: '골프회원권 안내', href: '/guide/golf' }], jsonld: [].concat(articleLd({ title: '골프회원권 안내', desc: '골프회원권 종류·혜택·확인사항·절차', url: '/guide/golf', faqs }), definedTermLd('골프회원권', '회원제 골프장에 입회금을 내고 얻는 회원 자격으로, 주말 우선 예약권과 회원 그린피 혜택이 있으며 골프장 승인을 거쳐 양도할 수 있는 권리', '/guide/golf'), speakableLd('/guide/golf', '골프회원권 안내')) }));
 });
 
 // ── 콘도회원권 안내 ──
 router.get('/guide/condo', (req, res) => {
   const cs = prices.stats('condo'); const fmc = require('../lib/util').fmtMan; const cu = cs.lastUpdated ? require('../lib/util').kstDate(new Date(cs.lastUpdated * 1000)) : '';
-  const keyFacts = [['시세 종목', `${cs.total}종목`], ['평균 시세', fmc(cs.avg)], ['권리 형태', '공유제(등기) · 회원제(입회금)'], ['갱신', cu || '매주 월요일']];
+  const keyFacts = [['시세 종목', `${cs.total}종목`], ['평균 시세', fmc(cs.avg)], ['권리 형태', '공유제(등기) · 회원제(입회금)'], ['갱신', cu || '정기 갱신']];
   const faqs = [faqBy(/콘도 회원권 공유제|공유제와 회원제/) || faqBy(/콘도회원권이란/), { q: '콘도 회원권 관리비는 매년 내나요?', a: '대부분의 리조트는 연간 관리비(연회비)를 부과합니다. 금액과 부과 방식은 리조트·객실 타입별로 다르므로 매수 전 확인이 필요합니다.' }, { q: '콘도 회원권도 양도소득세가 있나요?', a: '개인이 양도차익을 얻으면 골프회원권과 같이 양도소득세 대상입니다. 공유제(등기) 회원권은 부동산 지분 성격이라 취득세 등 세무 처리가 달라질 수 있으니 세무사 확인을 권장합니다.' }];
   const sections = `
 <h2>콘도회원권이란 무엇인가요?</h2><p>콘도(리조트) 회원권은 리조트 객실을 <strong>연간 정해진 일수만큼 회원가로 이용</strong>할 수 있는 권리입니다. 가족 단위 휴가, 임직원 복지, 워크숍 숙소 확보 목적으로 활용되며, 골프장·스키장·워터파크를 함께 운영하는 리조트는 부대시설 할인도 받습니다.</p>
@@ -168,16 +168,32 @@ router.get('/listings/:id(\\d+)', (req, res, next) => {
   if (!images.length && l.image) images = [l.image];
   // 값이 비었거나 제목과 같거나, 아래 설명 본문에 그대로 나오는 항목은 요약표에서 제외
   info = info.filter(([k, v]) => v && String(v).trim() && String(v).trim() !== l.title && !(l.desc_html && /골프장 소개|피트니스 소개|회원권 종류|회원 혜택|^기타$/.test(k)));
-  const related = db.prepare("SELECT id,title,image,kind,price FROM listings WHERE status='open' AND category=? AND id<>? ORDER BY id DESC LIMIT 4").all(l.category, l.id);
+  // 같은 분류 상품: 최신 4개만 보이면 오래된 매물이 고립돼(2026-11-02) 앞뒤 번호 매물을 보여 준다
+  // 벨루토 매물에는 '무기명' 표현이 보이지 않게(2026-10-29 요청) — 옆 목록에서도 무기명 상품 제목을 뺀다
+  const noAnon = l.src_id === 'membership04-46';
+  const relQ = (op, ord) => db.prepare(`SELECT id,title,image,kind,price FROM listings WHERE status='open' AND category=? AND id${op}? ORDER BY id ${ord} LIMIT 12`).all(l.category, l.id).filter(x => !noAnon || !/무기명/.test(x.title)).slice(0, 4);
+  const newer = relQ('>', 'ASC'), older = relQ('<', 'DESC');
+  const related = [...newer.slice(0, 2), ...older.slice(0, 2)].concat([...newer.slice(2), ...older.slice(2)]).slice(0, 4);
   const catLabel = LCAT[l.category] || '매물'; const excl = Object.entries(EXCL).find(([, e]) => e.kind === l.kind);
   const crumb = excl ? [{ name: '전용관', href: '/exclusive/anonymous' }, { name: excl[1].h1, href: '/exclusive/' + excl[0] }] : [{ name: '회원권 매물', href: '/listings' }, { name: catLabel, href: '/listings?category=' + l.category }];
+  // SEO·AEO(2026-11-02 점검): 같은 이름 매물 제목 구분, 상세 이미지 대체 텍스트, 관련 시세·골프장 링크와 안내 문단(본문 빈약 227곳)
+  const dupTitle = db.prepare("SELECT COUNT(*) c FROM listings WHERE status='open' AND title=? AND id<>?").get(l.title, l.id).c > 0;
+  const titleX = dupTitle ? `${l.title} (매물 ${l.id})` : l.title;
+  let imgN = 0; const descHtml = (l.desc_html || '').replace(/<img\b([^>]*)>/g, (m, a) => { imgN++; return /\balt="[^"]+"/.test(a) ? m : `<img alt="${attr(l.title)} 상세 안내 ${imgN}"${a.replace(/\s*\balt="[^"]*"/, '')}>`; });
+  const base = String(l.name || l.title).replace(/\s*(회원권|골프회원권|무기명|분양|안내|모집|매물).*$/, '').replace(/(cc|CC|컨트리클럽|골프클럽)$/, '').trim().split(/[\s(-]/)[0];
+  const pcat = { golf: ['golf', 'corporate'], condo: ['condo'], fitness: ['fitness'], sale: ['golf'] }[l.category] || [];
+  const relPrices = base.length >= 2 && pcat.length ? db.prepare(`SELECT id, category, name, today FROM prices WHERE category IN (${pcat.map(() => '?').join(',')}) AND today IS NOT NULL AND (name LIKE ? OR name LIKE ?) ORDER BY category, today DESC LIMIT 6`).all(...pcat, base + '%', base + ' %') : [];
+  const relClub = base.length >= 2 && (l.category === 'golf' || l.category === 'sale') ? db.prepare("SELECT slug, name FROM clubs WHERE parent_id IS NULL AND status='published' AND name LIKE ? ORDER BY length(name) LIMIT 1").get(base + '%') : null;
+  const guideLink = { golf: ['/guide/golf', '골프회원권 안내'], condo: ['/guide/condo', '콘도회원권 안내'], fitness: ['/guide/fitness', '피트니스회원권 안내'], sale: ['/guide/golf', '골프회원권 안내'] }[l.category];
+  const howTo = { golf: '골프회원권 매물은 같은 골프장이라도 정회원·주중·무기명·법인 등 종류에 따라 이용 조건과 가격이 다릅니다. 계약 전에 골프장 명의개서 가능 여부와 명의개서료, 주말 예약 방식을 확인합니다.', condo: '콘도회원권 매물은 리조트·평형·공유제(등기) 여부에 따라 이용 일수와 연회비가 다릅니다. 계약 전에 성수기 배정 방식과 명의변경 비용을 확인합니다.', fitness: '호텔 피트니스 회원권 매물은 개인·부부·가족 등 등록 인원과 연회비, 이용 시설 범위에 따라 가격이 다릅니다. 양도 시 호텔 승인과 명의변경료를 확인합니다.', sale: '분양 상품은 분양가·구좌 수·입회금 반환 조건이 모집 시점에 따라 바뀝니다. 잔여 구좌와 최신 조건은 상담으로 확인합니다.' }[l.category] || '';
   const bluf = `${l.title}, ${l.kind && l.kind !== '매물' ? l.kind + ' ' : ''}${catLabel} 상품입니다. ${l.price ? '표시 가격 ' + fmtMan(l.price) + '(만원 기준, 시점에 따라 변동). ' : ''}${info.filter(([k]) => /회원권 종류|회원 혜택/.test(k)).map(([k, v]) => k + ': ' + truncate(v, 80)).join(' · ')}${info.length ? ' ' : ''}상세 조건·부대비용은 ${s.phone}으로 문의하시면 당일 안내합니다.`;
   const body = `<section class="page-head"><div class="wrap"><p class="eyebrow">${esc(excl ? excl[1].h1 : catLabel)}</p><h1>${esc(l.title)}</h1><p class="bluf">${esc(bluf)}</p></div></section>
-<section class="section"><div class="wrap prd"><div class="prd-main">${images.map((im, i) => `<figure class="prd-fig${i ? ' reveal' : ''}"><img src="${attr(im)}" alt="${attr(l.title)}${images.length > 1 ? ' ' + (i + 1) : ''}" ${i ? 'loading="lazy"' : ''} width="1080" height="1080"></figure>`).join('')}${l.desc_html ? `<article class="prose prd-desc">${l.desc_html}</article>` : ''}</div>
+<section class="section"><div class="wrap prd"><div class="prd-main">${images.map((im, i) => `<figure class="prd-fig${i ? ' reveal' : ''}"><img src="${attr(im)}" alt="${attr(l.title)}${images.length > 1 ? ' ' + (i + 1) : ''}" ${i ? 'loading="lazy"' : ''} width="1080" height="1080"></figure>`).join('')}${descHtml ? `<article class="prose prd-desc">${descHtml}</article>` : ''}
+${howTo ? `<div class="prose prd-more"><h2>${esc(l.title)} 거래 전에 확인할 것</h2><p>${esc(howTo)} 자세한 내용은 <a href="${guideLink ? guideLink[0] : '/guide/golf'}">${guideLink ? guideLink[1] : '회원권 안내'}</a>를 참고하세요.</p>${relClub ? `<p>${esc(relClub.name)}의 코스·연혁·회원 구성은 <a href="/golf/${encodeURIComponent(relClub.slug)}">${esc(relClub.name)} 소개</a>에서 볼 수 있습니다.</p>` : ''}${relPrices.length ? `<h3>${esc(base)} 관련 시세</h3><ul>${relPrices.map(x => `<li><a href="/market/${x.category}/${x.id}">${esc(x.name)}</a> ${x.category === 'corporate' ? '(법인) ' : ''}${fmtMan(x.today)}</li>`).join('')}</ul>` : ''}</div>` : ''}</div>
 <aside class="prd-side"><div class="side-card"><span class="tag">${esc(l.kind || catLabel)}</span><h2>${esc(l.title)}</h2>${info.length ? `<table class="prd-info">${info.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join('')}</table>` : ''}${l.price ? `<p class="prd-price"><b>${fmtMan(l.price)}</b><small>표시 시점 기준 · 변동 가능</small></p>` : ''}${l.link ? `<a class="btn btn-ghost block" href="${attr(l.link)}" target="_blank" rel="noopener">일정·요금 자세히 보기 ↗</a>` : ''}<a class="btn btn-primary block" href="/apply?item=${encodeURIComponent(l.name || l.title)}">이 상품 상담 신청</a><a class="btn btn-call block impact" href="tel:${attr(s.phone)}"><span class="ic" aria-hidden="true">📞</span> ${esc(s.phone)}</a><p class="note">24시간 전화 상담 · 평일 09:00–18:00 방문 상담</p></div>
-${related.length ? `<div class="side-card"><h3>같은 분류 상품</h3><ul class="rel-list">${related.map(r => `<li><a href="/listings/${r.id}">${r.image ? `<img src="${attr(r.image)}" alt="" loading="lazy" width="56" height="56">` : ''}<span>${esc(r.title)}${r.price ? `<small>${fmtMan(r.price)}</small>` : ''}</span></a></li>`).join('')}</ul></div>` : ''}</aside></div></section>`;
+${related.length ? `<div class="side-card"><h3>같은 분류 상품</h3><ul class="rel-list">${related.map(r => `<li><a href="/listings/${r.id}">${r.image ? `<img src="${attr(r.image)}" alt="${attr(r.title)}" loading="lazy" width="56" height="56">` : ''}<span>${esc(r.title)}${r.price ? `<small>${fmtMan(r.price)}</small>` : ''}</span></a></li>`).join('')}</ul></div>` : ''}</aside></div></section>`;
   const ld = [{ '@context': 'https://schema.org', '@type': 'Product', name: l.title, image: images.map(im => site + im), description: bluf, category: catLabel, brand: { '@type': 'Brand', name: l.name || l.title }, offers: { '@type': 'Offer', url: `${site}/listings/${l.id}`, priceCurrency: 'KRW', ...(l.price ? { price: l.price * 10000 } : {}), availability: 'https://schema.org/InStock', seller: { '@id': site + '/#org' } } }];
-  res.send(page({ title: `${l.title}: ${excl ? excl[1].h1 : catLabel} 상품 안내`, description: truncate(bluf, 155), path: `/listings/${l.id}`, body, breadcrumbs: [...crumb, { name: l.title, href: `/listings/${l.id}` }], ogImage: images[0] || undefined, jsonld: ld, dateModified: isoFromTs(l.updated_at) }));
+  res.send(page({ title: `${titleX}: ${excl ? excl[1].h1 : catLabel} 상품 안내`, description: truncate(bluf, 155), path: `/listings/${l.id}`, body, breadcrumbs: [...crumb, { name: l.title, href: `/listings/${l.id}` }], ogImage: images[0] || undefined, jsonld: ld, dateModified: isoFromTs(l.updated_at) }));
 });
 
 // ── 매매 신청 ──

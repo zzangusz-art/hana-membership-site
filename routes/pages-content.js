@@ -29,7 +29,15 @@ router.get('/blog/:slug', (req, res, next) => {
   const s = settings.all(); const site = settings.siteUrl();
   let faqs = [], sources = [];
   try { const j = JSON.parse(p.source_urls || '[]'); if (Array.isArray(j)) sources = j; else { faqs = j.faq || []; sources = j.sources || []; } } catch (_) { /* no-op */ }
-  const related = db.prepare("SELECT * FROM posts WHERE kind='blog' AND status='published' AND id<>? AND type=? ORDER BY published_at DESC LIMIT 4").all(p.id, p.type);
+  // 같은 주제의 글: 최신 글만 보이면 초기 글이 어디에서도 링크되지 않아(2026-11-02 점검: 고립 글 17개) 태그·제목이 겹치는 글을 고른다
+  const related = (() => {
+    const bigr = (t) => { const x = String(t || '').replace(/\(.*?\)/g, '').replace(/[^가-힣a-z0-9]/gi, ''); const o = new Set(); for (let i = 0; i < x.length - 1; i++) o.add(x.slice(i, i + 2)); return o; };
+    const tg = (t) => new Set(String(t || '').split(',').map(x => x.trim()).filter(x => x && x !== '하나회원권거래소'));
+    const me = bigr(p.title), mt = tg(p.tags);
+    const all = db.prepare("SELECT * FROM posts WHERE kind='blog' AND status='published' AND id<>? AND slug NOT LIKE 'club-guide-%'").all(p.id);
+    const score = (q) => { const b = bigr(q.title); let n = 0; for (const x of b) if (me.has(x)) n++; let t = 0; for (const x of tg(q.tags)) if (mt.has(x)) t++; return n / Math.max(1, Math.min(me.size, b.size)) + t * 0.5 + (q.type === p.type ? 0.1 : 0); };
+    return all.map(q => [q, score(q)]).sort((a, b) => b[1] - a[1] || b[0].published_at - a[0].published_at).slice(0, 4).map(([q]) => q);
+  })();
   const latest = db.prepare("SELECT * FROM posts WHERE kind='blog' AND status='published' AND id<>? ORDER BY published_at DESC LIMIT 5").all(p.id);
   const tags = (p.tags || '').split(',').map(t => t.trim()).filter(Boolean);
   const pubDate = kstDate(new Date(p.published_at * 1000)); const modDate = kstDate(new Date(p.updated_at * 1000));
