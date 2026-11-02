@@ -173,6 +173,13 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
   { const items = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', 'data', 'seed', 'listings.json'), 'utf8')).items.filter(x => /-u1\.webp$/.test((x.images || [])[0] || ''));
     const bad = items.filter(x => { const r = db.prepare('SELECT image FROM listings WHERE src_id=?').get(x.src_id); return !r || r.image !== x.images[0] || !require('fs').existsSync(require('path').join(__dirname, '..', 'public', x.images[0])); });
     ok(items.length >= 67 && !bad.length, '골프·분양 썸네일 통일(오크힐스 템플릿) 적용', `${items.length}건${bad.length ? ' · 불일치 ' + bad.map(x => x.src_id).join(',') : ''}`); }
+  // AEO·SEO(2026-11-02): 시세 상세 FAQ·시세 흐름, 같은 이름 매물 제목 구분, 상세 이미지 alt, 갱신 주기 문구
+  { const pc = db.prepare("SELECT id FROM prices WHERE category='corporate' AND today IS NOT NULL LIMIT 1").get(); const mp = await get('/market/corporate/' + pc.id);
+    const dup = db.prepare("SELECT title FROM listings WHERE status='open' GROUP BY title HAVING COUNT(*)>1 LIMIT 1").get(); let dupOk = true;
+    if (dup) { const ids = db.prepare("SELECT id FROM listings WHERE status='open' AND title=? LIMIT 2").all(dup.title); const t = []; for (const x of ids) { const p = await get('/listings/' + x.id); t.push((p.text.match(/<title>([^<]*)/) || [])[1]); } dupOk = t[0] !== t[1]; }
+    const lw = db.prepare("SELECT id FROM listings WHERE status='open' AND desc_html LIKE '%<img%' LIMIT 1").get(); const lp = lw ? await get('/listings/' + lw.id) : { text: '' }; const desc = (lp.text.match(/<article class="prose prd-desc">([\s\S]*?)<\/article>/) || ['', ''])[1];
+    const llms = await get('/llms.txt'); const mg = await get('/market/golf');
+    ok(mp.text.includes('"FAQPage"') && mp.text.includes('자주 묻는 질문') && dupOk && !/<img(?![^>]*\balt="[^"]+")[^>]*>/.test(desc) && llms.text.includes('지금 골프회원권 시세') && !/매주 월요일/.test(llms.text + mg.text), 'AEO·SEO: 시세 상세 FAQ, 같은 이름 매물 제목 구분, 상세 이미지 alt, llms 최신 시세·갱신 주기'); }
   // 벨루토는 '무기명' 표현을 쓰지 않는다(2026-10-29 요청), 더시에나 특별회원권 상품 등록
   { const bl = db.prepare("SELECT id, title, desc_html, info_json, image FROM listings WHERE src_id='membership04-46'").get(); const sp = db.prepare("SELECT id FROM listings WHERE src_id='thesiena-special-2026' AND status='open'").get();
     const pg = await get('/listings/' + bl.id); const main = (pg.text.match(/<main[\s\S]*<\/main>/) || [''])[0];
