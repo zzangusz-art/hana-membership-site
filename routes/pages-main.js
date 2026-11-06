@@ -31,7 +31,7 @@ function faqHtml(faqs, title = '자주 묻는 질문') {
 }
 function postCard(p) {
   const TL = { club: '골프장 소개', report: '시세 리포트', guide: '거래 가이드', trend: '시장 동향' };
-  return `<article class="post-card reveal"><a href="/blog/${attr(p.slug)}"><img class="post-thumb" src="/og/post/${encodeURIComponent(p.slug)}.jpg?v=2" alt="" loading="lazy" width="600" height="315"><span class="tag tag-${attr(p.type || 'guide')}">${TL[p.type] || '가이드'}</span><h3>${esc(p.title)}</h3><p>${esc(truncate(p.excerpt || stripHtml(p.body_html), 90))}</p><time datetime="${isoFromTs(p.published_at || p.created_at)}">${fmtKoDate(kstDate(new Date((p.published_at || p.created_at) * 1000)))}</time></a></article>`;
+  return `<article class="post-card reveal"><a href="/blog/${encodeURIComponent(p.slug)}"><img class="post-thumb" src="/og/post/${encodeURIComponent(p.slug)}.jpg?v=3" alt="" loading="lazy" width="600" height="315"><span class="tag tag-${attr(p.type || 'guide')}">${TL[p.type] || '가이드'}</span><h3>${esc(p.title)}</h3><p>${esc(truncate(p.excerpt || stripHtml(p.body_html), 90))}</p><time datetime="${isoFromTs(p.published_at || p.created_at)}">${fmtKoDate(kstDate(new Date((p.published_at || p.created_at) * 1000)))}</time></a></article>`;
 }
 function datasetLd(category, rows, updated) {
   const site = settings.siteUrl(); const label = prices.CATS[category];
@@ -372,7 +372,7 @@ router.get('/golf/:slug', (req, res, next) => {
   <aside class="club-side">
     <div class="side-card"><h3>매매 상담</h3><p>${esc(title)} 회원권 매수·매도 호가와 매물을 확인해 드립니다.</p><a class="btn btn-green block" href="/apply?item=${encodeURIComponent(title)}">매매 신청</a><a class="btn btn-ghost block" href="tel:${attr(s.phone)}">${esc(s.phone)}</a></div>
     ${related.length ? `<div class="side-card"><h3>같은 권역 골프장</h3><ul class="side-list">${related.map(r => `<li><a href="/golf/${encodeURIComponent(r.slug)}">${esc(r.title)}</a>${r.price ? `<span>${fmtNum(r.price.today)}</span>` : ''}</li>`).join('')}</ul></div>` : ''}
-    ${posts.length ? `<div class="side-card"><h3>관련 글</h3><ul class="side-list">${posts.map(x => `<li><a href="/blog/${attr(x.slug)}">${esc(x.title)}</a></li>`).join('')}</ul></div>` : ''}
+    ${posts.length ? `<div class="side-card"><h3>관련 글</h3><ul class="side-list">${posts.map(x => `<li><a href="/blog/${encodeURIComponent(x.slug)}">${esc(x.title)}</a></li>`).join('')}</ul></div>` : ''}
     <div class="side-card author"><h3>안내</h3><p><b>${esc(s.legal_name)}</b> 회원권 상담팀<br>2004년부터 회원권 매매 중개 · 분양 대행 28건<br><a href="/about">회사소개</a></p></div>
   </aside>
 </div></section>`;
@@ -383,7 +383,7 @@ router.get('/golf/:slug', (req, res, next) => {
   if (priced.length === 1) ld.push({ '@context': 'https://schema.org', '@type': 'Product', name: `${title} 골프회원권`, description: summary, brand: { '@type': 'Brand', name: title }, offers: { '@type': 'Offer', priceCurrency: 'KRW', price: p.today * 10000, availability: 'https://schema.org/InStock', url: site + url, seller: { '@id': site + '/#org' }, priceValidUntil: until } });
   else if (priced.length > 1) ld.push({ '@context': 'https://schema.org', '@type': 'Product', name: `${title} 골프회원권`, description: `${summary} 회원권 종류: ${priced.map(v => `${v.name} ${fmtMan(v.price.today)}`).join(', ')}.`, brand: { '@type': 'Brand', name: title }, offers: { '@type': 'AggregateOffer', priceCurrency: 'KRW', lowPrice: Math.min(...priced.map(v => v.price.today)) * 10000, highPrice: Math.max(...priced.map(v => v.price.today)) * 10000, offerCount: priced.length, availability: 'https://schema.org/InStock', url: site + url, seller: { '@id': site + '/#org' } } });
   if (faqs.length) ld.push(faqLd(faqs));
-  res.send(page({ title: `${title} 회원권 시세 ${range || ''} · ${multi ? `종류 ${vs.length}종·` : ''}입회 조건·매수 가이드`.replace(/\s+/g, ' '), description: truncate(`${title} 회원권 시세 ${range ? range + '(' + updated + ' 갱신)' : ''}${multi ? ', 종류 ' + vs.map(v => v.label).join('·') : ''}, ${c.region || ''} ${c.address || ''}. 적합한 매수자, 부킹 특징, 명의개서 조건. 하나회원권거래소 ${s.phone}.`, 158), path: url, body, breadcrumbs: [{ name: '골프장 소개', href: '/golf' }, { name: title, href: url }], jsonld: ld, dateModified: isoFromTs(c.updated_at), bodyClass: 'club-page', ogImage: `/og/club/${encodeURIComponent(c.slug)}.png?v=2` }));
+  res.send(page({ title: `${title} 회원권 시세 ${range || ''} · ${multi ? `종류 ${vs.length}종·` : ''}입회 조건·매수 가이드`.replace(/\s+/g, ' '), description: truncate(`${title} 회원권 시세 ${range ? range + '(' + updated + ' 갱신)' : ''}${multi ? ', 종류 ' + vs.map(v => v.label).join('·') : ''}, ${c.region || ''} ${c.address || ''}. 적합한 매수자, 부킹 특징, 명의개서 조건. 하나회원권거래소 ${s.phone}.`, 158), path: url, body, breadcrumbs: [{ name: '골프장 소개', href: '/golf' }, { name: title, href: url }], jsonld: ld, dateModified: isoFromTs(c.updated_at), bodyClass: 'club-page', ogImage: `/og/club/${encodeURIComponent(c.slug)}.png?v=3` }));
 });
 
 module.exports = { router, chg, sparkline, faqHtml, postCard };
