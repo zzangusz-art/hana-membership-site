@@ -144,6 +144,7 @@ app.get(['/admin', '/admin/*'], (req, res) => { res.setHeader('X-Robots-Tag', 'n
 app.use(require('./routes/pages-main').router);
 app.use(require('./routes/pages-info').router);
 app.use(require('./routes/pages-content').router);
+app.use(require('./routes/pages-hub'));
 
 // 404
 app.use((req, res) => {

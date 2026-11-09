@@ -282,6 +282,7 @@ router.get('/market/:category', (req, res, next) => {
   <ul><li><strong>계절</strong>: 봄·가을 성수기 앞뒤로 매수 수요가 늘어 강세, 한겨울·장마철은 약세 경향.</li><li><strong>골프장 정책</strong>: 회원수 조정, 입회금 인상·반환, 주말 부킹 제도 변경은 즉시 시세에 반영됩니다.</li><li><strong>금리·경기</strong>: 법인 접대 수요와 자산 시장 흐름이 고가 종목에 먼저 반영됩니다.</li><li><strong>신규 분양</strong>: 인근 신규 골프장 분양은 기존 종목 시세를 흔드는 요인입니다.</li></ul>
   <h2>매수·매도 판단은 이렇게</h2>
   <p>한 주 등락만 보지 마시고 <a href="/blog?type=report">주간 시세 리포트</a>에서 4주 흐름과 <a href="/golf">골프장별 입회 조건</a>을 같이 보세요. 지금 나온 매물과 호가는 ${esc(settings.cfg('phone'))}으로 물어보시는 게 가장 정확합니다.</p>
+  ${cat === 'golf' ? `<h2>지역별 골프회원권 시세</h2>${require('../lib/hubs').hubNav()}` : ''}
   ${faqHtml([kwFaq, { q: '시세는 언제 갱신되나요?', a: cat === 'golf' ? '골프회원권 시세는 매일 오전·낮·저녁에 반영해 갱신합니다. 표 위의 날짜가 마지막 갱신일입니다.' : '정기적으로 갱신하며, 표 위의 날짜와 종목별 페이지의 「시세 갱신」이 마지막 갱신일입니다.' }, { q: '표의 가격에 수수료가 포함되나요?', a: '아니요. 회원권 자체 시세이며 거래소 수수료와 골프장 명의개서료는 별도입니다.' }, { q: '표에 없는 종목도 거래할 수 있나요?', a: '네. 표는 주요 종목이며 그 외 종목은 상담 시 시세를 안내해 드립니다.' }])}
 </div></section>`;
   res.send(page({ title: `${meta.h1} ${updated} 갱신: ${all.length}종목 금일·전일 시세와 시세 변동 | 하나회원권거래소`, description: meta.desc(all.length, updated), path: `/market/${cat}`, body, breadcrumbs: [{ name: '회원권 시세', href: '/market/golf' }, { name: label, href: `/market/${cat}` }], jsonld: [datasetLd(cat, all, st.lastUpdated), faqLd([kwFaq, { q: '시세는 언제 갱신되나요?', a: cat === 'golf' ? '골프회원권 시세는 매일 오전·낮·저녁에 반영해 갱신합니다. 표 위의 날짜가 마지막 갱신일입니다.' : '정기적으로 갱신하며, 표 위의 날짜와 종목별 페이지의 「시세 갱신」이 마지막 갱신일입니다.' }, { q: '표의 가격에 수수료가 포함되나요?', a: '회원권 자체 시세이며 거래소 수수료와 골프장 명의개서료는 별도입니다.' }])], dateModified: st.lastUpdated ? isoFromTs(st.lastUpdated) : undefined, bodyClass: 'market-page', ogImage: `/og/page/market-${cat}.png` }));
@@ -318,6 +319,7 @@ router.get('/golf', (req, res) => {
   const body = `
 <section class="page-head"><div class="wrap"><p class="eyebrow">골프장 소개</p><h1>골프장 회원권 거래·입회권 안내 <small>${total}개 골프장</small></h1><p class="bluf">골프장마다 회원권 시세, 입회권·명의개서 조건, 회원권 혜택과 부킹 특징, 어떤 분께 맞는지를 정리했습니다. 주중·가족·여자 회원권처럼 종류가 여러 가지인 골프장은 골프장 페이지 안에서 종류를 골라 볼 수 있습니다.</p>
 <form class="market-controls" method="get" action="/golf"><input type="search" name="q" value="${attr(q)}" placeholder="골프장명 검색"><div class="chips"><a class="chip${!region ? ' active' : ''}" href="/golf">전체</a>${regions.map(r => `<a class="chip${region === r.region ? ' active' : ''}" href="/golf?region=${encodeURIComponent(r.region)}">${esc(r.region)} ${r.c}</a>`).join('')}</div><button class="btn btn-primary" type="submit">검색</button></form></div></section>
+<section class="section"><div class="wrap"><h2>지역별 골프회원권 시세</h2>${require('../lib/hubs').hubNav()}</div></section>
 <section class="section kmap-sec"><div class="wrap"><div class="sec-head"><div><p class="eyebrow">지역별 골프장</p><h2>지도에서 지역을 눌러 골프장을 찾아보세요</h2></div><p class="note">지역을 누르면 목록이 바뀌고, 다시 누르면 전체로 돌아갑니다.</p></div>
 <div class="kmap-wrap"><div class="kmap-box" data-short='${JSON.stringify(kmap.SHORT).replace(/'/g, '&#39;')}'>${kmap.SVG}</div>
 <div class="kmap-side"><div class="chips kmap-chips"><button type="button" class="chip active" data-sido="">전체 ${clubs.length}</button>${sidos.map(([sd, n]) => `<button type="button" class="chip" data-sido="${attr(sd)}">${esc(kmap.SHORT[sd] || sd)} ${n}</button>`).join('')}</div>
@@ -386,4 +388,4 @@ router.get('/golf/:slug', (req, res, next) => {
   res.send(page({ title: `${title} 회원권 시세 ${range || ''} · ${multi ? `종류 ${vs.length}종·` : ''}입회 조건·매수 가이드`.replace(/\s+/g, ' '), description: truncate(`${title} 회원권 시세 ${range ? range + '(' + updated + ' 갱신)' : ''}${multi ? ', 종류 ' + vs.map(v => v.label).join('·') : ''}, ${c.region || ''} ${c.address || ''}. 적합한 매수자, 부킹 특징, 명의개서 조건. 하나회원권거래소 ${s.phone}.`, 158), path: url, body, breadcrumbs: [{ name: '골프장 소개', href: '/golf' }, { name: title, href: url }], jsonld: ld, dateModified: isoFromTs(c.updated_at), bodyClass: 'club-page', ogImage: `/og/club/${encodeURIComponent(c.slug)}.png?v=3` }));
 });
 
-module.exports = { router, chg, sparkline, faqHtml, postCard };
+module.exports = { router, chg, sparkline, faqHtml, postCard, sido };
