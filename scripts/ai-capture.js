@@ -52,7 +52,8 @@ async function runChat(page, E, q) {
 }
 
 function arg(name, def) { const i = process.argv.indexOf('--' + name); return i > 0 && process.argv[i + 1] ? process.argv[i + 1] : def; }
-const engines = arg('engines', Object.keys(ENGINES).join(',')).split(',').map(s => s.trim()).filter(e => ENGINES[e]);
+// Claude는 로그인 계정의 작업 기록이 답변에 섞이므로(2026-11-09 확인) 기록 없는 계정을 쓰기 전까지 기본에서 뺀다
+const engines = arg('engines', Object.keys(ENGINES).filter(e => e !== 'claude').join(',')).split(',').map(s => s.trim()).filter(e => ENGINES[e]);
 const queries = arg('queries', QUERIES.join(',')).split(',').map(s => s.trim()).filter(Boolean);
 const date = arg('date', kstDate());
 const outDir = path.join(ROOT_OUT, date); fs.mkdirSync(outDir, { recursive: true });

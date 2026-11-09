@@ -14,7 +14,9 @@ const router = express.Router();
 function hubClubs(region) {
   const ctx = clubgroup.context();
   return db.prepare("SELECT * FROM clubs WHERE status='published' AND parent_id IS NULL AND region=? ORDER BY COALESCE(NULLIF(group_name, ''), name)").all(region).map(c => {
-    const ps = clubgroup.variants(c, ctx).filter(v => v.price && v.price.today != null && v.price.today > 0).map(v => v.price.today);
+    // 같은 골프장 종류끼리 8배 넘게 어긋나는 값(입력 오류 의심: 크라운 주중 400 등)은 순위·요약에서 뺀다
+    const raw = clubgroup.variants(c, ctx).filter(v => v.price && v.price.today != null && v.price.today > 0).map(v => v.price.today);
+    const mid = raw.length ? median(raw) : 0; const ps = raw.length > 1 ? raw.filter(p => p <= mid * 8 && p >= mid / 8) : raw;
     return { ...c, title: c.group_name || c.name, kinds: ps.length, lo: ps.length ? Math.min(...ps) : null, hi: ps.length ? Math.max(...ps) : null, area: c.sido || sido(c.address) };
   });
 }
