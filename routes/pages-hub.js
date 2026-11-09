@@ -48,7 +48,7 @@ router.get('/golf/region/:hub', (req, res, next) => {
     : `${R} 골프장 ${clubs.length}곳의 회원권은 상담으로 시세를 안내합니다.`;
   const rankTable = (rows, val) => `<table><thead><tr><th>골프장</th><th>지역</th><th>시세</th></tr></thead><tbody>${rows.map(c => `<tr><td>${clubLink(c)}</td><td>${esc(c.area || '')}</td><td><b>${fmtMan(val(c))}</b></td></tr>`).join('')}</tbody></table>`;
   const body = `<section class="page-head"><div class="wrap"><p class="eyebrow">지역별 골프회원권</p><h1>${esc(R)} 골프회원권 시세는 얼마인가요? <small>${clubs.length}개 골프장</small></h1><p class="bluf">${bluf}</p>${hubNav(hub.slug)}</div></section>
-<section class="section explain"><div class="wrap narrow">
+<section class="section explain"><div class="wrap narrow prose">
 ${priced.length ? `<h2>${esc(R)} 골프회원권 가격대</h2><table><thead><tr><th>가격대(골프장별 최저 시세)</th><th>골프장 수</th></tr></thead><tbody>${bands.map(([k, n]) => `<tr><td>${k}</td><td>${n}곳</td></tr>`).join('')}</tbody></table>
 <h2>${esc(R)}에서 시세가 낮은 골프장</h2>${rankTable(low, c => c.lo)}
 <h2>${esc(R)}에서 시세가 높은 골프장</h2>${rankTable(high, c => c.hi)}` : ''}
