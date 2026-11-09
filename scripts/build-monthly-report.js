@@ -76,6 +76,9 @@ const FEAT = [
   ['골프장 세부 정보(공식 홈페이지 기준, 10/14~)', path.join(SS, '2026-10-14', 'before_golf_songchoo_detail.png'), '송추CC 추가 전', path.join(SS, '2026-10-14', 'after_golf_songchoo_detail.png'), '추가 후', 'height:62mm;object-fit:cover;object-position:top'],
   ['시세 차트 과거 기록(10/21): 동아회원권·구 사이트 기록을 이어 2011년부터 표시', path.join(SS, '2026-10-21', 'before_chart10y_condo_yongpyong.png'), '용평 콘도 10년 차트 — 반영 전', path.join(SS, '2026-10-21', 'after_chart10y_condo_yongpyong.png'), '반영 후', 'height:62mm;object-fit:cover;object-position:top'],
   ['골프장 세부 정보 누적 65곳(10/22, 기흥CC)', path.join(SS, '2026-10-22', 'before_golf_giheung_detail.png'), '추가 전(운영)', path.join(SS, '2026-10-22', 'after_golf_giheung_detail.png'), '추가 후', 'height:62mm;object-fit:cover;object-position:top'],
+  ['시세 상세 FAQ·시세 흐름(11/2, 344개 페이지)', path.join(SS, '2026-11-02', 'before_market_corporate_82.png'), '수정 전', path.join(SS, '2026-11-02', 'after_market_corporate_82.png'), '수정 후', 'height:62mm;object-fit:cover;object-position:top'],
+  ['블로그 썸네일 정합성(11/6, 골프장 소개 글 24건)', path.join(SS, '2026-11-06', 'before_blog_thumbs_1.png'), '수정 전: 다른 골프장 이름·사진', path.join(SS, '2026-11-06', 'after_blog_thumbs_prod_1.png'), '수정 후(운영)', 'height:62mm;object-fit:cover;object-position:top'],
+  ['골프장 세부 정보 누적 81곳(11/2, 용평CC)', path.join(SS, '2026-11-02', 'before_golf_yongpyong_detail.png'), '추가 전', path.join(SS, '2026-11-02', 'after_golf_yongpyong_detail.png'), '추가 후', 'height:62mm;object-fit:cover;object-position:top'],
   ['콘도회원권 매물 썸네일(10/6)', path.join(SS, '2026-10-06', 'before_condo_listings.png'), '이전', path.join(SS, '2026-10-06', 'after_condo_listings_v3.png'), '정리 후', 'height:62mm;object-fit:cover;object-position:top'],
 ];
 const featPairs = FEAT.filter(f => fs.existsSync(f[1]) && fs.existsSync(f[3])).map(([t, b, bc, a, ac, st]) => { const pos = /bottom/.test(st) ? 'bottom' : 'top'; const r = /95mm/.test(st) ? 1.5 : 0.55; return pair(t, cut(b, pos, r), bc, cut(a, pos, r), ac, /95mm/.test(st) ? 'height:88mm;width:auto;max-width:100%;margin:0 auto' : ''); }).join('');
@@ -122,6 +125,16 @@ const statHtml = () => !STAT ? '' : `<section><h2>${sec()}. 콘텐츠·데이터
 <p class="small muted">과거 기록: 동아회원권 공개 시세 기록과 구 하나회원권 사이트 기록을 이어 붙였고, 9/30부터는 하나회원권거래소가 매일 기록합니다. 현재 시세와 30% 넘게 어긋나는 과거 기록은 걸러 냈습니다(법인 17종목 제외).</p>
 <h3>골프장 정보</h3><p>골프장 소개 페이지 ${n(M ? M.golfClubs : 0)}곳 · 공식 홈페이지만 출처로 쓴 세부 정보(회원 구성·그린피·예약 규정·명의개서·법인 규정) <b>${n(STAT.details)}곳</b>. 그린피·수수료에는 확인 날짜를 함께 적었습니다.</p>
 </section>`;
+const NV = (() => { try { return JSON.parse(fs.readFileSync(path.join(PROJ, '측정', `네이버점검_${DATE}.json`), 'utf8')); } catch (_) { return null; } })();
+const NV0 = (() => { try { return JSON.parse(fs.readFileSync(path.join(PROJ, '측정', '네이버점검_2026-11-06_최종.json'), 'utf8')); } catch (_) { return null; } })();
+const rk = (v) => v == null ? '<span class="muted">-</span>' : v + '번째';
+const nvHtml = () => !NV ? '' : `<h3>네이버 통합검색 순위 (광고 제외 외부 결과 기준, ${md(NV0 && NV0.date)} → ${md(NV.date)})</h3>
+<table class="c"><tr><th>질의</th><th>새 사이트 ${md(NV0 && NV0.date)}</th><th>새 사이트 ${md(NV.date)}</th><th>구 사이트 ${md(NV.date)}</th></tr>${NV.queries.map(r => { const o = NV0 && NV0.queries.find(x => x.q === r.q); return `<tr><td>${esc(r.q)}</td><td>${o ? rk(o.all.member) : '-'}</td><td><b>${rk(r.all.member)}</b></td><td>${rk(r.all.market)}</td></tr>`; }).join('')}</table>
+<p class="small muted">비로그인 브라우저 1곳에서 첫 페이지를 읽은 값입니다. -는 첫 페이지에 없음. 일일 캡처와 측정 시각이 달라 일부 질의는 결과가 다를 수 있습니다. 원본: 측정/네이버점검_${DATE}.json</p>`;
+const kpiHtml = () => !(M && M.kpi) ? '' : `<section><h2>${sec()}. 목표 대비 재측정 (10/6 액션 플랜의 11/8 목표)</h2>
+<table><tr><th style="width:30%">지표</th><th style="width:15%">목표</th><th>현재</th><th style="width:12%">판정</th></tr>${M.kpi.map(([a, b, c, d]) => `<tr><td>${esc(a)}</td><td>${esc(b)}</td><td>${esc(c)}</td><td><b class="${/달성/.test(d) && !/미달|부분/.test(d) ? 'ok' : /미확인|부분/.test(d) ? 'warn' : ''}">${esc(d)}</b></td></tr>`).join('')}</table>
+${nvHtml()}
+${M.findings ? `<h3>방향성 판단</h3><ul>${M.findings.map(x => `<li>${x}</li>`).join('')}</ul>` : ''}</section>`;
 const tlHtml = () => !(M && M.timeline) ? '' : `<section><h2>${sec()}. 진행 경과 (${md(FROM)} ~ ${md(DATE)})</h2><table><tr><th style="width:15%">기간</th><th style="width:22%">단계</th><th>주요 작업</th></tr>${M.timeline.map(([p, s, items]) => `<tr><td>${esc(p)}</td><td><b>${esc(s)}</b></td><td><ul>${items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></td></tr>`).join('')}</table>
 ${M.weekly ? `<h3>주간 신규 노출 리포트</h3><table class="c"><tr><th>주간</th><th>새로 노출</th><th>새 상호 언급</th><th>비고</th></tr>${M.weekly.map(w => `<tr><td>${esc(w[0])}</td><td>${esc(w[1])}</td><td>${esc(w[2])}</td><td style="text-align:left">${esc(w[3])}</td></tr>`).join('')}</table>` : ''}</section>`;
 
@@ -162,6 +175,7 @@ ${M && M.inquiryTotal != null ? `<div><b>${n(M.inquiryTotal)}</b><span>누적 �
 <h3>검색·AI 노출 추이 (${md(T0 && T0.d)} ~ ${md(T1 && T1.d)})</h3>${trendSvg}
 <p class="small muted">남색: 결과에 우리 사이트 링크가 나온 건수 / 회색: 상호(하나회원권거래소)가 언급된 건수. 9/29부터 매번 같은 6개 키워드(하나회원권거래소·골프회원권·무기명 골프회원권·콘도회원권·골프회원권 시세·골프회원권 거래소 추천)를 같은 방법으로 검색했습니다(네이버 AI탭은 10/6부터).</p>
 </section>
+${kpiHtml()}
 ${tlHtml()}
 ${M && M.timeline ? statHtml() : ''}
 <section><h2>${sec()}. 홈페이지 전후 — PC</h2>${pagePairs}</section>

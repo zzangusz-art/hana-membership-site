@@ -23,7 +23,8 @@ const ENGINES = {
   perplexity: { url: (q) => `https://www.perplexity.ai/search?q=${encodeURIComponent(q)}`, wait: 18000, full: true },
   // 대화형 AI: 질의를 입력창에 넣고 답변이 멈출 때까지 대기. Claude·Gemini는 캡처용 프로필(.chrome-profile)에 한 번 로그인해 둬야 한다(안 돼 있으면 '로그인 필요'로 기록)
   chatgpt: { url: (q) => `https://chatgpt.com/?q=${encodeURIComponent(q)}&hints=search`, wait: 6000, chat: true, area: 'main', input: '#prompt-textarea, div[contenteditable="true"], textarea' },
-  claude: { url: (q) => `https://claude.ai/new?q=${encodeURIComponent(q)}`, wait: 6000, chat: true, area: 'main', input: 'div[contenteditable="true"], textarea' },
+  // 주소로 미리 채운 프롬프트는 경고가 뜨고 자동 전송되지 않으므로(2026-11) 빈 대화에서 직접 입력한다
+  claude: { url: () => 'https://claude.ai/new', wait: 6000, chat: true, area: 'main', input: '.ProseMirror, [contenteditable="true"], [contenteditable=""], textarea' },
   gemini: { url: () => 'https://gemini.google.com/app?hl=ko', wait: 6000, chat: true, area: 'chat-window', input: 'rich-textarea div[contenteditable="true"], div[contenteditable="true"], textarea' },
 };
 const sleep = (ms) => new Promise(res => setTimeout(res, ms));
