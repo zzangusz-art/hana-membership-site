@@ -12,6 +12,13 @@ const ROOT_OUT = path.join(__dirname, '..', '..', '측정', 'AI검색');
 const SITE = 'hanamember.co.kr';
 // Perplexity 등은 출처를 'hanamember.co' 처럼 줄여 보여 주므로 도메인 앞부분으로 판정(2026-10-12 수정: 이전엔 .kr까지 요구해 Perplexity 인용을 놓침)
 const SITE_RE = /hanamember\.co(\.kr)?|hanamember\.co\s|hanamember\.co$/i;
+// 네이버 자연 검색 결과 판정(광고 제외, 2026-11-11): 경로(›) 줄, 주소 앞뒤 '새 창 열림', 주소 두 줄 연속 중 하나.
+// 파워링크 광고는 주소 한 줄 다음에 바로 광고 문구가 와서 여기에 걸리지 않는다
+const DOM_LINE = /^\s*(https?:\/\/)?(www\.)?hanamember\.co\.kr\/?(\s|›|\/|$)/i;
+function naverOrganic(T) {
+  const L = T.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  return L.some(l => /^(https?:\/\/)?(www\.)?hanamember\.co\.kr\s*›/i.test(l)) || L.some((l, i) => DOM_LINE.test(l) && (L[i - 1] === '새 창 열림' || L[i + 1] === '새 창 열림' || DOM_LINE.test(L[i + 1] || '') || DOM_LINE.test(L[i - 1] || '')));
+}
 const BRAND = ['하나회원권거래소', '하나회원권'];
 const COMPETITORS = ['동아회원권', '에이스회원권', '토탈골프', '회원권마켓', '프리미엄회원권', '신세계회원권', '동부회원권', '한솔회원권', '골프클럽119'];
 const QUERIES = ['회원권거래소', '하나회원권거래소', '콘도회원권 시세', '피트니스회원권 시세', '골프회원권 시세', '골프회원권', '무기명 골프회원권', '콘도회원권', '골프회원권 거래소 추천'];
