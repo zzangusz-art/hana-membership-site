@@ -335,3 +335,6 @@ input:focus,select:focus,textarea:focus{outline:2px solid rgba(31,58,115,.25);bo
 /* 상담 시간 선택 — 모바일은 '가능한 빨리' 한 줄 + 2×2 정렬 / 동의 문구가 flex 항목으로 쪼개지지 않게 */
 .inq-form label.agree{display:block;line-height:1.6}.inq-form .agree input{margin:0 6px 0 0;vertical-align:-2px}
 @media (max-width:600px){.ctime-chips{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ctime-chips .tchip:first-child{grid-column:1/-1}.ctime-chips .tchip span{width:100%;text-align:center}.ctime legend .opt{display:block;margin:2px 0 0}}
+
+/* 질문 답변 모음(2026-11-11) */
+.qa-list{margin:8px 0 20px}.qa-list dt{font-weight:700;margin-top:14px}.qa-list dt a{color:inherit}.qa-list dt a:hover{text-decoration:underline}.qa-list dd{margin:4px 0 0;color:#5b6678;font-size:15px;line-height:1.6}.qa-chips{margin-top:14px;flex-wrap:wrap}

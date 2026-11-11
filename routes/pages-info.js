@@ -100,7 +100,7 @@ router.get('/guide/process', (req, res) => {
 // ── FAQ ──
 router.get('/faq', (req, res) => {
   const body = `<section class="page-head"><div class="wrap"><p class="eyebrow">FAQ</p><h1>회원권 거래 자주 묻는 질문</h1><p class="bluf">시세, 수수료, 명의개서, 법인·무기명 회원권, 세금. 전화 상담에서 가장 많이 받는 질문을 짧게 답했습니다.</p></div></section><section class="section"><div class="wrap narrow">${faqHtml(FAQ, '')}<p class="cta">원하는 답이 없다면 ${esc(settings.cfg('phone'))} 또는 <a href="/apply">매매 신청</a>으로 문의해 주세요.</p></div></section>`;
-  res.send(page({ title: '회원권 거래 FAQ: 시세 변동·구매·판매 방법·입회권·혜택·세금', description: '회원권거래소 고르는 법, 골프회원권 시세 변동 이유, 콘도·피트니스회원권 시세 확인, 싸게 사는 법, 판매 방법, 수수료·세금까지 하나회원권거래소 상담 FAQ.', path: '/faq', body, breadcrumbs: [{ name: '자주 묻는 질문', href: '/faq' }], ogImage: '/og/page/faq.png', jsonld: [faqLd(FAQ)] }));
+  res.send(page({ title: '회원권 거래 FAQ: 시세 변동·구매·판매 방법·입회권·혜택·세금', description: '회원권거래소 고르는 법, 골프회원권 시세 변동 이유, 콘도·피트니스회원권 시세 확인, 싸게 사는 법, 판매 방법, 수수료·세금까지 하나회원권거래소 상담 FAQ.', path: '/faq', body: body + `<section class="section"><div class="wrap narrow">${require('../lib/questions').qa(null, 15, '시세·거래 질문 답변 모음')}</div></section>`, breadcrumbs: [{ name: '자주 묻는 질문', href: '/faq' }], ogImage: '/og/page/faq.png', jsonld: [faqLd(FAQ)] }));
 });
 
 // ── 무기명 골프회원권 안내 (메인 키워드 대표 페이지) ──
