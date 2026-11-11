@@ -162,7 +162,7 @@ router.get('/listings', (req, res) => {
 
 // 매물 상세, 구 사이트 상품 페이지(이미지 포스터 + 정보표 + 설명) 이관
 router.get('/listings/:id(\\d+)', (req, res, next) => {
-  const l = db.prepare("SELECT * FROM listings WHERE id=? AND status<>'deleted'").get(req.params.id); if (!l) return next();
+  const l = db.prepare("SELECT * FROM listings WHERE id=? AND status NOT IN ('deleted','hidden')").get(req.params.id); if (!l) return next();
   const s = settings.all(); const site = settings.siteUrl();
   let images = []; let info = []; try { images = JSON.parse(l.images || '[]'); } catch (_) { /* no-op */ } try { info = JSON.parse(l.info_json || '[]'); } catch (_) { /* no-op */ }
   if (!images.length && l.image) images = [l.image];

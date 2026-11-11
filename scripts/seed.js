@@ -122,7 +122,7 @@ function seedArticles() {
     const arr = J(f);
     arr.forEach((a, i) => {
       const ex = db.prepare('SELECT id, body_html FROM posts WHERE slug=?').get(a.slug);
-      if (ex) { if (ex.body_html !== a.body_html) db.prepare('UPDATE posts SET title=?, excerpt=?, meta_description=?, body_html=?, updated_at=? WHERE id=?').run(a.title, a.excerpt, a.meta_description, a.body_html, now(), ex.id); return; }
+      if (ex) { if (ex.body_html !== a.body_html) db.prepare('UPDATE posts SET title=?, excerpt=?, meta_description=?, body_html=?, source_urls=?, updated_at=? WHERE id=?').run(a.title, a.excerpt, a.meta_description, a.body_html, JSON.stringify({ sources: [], faq: a.faq || [] }), now(), ex.id); return; }
       // 파일 날짜가 미래면 예약 발행(scheduled): 스케줄러가 그 시각에 발행하고 인블로그로 보낸다
       const when = base + i * 3600; const future = when > now(); const t = future ? when : Math.min(now(), when);
       ins.run(a.type, a.slug, a.title, a.excerpt, a.meta_description, a.body_html, (a.tags || []).join(','), future ? 'scheduled' : 'published', JSON.stringify({ sources: [], faq: a.faq || [] }), t, future ? now() : t, future ? now() : t); n++;
