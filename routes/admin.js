@@ -119,21 +119,22 @@ router.post('/prices/:id/lock', (req, res) => { db.prepare('UPDATE prices SET ma
 router.delete('/prices/:id', (req, res) => { db.prepare('DELETE FROM prices WHERE id=?').run(req.params.id); res.json({ ok: true }); });
 
 // ── 골프장 ──
-router.get('/clubs', (req, res) => res.json(db.prepare('SELECT id,slug,name,region,address,holes,price_name,status,verified,ai_generated,updated_at, (body_html IS NOT NULL AND body_html<>\'\') has_body FROM clubs ORDER BY name').all()));
+router.get('/clubs', (req, res) => res.json(db.prepare('SELECT id,slug,name,region,sido,address,holes,price_name,status,verified,ai_generated,updated_at,parent_id,group_name,variant_label,logo,website,phone,edited, (body_html IS NOT NULL AND body_html<>\'\') has_body, detail_json FROM clubs ORDER BY name').all().map(r => { let d = {}; try { d = JSON.parse(r.detail_json || '{}') || {}; } catch (_) { d = {}; } const filled = ['intro', 'course', 'access'].some(k => d[k]) || Object.values(d.personal || {}).some(Boolean); delete r.detail_json; return { ...r, has_detail: filled ? 1 : 0, detail_checked: filled ? (d.checked || '') : '' }; })));
 router.get('/clubs/:id', (req, res) => { const c = db.prepare('SELECT * FROM clubs WHERE id=?').get(req.params.id); if (!c) return res.status(404).json({ error: 'not found' }); res.json(c); });
 router.post('/clubs', (req, res) => {
   const b = req.body || {}; if (!b.name) return res.status(400).json({ error: '이름 필요' });
   const ts = now(); const slug = b.slug || koSlug(b.name);
+  const cur = b.id ? db.prepare('SELECT * FROM clubs WHERE id=?').get(b.id) : null; if (b.id && !cur) return res.status(404).json({ error: 'not found' });
+  const v = (k, def = '') => b[k] !== undefined ? b[k] : (cur ? cur[k] : def); // 폼에 없는 칸은 기존 값 유지
+  const row = [b.name, cur && !b.slug ? cur.slug : slug, v('region'), v('sido'), v('address'), v('holes') ? Number(v('holes')) : null, v('opened'), v('type', '회원제') || '회원제', v('summary'), sanitizeHtml(v('body_html') || ''), v('faq_json', '[]') || '[]', v('fit_for'), v('booking'), v('transfer'), v('price_name'), v('phone'), v('website'), v('logo'), v('status', 'published') || 'published', b.verified ? 1 : 0, ts];
   if (b.id) {
-    db.prepare('UPDATE clubs SET name=?,slug=?,region=?,address=?,holes=?,opened=?,type=?,summary=?,body_html=?,faq_json=?,fit_for=?,booking=?,transfer=?,price_name=?,status=?,verified=?,updated_at=? WHERE id=?')
-      .run(b.name, slug, b.region || '', b.address || '', b.holes ? Number(b.holes) : null, b.opened || '', b.type || '회원제', b.summary || '', sanitizeHtml(b.body_html || ''), b.faq_json || '[]', b.fit_for || '', b.booking || '', b.transfer || '', b.price_name || '', b.status || 'published', b.verified ? 1 : 0, ts, b.id);
-    if (clubdetail.hasForm(b)) { const cur = db.prepare('SELECT detail_json FROM clubs WHERE id=?').get(b.id); db.prepare('UPDATE clubs SET detail_json=? WHERE id=?').run(clubdetail.fromForm(b, cur && cur.detail_json), b.id); }
-    return res.json({ ok: true, id: b.id });
+    db.prepare('UPDATE clubs SET name=?,slug=?,region=?,sido=?,address=?,holes=?,opened=?,type=?,summary=?,body_html=?,faq_json=?,fit_for=?,booking=?,transfer=?,price_name=?,phone=?,website=?,logo=?,status=?,verified=?,updated_at=?,edited=1 WHERE id=?').run(...row, b.id);
+    if (clubdetail.hasForm(b)) db.prepare('UPDATE clubs SET detail_json=? WHERE id=?').run(clubdetail.fromForm(b, cur.detail_json), b.id);
+    return res.json({ ok: true, id: Number(b.id) });
   }
-  const info = db.prepare('INSERT INTO clubs (slug,name,region,address,holes,opened,type,summary,body_html,faq_json,fit_for,booking,transfer,price_name,status,verified,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-    .run(slug, b.name, b.region || '', b.address || '', b.holes ? Number(b.holes) : null, b.opened || '', b.type || '회원제', b.summary || '', sanitizeHtml(b.body_html || ''), b.faq_json || '[]', b.fit_for || '', b.booking || '', b.transfer || '', b.price_name || '', b.status || 'published', b.verified ? 1 : 0, ts, ts);
+  const info = db.prepare('INSERT INTO clubs (name,slug,region,sido,address,holes,opened,type,summary,body_html,faq_json,fit_for,booking,transfer,price_name,phone,website,logo,status,verified,updated_at,created_at,edited) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)').run(...row, ts);
   if (clubdetail.hasForm(b)) db.prepare('UPDATE clubs SET detail_json=? WHERE id=?').run(clubdetail.fromForm(b, ''), info.lastInsertRowid);
-  res.json({ ok: true, id: info.lastInsertRowid });
+  res.json({ ok: true, id: Number(info.lastInsertRowid) });
 });
 router.post('/clubs/:id/verify', (req, res) => { db.prepare('UPDATE clubs SET verified=?, updated_at=? WHERE id=?').run(req.body?.verified ? 1 : 0, now(), req.params.id); res.json({ ok: true }); });
 router.post('/clubs/:id/generate', async (req, res) => {
@@ -152,12 +153,46 @@ function listingWritable(req, res, cat, id) {
   if (VIEW_ONLY_CATS.includes(cat) || (cur && VIEW_ONLY_CATS.includes(cur.category))) { res.status(403).json({ error: '회원권 분양·해외투어 매물은 열람만 가능합니다(총괄 관리자 문의).' }); return false; }
   return true;
 }
+const LISTING_STATUS = ['open', 'closed', 'hidden']; // 진행·종료·비공개
+const listImages = (x) => (Array.isArray(x) ? x : String(x || '').split(/\r?\n/)).map(s => String(s).trim()).filter(Boolean).slice(0, 30);
+// 상품 정보 표: '항목 | 내용' 한 줄에 하나(배열로 와도 됨)
+const listInfo = (x) => Array.isArray(x) ? x.filter(r => Array.isArray(r) && r[0]).map(([k, v]) => [String(k).trim(), String(v || '').trim()]) : String(x || '').split(/\r?\n/).map(l => l.split('|')).filter(p => p[0] && p[0].trim()).map(([k, ...v]) => [k.trim(), v.join('|').trim()]);
 router.post('/listings', (req, res) => {
   const b = req.body || {}; if (!b.title || !b.category) return res.status(400).json({ error: '제목·구분 필요' }); const ts = now();
   if (!listingWritable(req, res, b.category, b.id)) return;
-  if (b.id) { db.prepare('UPDATE listings SET category=?,title=?,name=?,region=?,price=?,kind=?,body=?,status=?,featured=?,image=?,link=?,updated_at=? WHERE id=?').run(b.category, b.title, b.name || '', b.region || '', b.price ? Number(b.price) : null, b.kind || '', b.body || '', b.status || 'open', b.featured ? 1 : 0, b.image || '', b.link || '', ts, b.id); return res.json({ ok: true, id: b.id }); }
-  const info = db.prepare('INSERT INTO listings (category,title,name,region,price,kind,body,status,featured,image,images,link,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(b.category, b.title, b.name || '', b.region || '', b.price ? Number(b.price) : null, b.kind || '', b.body || '', b.status || 'open', b.featured ? 1 : 0, b.image || '', JSON.stringify(b.image ? [b.image] : []), b.link || '', ts, ts);
-  res.json({ ok: true, id: info.lastInsertRowid });
+  const cur = b.id ? db.prepare('SELECT * FROM listings WHERE id=?').get(b.id) : null; if (b.id && !cur) return res.status(404).json({ error: 'not found' });
+  const status = LISTING_STATUS.includes(b.status) ? b.status : 'open';
+  const images = b.images !== undefined ? listImages(b.images) : (cur ? JSON.parse(cur.images || '[]') : []);
+  const image = String(b.image || '').trim() || images[0] || '';
+  if (image && !images.includes(image)) images.unshift(image);
+  const info = b.info !== undefined ? listInfo(b.info) : (cur ? JSON.parse(cur.info_json || '[]') : []);
+  const desc = b.desc_html !== undefined ? sanitizeHtml(String(b.desc_html || '')) : (cur ? cur.desc_html || '' : '');
+  const row = [b.category, b.title, b.name || '', b.region || '', b.price ? Number(b.price) : null, b.kind || '', b.body || '', status, b.featured ? 1 : 0, image, JSON.stringify(images), JSON.stringify(info), desc, b.link || ''];
+  if (b.id) { db.prepare('UPDATE listings SET category=?,title=?,name=?,region=?,price=?,kind=?,body=?,status=?,featured=?,image=?,images=?,info_json=?,desc_html=?,link=?,updated_at=?,edited=1 WHERE id=?').run(...row, ts, b.id); return res.json({ ok: true, id: Number(b.id) }); }
+  const r = db.prepare('INSERT INTO listings (category,title,name,region,price,kind,body,status,featured,image,images,info_json,desc_html,link,created_at,updated_at,edited) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1)').run(...row, ts, ts);
+  res.json({ ok: true, id: Number(r.lastInsertRowid) });
+});
+router.post('/listings/:id/status', (req, res) => {
+  const s = String((req.body || {}).status || ''); if (!LISTING_STATUS.includes(s)) return res.status(400).json({ error: '상태 값 오류' });
+  if (!listingWritable(req, res, null, req.params.id)) return;
+  const r = db.prepare('UPDATE listings SET status=?, updated_at=?, edited=1 WHERE id=?').run(s, now(), req.params.id); if (!r.changes) return res.status(404).json({ error: 'not found' });
+  res.json({ ok: true });
+});
+// 복제: 비슷한 매물을 빠르게 만들 때. 복사본은 비공개로 만들어 확인 후 공개
+router.post('/listings/:id/duplicate', (req, res) => {
+  const c = db.prepare('SELECT * FROM listings WHERE id=?').get(req.params.id); if (!c) return res.status(404).json({ error: 'not found' });
+  if (!listingWritable(req, res, c.category, null)) return; const ts = now();
+  const r = db.prepare("INSERT INTO listings (category,title,name,region,price,kind,body,status,featured,image,images,info_json,desc_html,link,created_at,updated_at,edited) VALUES (?,?,?,?,?,?,?,'hidden',0,?,?,?,?,?,?,?,1)").run(c.category, c.title + ' (복사)', c.name, c.region, c.price, c.kind, c.body, c.image, c.images, c.info_json, c.desc_html, c.link, ts, ts);
+  res.json({ ok: true, id: Number(r.lastInsertRowid) });
+});
+// 이미지 업로드(관리자 전용): /uploads/YYYYMM/무작위.확장자 로 저장하고 주소를 돌려준다
+const IMG_EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
+router.post('/upload', upload.single('file'), (req, res) => {
+  const f = req.file; if (!f || !IMG_EXT[f.mimetype]) return res.status(400).json({ error: 'JPG·PNG·WEBP·GIF 이미지만 올릴 수 있습니다.' });
+  const ym = kstDate().slice(0, 7).replace('-', ''); const dir = path.join(DATA_DIR, 'uploads', ym); fs.mkdirSync(dir, { recursive: true });
+  const name = require('crypto').randomBytes(8).toString('hex') + '.' + IMG_EXT[f.mimetype];
+  fs.writeFileSync(path.join(dir, name), f.buffer);
+  res.json({ ok: true, url: `/uploads/${ym}/${name}` });
 });
 router.delete('/listings/:id', (req, res) => { if (!listingWritable(req, res, null, req.params.id)) return; db.prepare('DELETE FROM listings WHERE id=?').run(req.params.id); res.json({ ok: true }); });
 

@@ -313,6 +313,25 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     r = await fetch(BASE + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'smokestaff', pw: 'staff-pass-1' }) }); ok(r.status === 403, '정지된 계정 로그인 403');
     r = await M('/accounts/' + sj.id, { method: 'DELETE' }); ok(r.status === 200 && db.prepare('SELECT assignee_id FROM customers WHERE name=?').get('홍길동').assignee_id === null, '직원 계정 삭제 → 담당 배정 해제');
     r = await A('/accounts'); const acc = await r.json(); ok(acc.accounts.length === 2 && acc.accounts[0].role === 'owner' && acc.accounts[1].role === 'manager', '계정 목록(총괄·업체 관리자)'); }
+  { // 관리자 수기 수정(2026-11-12)
+    const L = db.prepare("SELECT * FROM listings WHERE src_id IS NOT NULL AND status='open' ORDER BY id LIMIT 1").get();
+    r = await A('/listings', { method: 'POST', body: JSON.stringify({ id: L.id, category: L.category, title: L.title, name: L.name, kind: L.kind, price: 1234, status: 'open', image: '/img/og.png', images: '/img/og.png\n/img/logo.png', info: '분양가 | 1억원\n만기 | 5년', desc_html: '<p>수기 상세 <script>x</script></p>', body: '수기 요약' }) });
+    const L2 = db.prepare('SELECT * FROM listings WHERE id=?').get(L.id);
+    ok(r.status === 200 && L2.edited === 1 && L2.price === 1234 && JSON.parse(L2.images).length === 2 && JSON.parse(L2.info_json)[1][1] === '5년' && !/script/.test(L2.desc_html), '매물 수기 수정 저장(이미지·정보 표·상세 설명)');
+    require('./seed').seedIfEmpty(); const L3 = db.prepare('SELECT price, desc_html FROM listings WHERE id=?').get(L.id);
+    ok(L3.price === 1234 && /수기 상세/.test(L3.desc_html), '시드 재실행에도 수기 수정 유지', JSON.stringify(L3).slice(0, 60));
+    r = await A('/listings/' + L.id + '/status', { method: 'POST', body: JSON.stringify({ status: 'hidden' }) }); const hid = await get('/listings/' + L.id); ok(r.status === 200 && hid.status === 404, '매물 상태 바로 변경(비공개 → 상세 404)');
+    r = await A('/listings/' + L.id + '/duplicate', { method: 'POST', body: '{}' }); const dj = await r.json(); const D = db.prepare('SELECT status, title FROM listings WHERE id=?').get(dj.id); ok(r.status === 200 && D.status === 'hidden' && /\(복사\)$/.test(D.title), '매물 복제(비공개)');
+    await A('/listings/' + L.id + '/status', { method: 'POST', body: JSON.stringify({ status: 'open' }) }); await A('/listings/' + dj.id, { method: 'DELETE' });
+    const C = db.prepare("SELECT * FROM clubs WHERE parent_id IS NULL AND status='published' ORDER BY id LIMIT 1").get();
+    r = await A('/clubs', { method: 'POST', body: JSON.stringify({ id: C.id, name: C.name, region: C.region, website: 'https://example.com/club', phone: '02-000-0000', logo: '/img/og.png', status: 'published' }) }); const C2 = db.prepare('SELECT edited, website, phone, logo, address, price_name FROM clubs WHERE id=?').get(C.id);
+    ok(r.status === 200 && C2.edited === 1 && C2.website === 'https://example.com/club' && C2.logo === '/img/og.png' && C2.address === C.address && C2.price_name === C.price_name, '골프장 수기 수정(사진·홈페이지·전화, 안 보낸 칸 유지)');
+    const fd = new FormData(); fd.append('file', new Blob([require('fs').readFileSync(require('path').join(__dirname, '..', 'public', 'img', 'og.png'))], { type: 'image/png' }), 'a.png');
+    r = await fetch(BASE + '/api/admin/upload', { method: 'POST', headers: { cookie }, body: fd }); const uj = await r.json(); const ug = uj.url ? await fetch(BASE + uj.url) : { status: 0 };
+    ok(r.status === 200 && /^\/uploads\/\d{6}\/[0-9a-f]{16}\.png$/.test(uj.url) && ug.status === 200, '이미지 업로드·서빙', uj.url);
+    const fd2 = new FormData(); fd2.append('file', new Blob(['hi'], { type: 'text/plain' }), 'a.txt'); r = await fetch(BASE + '/api/admin/upload', { method: 'POST', headers: { cookie }, body: fd2 }); ok(r.status === 400, '이미지 아닌 파일 업로드 거부');
+    r = await fetch(BASE + '/api/admin/upload', { method: 'POST', body: fd }); ok(r.status === 401, '로그인 없이 업로드 401');
+  }
   r = await A('/settings', { method: 'POST', body: JSON.stringify({ inblog_url: 'https://blog.hanamember.co.kr' }) }); ok(r.status === 200, '설정 저장');
   r = await get('/'); ok(r.text.includes('https://blog.hanamember.co.kr'), '설정 반영(sameAs·푸터)');
   console.log(fails ? `\n실패 ${fails}건` : '\n모든 스모크 테스트 통과');

@@ -39,7 +39,7 @@ function seedListings() {
   const has = db.prepare('SELECT 1 FROM listings WHERE src_id=?');
   const ins = db.prepare('INSERT INTO listings (category,title,name,region,price,kind,body,status,featured,image,images,info_json,desc_html,src_id,link,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
   // 구 사이트 순서(최신이 앞) 유지: 뒤에서부터 넣어 id가 커질수록 최신
-  const upd = db.prepare('UPDATE listings SET images=?, info_json=?, desc_html=?, image=?, body=?, price=COALESCE(?, price), link=COALESCE(NULLIF(?, \'\'), link) WHERE src_id=?');
+  const upd = db.prepare('UPDATE listings SET images=?, info_json=?, desc_html=?, image=?, body=?, price=COALESCE(?, price), link=COALESCE(NULLIF(?, \'\'), link) WHERE src_id=? AND edited=0');
   for (const it of [...items].reverse()) {
     const _exists = !!has.get(it.src_id);
     const price = (() => { const r = (it.info || []).find(([k]) => /매매가|분양가/.test(k)); const m = r && String(r[1]).replace(/,/g, '').match(/(\d+)\s*만원/); return m ? Number(m[1]) : null; })();
@@ -59,7 +59,7 @@ function seedClubsHanamarket() {
   const existing = db.prepare('SELECT id, name, address, holes, summary, fit_for, booking, transfer, verified, old_id FROM clubs').all();
   const priceNames = db.prepare("SELECT name FROM prices WHERE category='golf'").all().map(r => r.name);
   const findPrice = (name) => { const k = normName(name); return priceNames.find(p => normName(p) === k) || ''; };
-  const upStmt = db.prepare('UPDATE clubs SET sido=?, phone=?, website=?, members=?, logo=?, tables_json=?, old_id=?, source=?, address=CASE WHEN address IS NULL OR address=\'\' OR verified=0 THEN ? ELSE address END, holes=CASE WHEN holes IS NULL OR verified=0 THEN ? ELSE holes END, region=?, summary=CASE WHEN summary IS NULL OR summary=\'\' THEN ? ELSE summary END, fit_for=CASE WHEN fit_for IS NULL OR fit_for=\'\' THEN ? ELSE fit_for END, booking=CASE WHEN booking IS NULL OR booking=\'\' THEN ? ELSE booking END, transfer=CASE WHEN transfer IS NULL OR transfer=\'\' THEN ? ELSE transfer END, verified=CASE WHEN ?>0 THEN 1 ELSE verified END, updated_at=? WHERE id=?');
+  const upStmt = db.prepare('UPDATE clubs SET sido=?, phone=?, website=?, members=?, logo=?, tables_json=?, old_id=?, source=?, address=CASE WHEN address IS NULL OR address=\'\' OR verified=0 THEN ? ELSE address END, holes=CASE WHEN holes IS NULL OR verified=0 THEN ? ELSE holes END, region=?, summary=CASE WHEN summary IS NULL OR summary=\'\' THEN ? ELSE summary END, fit_for=CASE WHEN fit_for IS NULL OR fit_for=\'\' THEN ? ELSE fit_for END, booking=CASE WHEN booking IS NULL OR booking=\'\' THEN ? ELSE booking END, transfer=CASE WHEN transfer IS NULL OR transfer=\'\' THEN ? ELSE transfer END, verified=CASE WHEN ?>0 THEN 1 ELSE verified END, updated_at=? WHERE id=? AND edited=0');
   const insStmt = db.prepare('INSERT OR IGNORE INTO clubs (slug,name,region,address,holes,opened,type,price_name,status,verified,summary,fit_for,booking,transfer,sido,phone,website,members,logo,tables_json,old_id,source,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
   for (const it of items) {
     const region = SIDO_REGION[it.sido] || ''; const addr = it.address || ''; const holes = it.holes || null;
@@ -78,12 +78,12 @@ function seedClubsHanamarket() {
   // 이관 텍스트의 HTML 엔티티(&quot; &amp; &apos; &nbsp; 등) 해제 — 템플릿에서 다시 이스케이프되므로 원문은 평문이어야 함
   const unesc1 = (t) => String(t || '').replace(/&quot;/g, '"').replace(/&apos;|&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;| /g, ' ').replace(/&amp;/g, '&').trim();
   const unesc = (t) => unesc1(unesc1(t)); // 이중 인코딩(&amp;gt;) 대비 두 번
-  for (const r of db.prepare("SELECT id, name, address, summary, fit_for, booking, transfer, tables_json, phone, website FROM clubs WHERE source='hanamarket'").all()) {
+  for (const r of db.prepare("SELECT id, name, address, summary, fit_for, booking, transfer, tables_json, phone, website FROM clubs WHERE source='hanamarket' AND edited=0").all()) {
     const v = { name: unesc(r.name), address: unesc(r.address), summary: unesc(r.summary), fit_for: unesc(r.fit_for), booking: unesc(r.booking), transfer: unesc(r.transfer), tables_json: unesc(r.tables_json).replace(/\s+$/, '') || '[]', phone: unesc(r.phone), website: unesc(r.website) };
     if (/^[\d\-()\s]+$/.test(v.website) && v.website) { if (!v.phone) v.phone = v.website; v.website = ''; }
     if (Object.keys(v).some(k => (v[k] || '') !== (r[k] || ''))) db.prepare('UPDATE clubs SET name=?, address=?, summary=?, fit_for=?, booking=?, transfer=?, tables_json=?, phone=?, website=? WHERE id=?').run(v.name, v.address, v.summary, v.fit_for, v.booking, v.transfer, v.tables_json, v.phone, v.website, r.id);
   }
-  for (const r of db.prepare("SELECT id, title, body, info_json FROM listings WHERE src_id IS NOT NULL").all()) {
+  for (const r of db.prepare("SELECT id, title, body, info_json FROM listings WHERE src_id IS NOT NULL AND edited=0").all()) {
     const v = { title: unesc(r.title), body: unesc(r.body), info_json: unesc(r.info_json) };
     if (Object.keys(v).some(k => (v[k] || '') !== (r[k] || ''))) db.prepare('UPDATE listings SET title=?, body=?, info_json=? WHERE id=?').run(v.title, v.body, v.info_json, r.id);
   }

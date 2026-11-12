@@ -230,6 +230,9 @@ CREATE INDEX IF NOT EXISTS idx_cnotes_customer ON customer_notes(customer_id);
 ensureColumn('customers', 'source', "TEXT NOT NULL DEFAULT 'manual'"); // inquiry|manual
 ensureColumn('customers', 'last_note_at', 'INTEGER');
 ensureColumn('inquiries', 'customer_id', 'INTEGER');
+// 관리자에서 손으로 고친 매물·골프장은 시드(구 사이트 자료)가 다시 덮어쓰지 않는다(2026-11-12)
+ensureColumn('listings', 'edited', 'INTEGER NOT NULL DEFAULT 0');
+ensureColumn('clubs', 'edited', 'INTEGER NOT NULL DEFAULT 0');
 
 // ── 최초 관리자 ──
 if (db.prepare('SELECT COUNT(*) c FROM admins').get().c === 0) {
