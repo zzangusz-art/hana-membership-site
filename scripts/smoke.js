@@ -330,7 +330,7 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     r = await fetch(BASE + '/api/admin/upload', { method: 'POST', headers: { cookie }, body: fd }); const uj = await r.json(); const ug = uj.url ? await fetch(BASE + uj.url) : { status: 0 };
     ok(r.status === 200 && /^\/uploads\/\d{6}\/[0-9a-f]{16}\.png$/.test(uj.url) && ug.status === 200, '이미지 업로드·서빙', uj.url);
     const fd2 = new FormData(); fd2.append('file', new Blob(['hi'], { type: 'text/plain' }), 'a.txt'); r = await fetch(BASE + '/api/admin/upload', { method: 'POST', headers: { cookie }, body: fd2 }); ok(r.status === 400, '이미지 아닌 파일 업로드 거부');
-    r = await fetch(BASE + '/api/admin/upload', { method: 'POST', body: fd }); ok(r.status === 401, '로그인 없이 업로드 401');
+    r = await fetch(BASE + '/api/admin/upload', { method: 'POST', body: fd }); ok(r.status === 401, '로그인 없이 업로드 401'); r = await fetch(BASE + '/uploads/000000/none.png'); ok(r.status === 404, '없는 업로드 파일 404');
   }
   r = await A('/settings', { method: 'POST', body: JSON.stringify({ inblog_url: 'https://blog.hanamember.co.kr' }) }); ok(r.status === 200, '설정 저장');
   r = await get('/'); ok(r.text.includes('https://blog.hanamember.co.kr'), '설정 반영(sameAs·푸터)');

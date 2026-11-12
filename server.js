@@ -77,7 +77,7 @@ app.use((req, res, next) => {
 });
 
 // 관리자 업로드 이미지(볼륨에 저장)
-app.use('/uploads', express.static(path.join(DATA_DIR, 'uploads'), { maxAge: '30d', index: false, fallthrough: false }));
+app.use('/uploads', express.static(path.join(DATA_DIR, 'uploads'), { maxAge: '30d', index: false }), (req, res) => res.status(404).end());
 app.use(express.static(PUBLIC_DIR, { maxAge: '7d', index: false, setHeaders: (res, p) => { if (/\.html$/.test(p) || /[\/]admin[\/]/.test(p)) res.setHeader('Cache-Control', 'no-cache'); } }));
 
 // 임시 도메인(Railway *.up.railway.app 등)으로 접속되면 검색엔진 색인 금지 — 정식 도메인 연결 전 중복 색인 방지
