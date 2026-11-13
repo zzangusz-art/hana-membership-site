@@ -130,6 +130,15 @@ const CLUB_REDIRECTS = require('./lib/migrations').REDIRECTS;
 app.use((req, res, next) => { let p = req.path.replace(/\/$/, ''); if (REDIRECTS[p]) return res.redirect(301, REDIRECTS[p]); try { p = decodeURIComponent(p); } catch (_) { /* no-op */ } if (CLUB_REDIRECTS[p]) return res.redirect(301, encodeURI(CLUB_REDIRECTS[p])); next(); });
 app.get(/^\/golf\/01_view\/(\d+)\/?$/, (req, res) => { let c = db.prepare("SELECT slug, parent_id, variant_label, name FROM clubs WHERE old_id=? AND status='published'").get(req.params[0]); if (c && c.parent_id) { const par = db.prepare("SELECT slug FROM clubs WHERE id=?").get(c.parent_id); if (par) return res.redirect(301, '/golf/' + encodeURIComponent(par.slug) + '?type=' + encodeURIComponent(c.variant_label || c.name)); } return res.redirect(301, c ? '/golf/' + encodeURIComponent(c.slug) : '/golf'); });
 app.get(/^\/golf\/02_view\/(\d+)\/?$/, (req, res) => res.redirect(301, '/market/golf'));
+// 구 사이트 매물·전용관 상세(/membership/04_view/62, /building/01_view/5) → 같은 매물(src_id). 없거나 숨긴 매물은 해당 목록으로(2026-11-13)
+app.get(/^\/(membership|building)\/(0\d)_view\/(\d+)\/?$/, (req, res) => {
+  const [sec, no, id] = [req.params[0], req.params[1], req.params[2]];
+  const l = db.prepare("SELECT id FROM listings WHERE src_id=? AND status IN ('open','closed')").get(`${sec}${no}-${id}`);
+  res.redirect(301, l ? '/listings/' + l.id : (REDIRECTS[`/${sec}/${no}`] || '/listings'));
+});
+// 그 밖의 구 사이트 상세(/market/01_view/10, /community/01_view/3 등)는 해당 목록으로, /index.php는 홈으로
+app.get(/^\/([a-z]+)\/(\d\d)_view\/\d+\/?$/, (req, res, next) => { const to = REDIRECTS[`/${req.params[0]}/${req.params[1]}`]; return to ? res.redirect(301, to) : next(); });
+app.get(/^\/index\.(php|html?)$/, (req, res) => res.redirect(301, '/'));
 
 // 공개 API
 app.use('/api', rateLimit({ windowMs: 60 * 1000, max: 240, standardHeaders: true, legacyHeaders: false }));
