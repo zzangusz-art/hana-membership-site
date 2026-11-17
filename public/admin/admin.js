@@ -374,6 +374,38 @@ ${vs.length ? `<div class="small"><b>회원권 종류 ${vs.length}개</b> — �
     $$('[data-vdel]').forEach(b => b.onclick = async () => { await api('/videos/' + b.dataset.vdel, { method: 'DELETE' }); views.notice(); });
   };
 
+  // ── 수동 실행 (2026-11-17: 관리 종결 후 업체가 직접 돌리는 작업 모음) ──
+  views.manual = async () => {
+    const s = await api('/manual/status');
+    const ago = (ts) => ts ? dt(ts > 1e12 ? Math.floor(ts / 1000) : ts) : '-';
+    const CATN = { golf: '골프', corporate: '법인', condo: '콘도', fitness: '피트니스' };
+    const d = s.donga || {}; const dl = d.last || {};
+    const card = (n, title, desc, body) => `<div class="card mcard"><h3 style="margin-top:0"><i class="mn">${n}</i>${title}</h3><p class="small muted">${desc}</p>${body}</div>`;
+    $('#view').innerHTML = `<h1>수동 실행 <span class="muted small">자동으로 돌던 작업을 직접 실행하는 곳</span></h1>
+<p class="small muted">서버에서 자동으로 도는 작업(동아 시세 하루 3회, 예약 글 발행, 네이버 블로그 글 불러오기)은 그대로 돌아갑니다. 아래 버튼은 자동 작업을 지금 바로 한 번 더 돌리거나, 자동이 아니던 작업(유튜브 새 영상 추가, 법인·콘도·피트니스 시세 입력)을 직접 할 때 씁니다.</p>
+<div class="grid g2">
+${card(1, '골프 시세 — 동아회원권 반영', `매일 08:30·12:00·18:00 자동 반영. 마지막 실행: ${dl.time ? esc(new Date(dl.time).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })) : '-'} · 반영 ${dl.matched ?? '-'}종목 · 변동 ${dl.changed ?? '-'}건`, `<div class="toolbar"><button class="btn" id="mDgPrev">미리보기</button><button class="btn primary" id="mDgRun">지금 반영</button></div><div id="mDgOut" class="small"></div><p class="small muted">값이 이상한 종목은 「시세 관리」에서 직접 고치고 「수기 잠금」을 켜면 자동 반영에서 빠집니다.</p>`)}
+${card(2, '법인·콘도·피트니스 시세 — 직접 입력', '이 세 분류는 구 홈페이지에서 받아 오던 값이라 자동 반영이 없습니다. 「시세 관리」에서 엑셀 양식을 내려받아 고친 뒤 올리거나, 표에서 바로 고치세요.', `<table><tbody>${s.prices.map(p => `<tr><td>${CATN[p.category]}</td><td class="num">${fmt(p.n)}종목</td><td class="small muted">마지막 변경 ${ago(p.updated)}</td></tr>`).join('')}</tbody></table><div class="toolbar" style="margin-top:8px"><button class="btn primary" onclick="location.hash='prices'">시세 관리로 →</button></div>`)}
+${card(3, '블로그 예약 글 발행', `예약 시각이 지나면 1분 안에 자동 발행됩니다. 예약 ${s.scheduled.length}건 · 마지막 발행: ${s.lastPost ? esc(s.lastPost.title.slice(0, 40)) + ' (' + ago(s.lastPost.published_at) + ')' : '-'}`, `${s.scheduled.length ? `<ul class="small">${s.scheduled.slice(0, 5).map(p => `<li>${ago(p.published_at)} · ${esc(p.title.slice(0, 50))}</li>`).join('')}</ul>` : ''}<div class="toolbar"><button class="btn" id="mPub">예약 글 지금 확인·발행</button>${s.owner ? '<button class="btn primary" onclick="location.hash=\'posts\'">글 쓰기·예약 →</button>' : ''}</div><p class="small muted">새 글은 「콘텐츠(블로그)」에서 「새 글」로 쓰고 발행 시각을 정하면 예약됩니다(총괄 계정).</p>`)}
+${card(4, '유튜브 새 영상 추가', `홈페이지 영상 ${s.videos.count}개 · 최근: ${s.videos.latest ? esc(s.videos.latest.title.slice(0, 40)) + ' (' + esc(s.videos.latest.published || '') + ')' : '-'}`, `<div class="toolbar"><button class="btn primary" id="mYt">채널 새 영상 확인</button></div><div id="mYtOut"></div>`)}
+${card(5, '네이버 블로그 최신 글', `홈·블로그 목록 하단에 네이버 블로그 최신 글을 보여 줍니다(1시간마다 자동). 마지막 불러오기: ${ago(s.naverblog.at)} · ${s.naverblog.latest ? esc(s.naverblog.latest.title.slice(0, 40)) : '-'}`, `<div class="toolbar"><button class="btn" id="mNb">지금 불러오기</button></div>`)}
+${card(6, '검색엔진 알림·썸네일', `새 글은 발행 때 네이버·Bing에 자동 알립니다. 마지막 알림: ${s.indexnow ? esc(new Date(s.indexnow.time).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })) + ' · ' + esc(s.indexnow.status || '') : '-'}`, `<div class="toolbar"><button class="btn" id="mIdx">전체 주소 다시 알리기</button><button class="btn" id="mOg">빠진 썸네일 만들기</button></div><p class="small muted">구글은 서치콘솔에서 사이트맵(https://hanamember.co.kr/sitemap.xml)을 제출해 두면 됩니다.</p>`)}
+</div>
+${s.owner ? card(7, '데이터 백업', '시세·매물·글·문의 등 사이트 데이터 전체를 파일 하나로 내려받습니다. 호스팅을 옮기거나 보관할 때 쓰세요. 개인정보(문의 고객)가 들어 있으니 안전하게 보관하세요.', '<a class="btn primary" href="/api/admin/manual/backup">전체 데이터 백업 받기</a>') : ''}`;
+    const out = (r) => r.error ? `<span class="pill err">${esc(r.error)}</span>` : `동아 ${r.fetched}종목(기준일 ${esc(r.srcDate || '-')}) · 반영 ${r.matched}종목 · 변동 ${r.changed}건${r.dryRun ? ' (미리보기 — 아직 반영 안 됨)' : ' · 반영 완료'}`;
+    $('#mDgPrev').onclick = (e) => busy(e.target, async () => { $('#mDgOut').innerHTML = out(await api('/donga/sync', { method: 'POST', body: { dryRun: true } })); });
+    $('#mDgRun').onclick = (e) => busy(e.target, async () => { const r = await api('/donga/sync', { method: 'POST', body: {} }); $('#mDgOut').innerHTML = out(r); toast(r.error ? '실패' : '반영 완료', !!r.error); });
+    $('#mPub').onclick = (e) => busy(e.target, async () => { const r = await api('/manual/publish-scheduled', { method: 'POST', body: {} }); toast(r.published ? `${r.published}건 발행` : '지금 발행할 예약 글이 없습니다'); views.manual(); });
+    $('#mNb').onclick = (e) => busy(e.target, async () => { const r = await api('/manual/naverblog', { method: 'POST', body: {} }); toast(`네이버 블로그 ${r.count}건 불러옴`); views.manual(); });
+    $('#mIdx').onclick = (e) => busy(e.target, async () => { const r = await api('/manual/indexnow', { method: 'POST', body: {} }); toast(r.ok ? `${r.count}개 주소 알림 완료` : '알림 실패: ' + (r.status || r.reason || ''), !r.ok); });
+    $('#mOg').onclick = (e) => busy(e.target, async () => { const r = await api('/manual/thumbnails', { method: 'POST', body: {} }); toast(`썸네일 ${r.made}장 만듦`); });
+    $('#mYt').onclick = (e) => busy(e.target, async () => {
+      const r = await api('/manual/youtube'); const fresh = r.items.filter(v => !v.added);
+      $('#mYtOut').innerHTML = `<p class="small">채널 최신 ${r.items.length}개 중 홈페이지에 없는 영상 <b>${fresh.length}</b>개</p>${fresh.length ? `<div class="tbl" style="max-height:260px"><table><tbody>${fresh.map((v, i) => `<tr><td><label class="check"><input type="checkbox" data-yt="${i}" checked> ${esc(v.title)}</label></td><td class="small muted nowrap">${esc(v.published)}</td></tr>`).join('')}</tbody></table></div><div class="toolbar" style="margin-top:8px"><button class="btn primary" id="mYtAdd">선택한 영상 홈페이지에 추가</button></div>` : ''}`;
+      const add = $('#mYtAdd'); if (add) add.onclick = (ev) => busy(ev.target, async () => { const items = $$('[data-yt]').filter(c => c.checked).map(c => fresh[Number(c.dataset.yt)]); const x = await api('/manual/youtube/add', { method: 'POST', body: { items } }); toast(`${x.added}개 추가`); views.manual(); });
+    });
+  };
+
   // ── 4주 실행계획 ──
   views.plan = async () => {
     const p = await api('/plan');

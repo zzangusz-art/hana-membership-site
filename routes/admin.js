@@ -276,6 +276,40 @@ router.delete('/customers/:id/notes/:nid', (req, res) => { db.prepare("DELETE FR
 router.delete('/customers/:id', (req, res) => { customers.remove(req.params.id); res.json({ ok: true }); });
 
 // ── 유튜브 ──
+// ── 수동 실행(자동으로 돌던 작업을 사람이 직접 돌리는 곳) ──
+router.get('/manual/status', (req, res) => {
+  const q = (s, ...a) => db.prepare(s).get(...a);
+  let nb = { at: 0, items: [] }; try { nb = JSON.parse(getSetting('naverblog_cache', '{}')) || nb; } catch (_) { /* no-op */ }
+  let idx = null; try { idx = JSON.parse(getSetting('indexnow_last', 'null')); } catch (_) { /* no-op */ }
+  res.json({
+    donga: donga.status(),
+    legacy: (() => { try { return require('../lib/hanamarket').status(); } catch (_) { return null; } })(),
+    prices: ['golf', 'corporate', 'condo', 'fitness'].map(c => ({ category: c, n: q('SELECT COUNT(*) c FROM prices WHERE category=?', c).c, updated: q('SELECT MAX(updated_at) m FROM prices WHERE category=?', c).m })),
+    scheduled: db.prepare("SELECT id, title, published_at FROM posts WHERE status='scheduled' ORDER BY published_at LIMIT 20").all(),
+    lastPost: q("SELECT title, published_at FROM posts WHERE kind='blog' AND status='published' ORDER BY published_at DESC LIMIT 1"),
+    naverblog: { at: nb.at || 0, count: (nb.items || []).length, latest: (nb.items || [])[0] || null },
+    videos: { count: q('SELECT COUNT(*) c FROM videos').c, latest: q('SELECT title, published FROM videos ORDER BY published DESC LIMIT 1') },
+    indexnow: idx, autoGenerate: getSetting('auto_generate', '1') === '1', owner: req.admin.role === 'owner',
+  });
+});
+router.post('/manual/publish-scheduled', async (req, res) => { try { const out = await scheduler.publishScheduled(); res.json({ ok: true, published: out.length, items: out }); } catch (e) { res.status(500).json({ error: e.message }); } });
+router.post('/manual/naverblog', async (req, res) => { try { const items = await require('../lib/naverblog').refresh(); res.json({ ok: true, count: items.length, latest: items[0] || null }); } catch (e) { res.status(502).json({ error: '네이버 블로그를 읽지 못했습니다: ' + e.message }); } });
+router.get('/manual/youtube', async (req, res) => { try { res.json(await require('../lib/youtube').latest()); } catch (e) { res.status(502).json({ error: e.message }); } });
+router.post('/manual/youtube/add', (req, res) => {
+  const list = Array.isArray(req.body?.items) ? req.body.items : []; const ts = now(); let n = 0;
+  const ins = db.prepare('INSERT OR IGNORE INTO videos (youtube_id,title,description,published,sort,created_at) VALUES (?,?,?,?,?,?)');
+  const top = (db.prepare('SELECT MIN(sort) m FROM videos').get().m || 0) - 1;
+  for (const v of list) { if (!/^[\w-]{6,20}$/.test(String(v.youtube_id || ''))) continue; n += ins.run(v.youtube_id, String(v.title || '').slice(0, 200), String(v.description || '').slice(0, 500), String(v.published || '').slice(0, 10), top - n, ts).changes; }
+  res.json({ ok: true, added: n });
+});
+router.post('/manual/indexnow', async (req, res) => { try { res.json(await indexnow.submitAll({ force: true })); } catch (e) { res.status(500).json({ error: e.message }); } });
+router.post('/manual/thumbnails', async (req, res) => { try { const n = await og.warmPosts(); res.json({ ok: true, made: n || 0 }); } catch (e) { res.status(500).json({ error: e.message }); } });
+// 전체 데이터 백업(SQLite 파일) — 호스팅 이전·보관용, 총괄 계정만
+router.get('/manual/backup', async (req, res) => {
+  if (req.admin.role !== 'owner') return res.status(403).json({ error: '총괄 계정만 받을 수 있습니다.' });
+  const file = path.join(DATA_DIR, 'backup-' + Date.now() + '.sqlite');
+  try { await db.backup(file); res.download(file, 'hana-site-db-' + kstDate() + '.sqlite', () => { try { fs.unlinkSync(file); } catch (_) { /* no-op */ } }); } catch (e) { try { fs.unlinkSync(file); } catch (_) { /* no-op */ } res.status(500).json({ error: e.message }); }
+});
 router.get('/videos', (req, res) => res.json(db.prepare('SELECT * FROM videos ORDER BY sort, id DESC').all()));
 router.post('/videos', (req, res) => { const b = req.body || {}; const m = String(b.url || b.youtube_id || '').match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})|^([\w-]{11})$/); const id = m ? (m[1] || m[2]) : null; if (!id || !b.title) return res.status(400).json({ error: '유튜브 URL과 제목 필요' }); db.prepare('INSERT INTO videos (youtube_id,title,description,published,sort,created_at) VALUES (?,?,?,?,?,?) ON CONFLICT(youtube_id) DO UPDATE SET title=excluded.title, description=excluded.description, published=excluded.published, sort=excluded.sort').run(id, b.title, b.description || '', b.published || kstDate(), Number(b.sort) || 0, now()); res.json({ ok: true, id }); });
 router.delete('/videos/:id', (req, res) => { db.prepare('DELETE FROM videos WHERE id=?').run(req.params.id); res.json({ ok: true }); });

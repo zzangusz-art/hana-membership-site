@@ -333,6 +333,14 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     const fd2 = new FormData(); fd2.append('file', new Blob(['hi'], { type: 'text/plain' }), 'a.txt'); r = await fetch(BASE + '/api/admin/upload', { method: 'POST', headers: { cookie }, body: fd2 }); ok(r.status === 400, '이미지 아닌 파일 업로드 거부');
     r = await fetch(BASE + '/api/admin/upload', { method: 'POST', body: fd }); ok(r.status === 401, '로그인 없이 업로드 401'); r = await fetch(BASE + '/uploads/000000/none.png'); ok(r.status === 404, '없는 업로드 파일 404');
   }
+  { // 수동 실행(2026-11-17)
+    r = await A('/manual/status'); const ms = await r.json(); ok(r.status === 200 && Array.isArray(ms.prices) && ms.prices.length === 4 && 'scheduled' in ms && ms.owner === true, '수동 실행 상태');
+    r = await A('/manual/publish-scheduled', { method: 'POST', body: '{}' }); ok(r.status === 200, '예약 글 지금 발행');
+    r = await A('/manual/youtube/add', { method: 'POST', body: JSON.stringify({ items: [{ youtube_id: 'smokeVid001', title: '스모크 영상', published: '2026-11-17' }, { youtube_id: 'bad id!' }] }) }); const ya = await r.json(); ok(r.status === 200 && ya.added === 1 && db.prepare("SELECT 1 FROM videos WHERE youtube_id='smokeVid001'").get(), '유튜브 영상 선택 추가(잘못된 ID 거름)'); db.prepare("DELETE FROM videos WHERE youtube_id='smokeVid001'").run();
+    ok(require('../lib/youtube').parse('<feed><entry><yt:videoId>abcDEF12345</yt:videoId><title>제목 &amp; 테스트</title><published>2026-11-13T10:00:00+00:00</published><media:description>설명</media:description></entry></feed>')[0].title === '제목 & 테스트', '유튜브 RSS 파서');
+    r = await A('/manual/backup'); const buf = Buffer.from(await r.arrayBuffer()); ok(r.status === 200 && buf.slice(0, 15).toString() === 'SQLite format 3', '전체 데이터 백업(SQLite)', buf.length + 'B');
+    r = await fetch(BASE + '/api/admin/manual/backup'); ok(r.status === 401, '백업은 로그인 필요');
+  }
   r = await A('/settings', { method: 'POST', body: JSON.stringify({ inblog_url: 'https://blog.hanamember.co.kr' }) }); ok(r.status === 200, '설정 저장');
   r = await get('/'); ok(r.text.includes('https://blog.hanamember.co.kr'), '설정 반영(sameAs·푸터)');
   console.log(fails ? `\n실패 ${fails}건` : '\n모든 스모크 테스트 통과');
