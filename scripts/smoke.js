@@ -243,7 +243,7 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     r = await fetch(BASE + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'hanamember', pw: 'smoke-mgr-1234' }) });
     const mck = (r.headers.get('set-cookie') || '').split(';')[0]; ok(r.status === 200 && mck.startsWith('hana_admin='), '업체 관리자 로그인');
     const M = (p, opt = {}) => fetch(BASE + '/api/admin' + p, { ...opt, headers: { 'Content-Type': 'application/json', cookie: mck, ...(opt.headers || {}) } });
-    r = await M('/me'); const mme = await r.json(); ok(mme.admin.role === 'manager' && !mme.views.includes('settings') && !mme.views.includes('auto') && !mme.views.includes('reports') && !mme.views.includes('audit') && !mme.views.includes('plan') && mme.views.includes('posts') && mme.views.includes('accounts') && mme.views.includes('customers'), '업체 관리자 메뉴에서 개발 메뉴 제외', mme.views.join(','));
+    r = await M('/me'); const mme = await r.json(); ok(mme.admin.role === 'manager' && !mme.views.includes('settings') && !mme.views.includes('auto') && !mme.views.includes('reports') && !mme.views.includes('audit') && !mme.views.includes('plan') && mme.views.includes('posts') && !mme.views.includes('accounts') && !mme.views.includes('manual') && mme.views.includes('customers'), '업체 관리자 메뉴에서 개발 메뉴 제외', mme.views.join(','));
     let blocked = 0; for (const p of ['/settings', '/automation', '/plan', '/reports', '/audit', '/traffic']) { const rr = await M(p); if (rr.status === 403) blocked++; await rr.text(); }
     ok(blocked === 6, '업체 관리자: 개발·운영 API 6개 403', `${blocked}/6`);
     r = await M('/posts?kind=blog'); const bl = await r.json(); ok(r.status === 200 && bl.length >= 1, '업체 관리자: 블로그 발행 현황 열람');
@@ -259,9 +259,9 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     r = await M('/clubs', { method: 'POST', body: JSON.stringify({ name: '스모크골프클럽', region: '수도권', holes: 18 }) }); const cj = await r.json(); ok(r.status === 200 && cj.id, '업체 관리자: 골프장 등록');
     r = await M('/clubs/' + cj.id + '/generate', { method: 'POST', body: '{}' }); ok(r.status === 403, '업체 관리자: AI 생성 403');
     r = await M('/clubs/' + cj.id, { method: 'DELETE' }); ok(r.status === 200, '업체 관리자: 골프장 삭제');
-    r = await M('/accounts', { method: 'POST', body: JSON.stringify({ login_id: 'smokestaff', pw: 'staff-pass-1', name: '직원A', dept: '골프 매매', phone: '010-0000-0000' }) }); const sj = await r.json(); ok(r.status === 200 && sj.id, '업체 관리자: 직원 계정 개설');
-    r = await M('/accounts', { method: 'POST', body: JSON.stringify({ login_id: 'smokemgr2', pw: 'manager-pass', name: 'X', role: 'manager' }) }); ok(r.status === 400, '업체 관리자: 관리자 권한 계정은 개설 불가');
-    r = await M('/accounts/' + db.prepare("SELECT id FROM admins WHERE login_id='admin'").get().id + '/password', { method: 'POST', body: JSON.stringify({ pw: 'hack-hack-hack' }) }); ok(r.status === 400, '업체 관리자: 총괄 비밀번호 변경 불가');
+    r = await A('/accounts', { method: 'POST', body: JSON.stringify({ login_id: 'smokestaff', pw: 'staff-pass-1', name: '직원A', dept: '골프 매매', phone: '010-0000-0000' }) }); const sj = await r.json(); ok(r.status === 200 && sj.id, '업체 관리자: 직원 계정 개설');
+    r = await M('/accounts', { method: 'POST', body: JSON.stringify({ login_id: 'smokemgr2', pw: 'manager-pass', name: 'X', role: 'manager' }) }); ok(r.status === 403, '업체 관리자: 계정 개설 불가(2026-11-17 관리 종결 — 총괄 전용)');
+    r = await M('/accounts/' + db.prepare("SELECT id FROM admins WHERE login_id='admin'").get().id + '/password', { method: 'POST', body: JSON.stringify({ pw: 'hack-hack-hack' }) }); ok(r.status === 403, '업체 관리자: 총괄 비밀번호 변경 불가');
     r = await M('/inquiries/' + inqList[0].id, { method: 'POST', body: JSON.stringify({ status: 'contacted', memo: '배정 테스트', assignee_id: sj.id }) }); ok(r.status === 200 && db.prepare('SELECT assignee_id FROM inquiries WHERE id=?').get(inqList[0].id).assignee_id === sj.id, '문의 담당자 배정');
     // 문의·고객 통합: 홈페이지 문의는 접수 즉시 고객으로 자동 등록
     const auto = db.prepare('SELECT * FROM customers WHERE inquiry_id=?').get(inqList[0].id); ok(auto && auto.source === 'inquiry' && auto.assignee_id === sj.id, '문의 접수 → 고객 자동 등록 + 담당자 동기화');
@@ -309,10 +309,10 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     r = await ST('/accounts'); ok(r.status === 403, '직원: 계정 관리 403');
     r = await ST('/listings/' + lj.id, { method: 'DELETE' }); ok(r.status === 200, '직원: 매물 삭제 가능');
     // 정지된 계정은 즉시 차단
-    r = await M('/accounts/' + sj.id, { method: 'POST', body: JSON.stringify({ active: false }) }); ok(r.status === 200, '직원 계정 정지');
+    r = await A('/accounts/' + sj.id, { method: 'POST', body: JSON.stringify({ active: false }) }); ok(r.status === 200, '직원 계정 정지');
     r = await ST('/me'); ok(r.status === 401, '정지된 직원 토큰 즉시 차단');
     r = await fetch(BASE + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 'smokestaff', pw: 'staff-pass-1' }) }); ok(r.status === 403, '정지된 계정 로그인 403');
-    r = await M('/accounts/' + sj.id, { method: 'DELETE' }); ok(r.status === 200 && db.prepare('SELECT assignee_id FROM customers WHERE name=?').get('홍길동').assignee_id === null, '직원 계정 삭제 → 담당 배정 해제');
+    r = await A('/accounts/' + sj.id, { method: 'DELETE' }); ok(r.status === 200 && db.prepare('SELECT assignee_id FROM customers WHERE name=?').get('홍길동').assignee_id === null, '직원 계정 삭제 → 담당 배정 해제');
     r = await A('/accounts'); const acc = await r.json(); ok(acc.accounts.length === 2 && acc.accounts[0].role === 'owner' && acc.accounts[1].role === 'manager', '계정 목록(총괄·업체 관리자)'); }
   { // 관리자 수기 수정(2026-11-12)
     const L = db.prepare("SELECT * FROM listings WHERE src_id IS NOT NULL AND status='open' ORDER BY id LIMIT 1").get();
