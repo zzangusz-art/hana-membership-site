@@ -299,9 +299,12 @@ router.get('/manual/status', (req, res) => {
     naverblog: { at: nb.at || 0, count: (nb.items || []).length, latest: (nb.items || [])[0] || null },
     videos: { count: q('SELECT COUNT(*) c FROM videos').c, latest: q('SELECT title, published FROM videos ORDER BY published DESC LIMIT 1') },
     indexnow: idx, autoGenerate: getSetting('auto_generate', '1') === '1', owner: req.admin.role === 'owner',
+    autoJobs: scheduler.isRunning ? scheduler.isRunning() : false, snapshot: { last: q('SELECT MAX(date) m FROM price_history').m, today: q('SELECT COUNT(*) c FROM price_history WHERE date=?', kstDate()).c },
   });
 });
 router.post('/manual/publish-scheduled', async (req, res) => { try { const out = await scheduler.publishScheduled(); res.json({ ok: true, published: out.length, items: out }); } catch (e) { res.status(500).json({ error: e.message }); } });
+// 오늘 시세 기록 저장(차트·이력용). 같은 날 다시 누르면 오늘 값으로 덮어씀
+router.post('/manual/snapshot', (req, res) => { const d = kstDate(); const r = db.prepare('INSERT INTO price_history (price_id,date,value) SELECT id, ?, today FROM prices WHERE today IS NOT NULL ON CONFLICT(price_id,date) DO UPDATE SET value=excluded.value').run(d); setSetting('snap_' + d, '1'); res.json({ ok: true, date: d, saved: r.changes }); });
 router.post('/manual/naverblog', async (req, res) => { try { const items = await require('../lib/naverblog').refresh(); res.json({ ok: true, count: items.length, latest: items[0] || null }); } catch (e) { res.status(502).json({ error: '네이버 블로그를 읽지 못했습니다: ' + e.message }); } });
 router.get('/manual/youtube', async (req, res) => { try { res.json(await require('../lib/youtube').latest()); } catch (e) { res.status(502).json({ error: e.message }); } });
 router.post('/manual/youtube/add', (req, res) => {
