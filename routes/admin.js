@@ -204,24 +204,33 @@ router.get('/posts', (req, res) => {
   res.json(db.prepare(`SELECT id,kind,type,slug,title,status,source,model,gen_slot,inblog_status,inblog_error,inblog_url,published_at,created_at,updated_at FROM posts WHERE kind=?${status} ORDER BY created_at DESC LIMIT 300`).all(...args));
 });
 router.get('/posts/:id', (req, res) => { const p = db.prepare('SELECT * FROM posts WHERE id=?').get(req.params.id); if (!p) return res.status(404).json({ error: 'not found' }); if (!postKindAllowed(req, res, p.kind)) return; res.json(p); });
+// 발행 예약 일시: 'YYYY-MM-DDTHH:mm'(한국 시각) → 초 단위 시각
+const kstTs = (s) => { const m = String(s || '').match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/); return m ? Math.floor(Date.parse(m[1] + 'T' + m[2] + ':00+09:00') / 1000) : null; };
+// FAQ: '질문 | 답' 한 줄에 하나 → [{q,a}]
+const faqRows = (x) => String(x || '').split(/\r?\n/).map(l => l.split('|')).filter(p => p[0] && p[0].trim() && p.slice(1).join('|').trim()).map(([q, ...a]) => ({ q: q.trim().slice(0, 200), a: a.join('|').trim().slice(0, 1000) })).slice(0, 10);
 router.post('/posts', (req, res) => {
   const b = req.body || {}; if (!b.title || !b.body_html) return res.status(400).json({ error: '제목·본문 필요' }); const ts = now();
   const kind = ['blog', 'notice', 'news'].includes(b.kind) ? b.kind : 'blog';
   if (!postKindAllowed(req, res, kind)) return;
-  const status = b.status === 'published' ? 'published' : 'draft';
-  if (b.id) {
-    const old = db.prepare('SELECT * FROM posts WHERE id=?').get(b.id); if (!old) return res.status(404).json({ error: 'not found' });
+  let status = ['published', 'scheduled'].includes(b.status) ? b.status : 'draft';
+  let when = null; if (status === 'scheduled') { when = kstTs(b.publish_at); if (!when) return res.status(400).json({ error: '예약할 날짜·시각을 넣어 주세요.' }); if (when <= ts) status = 'published'; }
+  const old = b.id ? db.prepare('SELECT * FROM posts WHERE id=?').get(b.id) : null; if (b.id && !old) return res.status(404).json({ error: 'not found' });
+  let src = { sources: [], faq: [] }; try { src = { ...src, ...JSON.parse((old && old.source_urls) || '{}') }; } catch (_) { /* no-op */ } if (Array.isArray(src)) src = { sources: src, faq: [] };
+  if (b.faq !== undefined) src.faq = faqRows(b.faq);
+  const pubAt = status === 'scheduled' ? when : status === 'published' ? (when || (old && old.status === 'published' && old.published_at) || ts) : (old ? old.published_at : null);
+  if (old) {
     if (!postKindAllowed(req, res, old.kind)) return;
-    db.prepare('UPDATE posts SET kind=?,type=?,title=?,slug=?,excerpt=?,meta_description=?,body_html=?,tags=?,author=?,status=?,published_at=?,updated_at=? WHERE id=?')
-      .run(kind, b.type || old.type, b.title, b.slug || old.slug, b.excerpt || '', b.meta_description || '', sanitizeHtml(b.body_html), b.tags || '', b.author || old.author, status, status === 'published' ? (old.published_at || ts) : old.published_at, ts, b.id);
+    db.prepare('UPDATE posts SET kind=?,type=?,title=?,slug=?,excerpt=?,meta_description=?,body_html=?,tags=?,author=?,status=?,published_at=?,source_urls=?,updated_at=? WHERE id=?')
+      .run(kind, b.type || old.type, b.title, b.slug || old.slug, b.excerpt || '', b.meta_description || '', sanitizeHtml(b.body_html), b.tags || '', b.author || old.author, status, pubAt, JSON.stringify(src), ts, b.id);
     og.invalidate(`v3-post-${b.slug || old.slug}`);
-    if (status === 'published') indexnow.submit([`/${kind === 'blog' ? 'blog' : kind}/${b.slug || old.slug}`]).catch(() => {});
-    return res.json({ ok: true, id: b.id });
+    if (status === 'published') indexnow.submit([`/${kind === 'blog' ? 'blog' : kind}/${encodeURIComponent(b.slug || old.slug)}`]).catch(() => {});
+    return res.json({ ok: true, id: Number(b.id), status });
   }
   let slug = slugify(b.slug || b.title, `${kind}-${ts.toString(36)}`); let n = 1; const base = slug; while (db.prepare('SELECT 1 FROM posts WHERE slug=?').get(slug)) slug = `${base}-${++n}`;
-  const info = db.prepare('INSERT INTO posts (kind,type,slug,title,excerpt,meta_description,body_html,tags,author,status,source,published_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-    .run(kind, b.type || (kind === 'blog' ? 'guide' : null), slug, b.title, b.excerpt || truncate(stripHtml(b.body_html), 160), b.meta_description || '', sanitizeHtml(b.body_html), b.tags || '', b.author || '하나회원권거래소 편집팀', status, 'manual', status === 'published' ? ts : null, ts, ts);
-  res.json({ ok: true, id: info.lastInsertRowid });
+  const info = db.prepare('INSERT INTO posts (kind,type,slug,title,excerpt,meta_description,body_html,tags,author,status,source,source_urls,published_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+    .run(kind, b.type || (kind === 'blog' ? 'guide' : null), slug, b.title, b.excerpt || truncate(stripHtml(b.body_html), 160), b.meta_description || '', sanitizeHtml(b.body_html), b.tags || '', b.author || '하나회원권거래소 편집팀', status, 'manual', JSON.stringify(src), pubAt, ts, ts);
+  if (status === 'published') indexnow.submit([`/${kind === 'blog' ? 'blog' : kind}/${encodeURIComponent(slug)}`]).catch(() => {});
+  res.json({ ok: true, id: Number(info.lastInsertRowid), status });
 });
 router.post('/posts/:id/publish', async (req, res) => {
   const p = db.prepare('SELECT * FROM posts WHERE id=?').get(req.params.id); if (!p) return res.status(404).json({ error: 'not found' });

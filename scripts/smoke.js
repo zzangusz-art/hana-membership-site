@@ -341,6 +341,13 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     r = await A('/manual/backup'); const buf = Buffer.from(await r.arrayBuffer()); ok(r.status === 200 && buf.slice(0, 15).toString() === 'SQLite format 3', '전체 데이터 백업(SQLite)', buf.length + 'B');
     r = await fetch(BASE + '/api/admin/manual/backup'); ok(r.status === 401, '백업은 로그인 필요');
   }
+  { // 글 예약 발행·FAQ 입력(2026-11-17)
+    const when = new Date(Date.now() + 9 * 3600e3 + 2 * 86400e3).toISOString().slice(0, 16);
+    r = await A('/posts', { method: 'POST', body: JSON.stringify({ kind: 'blog', title: '스모크 예약 글 질문인가요?', body_html: '<p>본문입니다.</p>', status: 'scheduled', publish_at: when, faq: '질문 하나? | 답 하나\n빈줄 |' }) }); const pj = await r.json(); const P = db.prepare('SELECT status, published_at, source_urls FROM posts WHERE id=?').get(pj.id);
+    ok(r.status === 200 && P.status === 'scheduled' && P.published_at > Date.now() / 1000 && JSON.parse(P.source_urls).faq.length === 1, '글 예약 발행·FAQ 저장');
+    r = await A('/posts', { method: 'POST', body: JSON.stringify({ kind: 'blog', title: 'x', body_html: '<p>x</p>', status: 'scheduled' }) }); ok(r.status === 400, '예약 시각 없으면 거부');
+    db.prepare('DELETE FROM posts WHERE id=?').run(pj.id);
+  }
   r = await A('/settings', { method: 'POST', body: JSON.stringify({ inblog_url: 'https://blog.hanamember.co.kr' }) }); ok(r.status === 200, '설정 저장');
   r = await get('/'); ok(r.text.includes('https://blog.hanamember.co.kr'), '설정 반영(sameAs·푸터)');
   console.log(fails ? `\n실패 ${fails}건` : '\n모든 스모크 테스트 통과');
