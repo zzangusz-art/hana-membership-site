@@ -42,3 +42,6 @@ details.card>summary{cursor:pointer;margin-bottom:6px}details.card[open]>summary
 
 /* 수동 실행(2026-11-17) */
 .mcard .mn{font-style:normal;display:inline-block;background:var(--navy);color:#fff;border-radius:5px;padding:0 7px;margin-right:6px;font-size:12px}
+
+/* 블로그 에디터(2026-11-18) */
+.rte-mode{display:flex;align-items:center;gap:8px;margin:10px 0 4px}.rte{border:1px solid #d5dce8;border-radius:10px;background:#fff;margin-bottom:8px}.rte-bar{display:flex;flex-wrap:wrap;gap:4px;padding:8px;border-bottom:1px solid #e6ebf2;background:#f7f9fc;border-radius:10px 10px 0 0;position:sticky;top:0;z-index:2}.rte-body{min-height:360px;max-height:60vh;overflow:auto;padding:16px 18px;outline:none;font-size:15px;line-height:1.75}.rte-body:empty::before{content:'여기에 글을 쓰세요. 소제목·굵게·사진은 위 버튼으로 넣습니다.';color:#9aa5b5}.rte-body img{max-width:100%;height:auto;border-radius:8px;display:block;margin:10px auto}.rte-body h2{font-size:20px;margin:22px 0 8px}.rte-body h3{font-size:17px;margin:18px 0 6px}.rte-body blockquote{border-left:4px solid #d5dce8;margin:10px 0;padding:6px 12px;color:#4a5568}.rte .small{padding:0 12px 10px;margin:0}

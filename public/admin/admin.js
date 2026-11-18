@@ -43,7 +43,7 @@
   async function boot() {
     try { ME = await api('/me'); } catch (_) { showLogin(); return; }
     $$('#menu a').forEach(a => { a.hidden = !ME.views.includes(a.dataset.v); });
-    const pm = $('#menu a[data-v="posts"]'); if (pm) { pm.textContent = isOwner() ? '📝 콘텐츠(블로그)' : '📝 블로그 발행 현황'; pm.classList.toggle('dev', isOwner()); }
+    const pm = $('#menu a[data-v="posts"]'); if (pm) { pm.textContent = '📝 콘텐츠(블로그)'; pm.classList.remove('dev'); }
     $('#who').innerHTML = `<b>${esc(ME.admin.name || ME.admin.login_id)}</b> <span class="rolepill ${esc(ME.admin.role)}">${esc(ROLE_LABEL()[ME.admin.role] || ME.admin.role)}</span>`;
     $('#login').hidden = true; $('#app').hidden = false; go(location.hash.slice(1) || 'dash');
     // 초기 비밀번호 그대로면 모든 화면 위에 경고(바꾸면 사라짐)
@@ -187,28 +187,100 @@ ${vs.length ? `<div class="small"><b>회원권 종류 ${vs.length}개</b> — �
     $('#addClub').onclick = () => form(); $$('[data-edit]').forEach(b => b.onclick = () => form(b.dataset.edit));
   };
 
-  // ── 콘텐츠 ──
+  // ── 콘텐츠(블로그) ── 2026-11-18: 업체 관리자도 직접 작성·발행. 에디터(네이버 블로그처럼 사진 올리기) + HTML 두 방식. 자동 생성·예약 발행은 총괄(AUTO) 전용
   views.posts = async (status = '') => {
     const rows = await api('/posts?kind=blog' + (status ? '&status=' + status : ''));
-    if (!isOwner()) { // 업체측: 발행 현황 열람 전용
-      const pub = rows.filter(r => r.status === 'published'), sch = rows.filter(r => r.status === 'scheduled');
-      const wk = Date.now() / 1000 - 7 * 86400; const thisWeek = pub.filter(r => r.published_at >= wk).length;
-      $('#view').innerHTML = `<h1>블로그 발행 현황 <span class="muted small">열람 전용 · 작성·발행은 총괄 관리자가 진행</span></h1>
-<div class="grid g4"><div class="kpi"><b>${pub.length}</b><span>발행된 글</span></div><div class="kpi"><b>${thisWeek}</b><span>최근 7일 발행</span></div><div class="kpi"><b>${sch.length}</b><span>발행 예약</span></div><div class="kpi"><b>${pub.length ? dt(pub[0].published_at) : '-'}</b><span>마지막 발행</span></div></div>
-<div class="toolbar" style="margin-top:14px"><button class="btn sm ${!status ? 'primary' : ''}" data-s="">전체</button><button class="btn sm ${status === 'published' ? 'primary' : ''}" data-s="published">발행</button><button class="btn sm ${status === 'scheduled' ? 'primary' : ''}" data-s="scheduled">예약</button><span class="sp"></span><a class="btn sm" href="/blog" target="_blank">블로그 열기 ↗</a></div>
-<div class="tbl"><table><thead><tr><th>제목</th><th>유형</th><th>상태</th><th>발행일</th></tr></thead><tbody>${rows.filter(r => r.status !== 'draft').map(r => `<tr><td><b>${esc(r.title)}</b>${r.status === 'published' ? `<br><a class="small" href="/blog/${esc(r.slug)}" target="_blank">글 보기 ↗</a>` : ''}</td><td>${TL[r.type] || r.type || ''}</td><td><span class="pill ${r.status === 'published' ? 'ok' : ''}">${r.status === 'published' ? '발행' : '예약'}</span></td><td class="small">${dt(r.published_at)}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">없음</td></tr>'}</tbody></table></div>`;
-      $$('[data-s]').forEach(b => b.onclick = () => views.posts(b.dataset.s)); return;
-    }
-    $('#view').innerHTML = `<h1>콘텐츠(블로그)</h1><div class="toolbar"><button class="btn ${!status ? 'primary' : ''}" data-s="">전체</button><button class="btn ${status === 'published' ? 'primary' : ''}" data-s="published">발행</button><button class="btn ${status === 'draft' ? 'primary' : ''}" data-s="draft">초안</button><button class="btn ${status === 'scheduled' ? 'primary' : ''}" data-s="scheduled">예약</button><span class="sp"></span><button class="btn" id="genNow">지금 1건 생성</button><button class="btn green" id="newPost">+ 직접 작성</button></div>
-<div class="tbl"><table><thead><tr><th>제목</th><th>유형</th><th>상태</th><th>생성</th><th>인블로그</th><th>발행</th><th></th></tr></thead><tbody>${rows.map(r => `<tr><td><b>${esc(r.title)}</b><br><a class="small" href="/blog/${esc(r.slug)}" target="_blank">/blog/${esc(r.slug)}</a></td><td>${TL[r.type] || r.type || ''}</td><td><span class="pill ${r.status === 'published' ? 'ok' : r.status === 'scheduled' ? '' : 'warn'}">${r.status === 'published' ? '발행' : r.status === 'scheduled' ? '예약 ' + dt(r.published_at) : '초안'}</span></td><td class="small">${r.source === 'ai' ? 'AI ' + esc(r.model || '') : r.source === 'template' ? '템플릿' : '수동'}<br><span class="muted">${esc(r.gen_slot || '')}</span></td><td>${r.inblog_status === 'published' ? `<span class="pill ok">동기화</span>` : r.inblog_status === 'error' ? `<span class="pill err" title="${esc(r.inblog_error)}">오류</span>` : r.inblog_status === 'draft' ? '<span class="pill">초안</span>' : '<span class="pill muted">-</span>'}</td><td class="small">${dt(r.published_at)}</td><td><button class="btn sm" data-edit="${r.id}">편집</button> <button class="btn sm ${r.status === 'published' ? '' : 'primary'}" data-pub="${r.id}" data-to="${r.status === 'published' ? '0' : '1'}">${r.status === 'published' ? '내리기' : '발행'}</button> <button class="btn sm" data-ib="${r.id}">인블로그 전송</button> <button class="btn sm danger" data-del="${r.id}">삭제</button></td></tr>`).join('') || '<tr><td colspan="7" class="muted">없음</td></tr>'}</tbody></table></div>`;
+    const own = AUTO();
+    const firstImg = (h) => { const m = String(h || '').match(/<img[^>]+src="([^"]+)"/i); return m ? m[1] : ''; };
+    const thumbOf = (r) => r.image || firstImg(r.body_html) || ''; // 자동 제목 이미지는 목록에서 만들지 않음(서버 부담)
+    const stLabel = (r) => r.status === 'published' ? '발행' : r.status === 'scheduled' ? '예약 ' + dt(r.published_at) : '초안';
+    const pub = rows.filter(r => r.status === 'published');
+    $('#view').innerHTML = `<h1>콘텐츠(블로그) <span class="muted small">발행 ${pub.length}편</span></h1>
+<p class="small muted">「+ 직접 작성」으로 글을 쓰고 상태를 「지금 발행」으로 저장하면 홈페이지 블로그(/blog)에 바로 올라갑니다. 본문은 <b>에디터</b>(네이버 블로그처럼 글을 쓰고 사진을 올리는 방식) 또는 <b>HTML</b>로 쓸 수 있습니다.</p>
+<div class="toolbar"><button class="btn ${!status ? 'primary' : ''}" data-s="">전체</button><button class="btn ${status === 'published' ? 'primary' : ''}" data-s="published">발행</button><button class="btn ${status === 'draft' ? 'primary' : ''}" data-s="draft">초안</button>${own ? `<button class="btn ${status === 'scheduled' ? 'primary' : ''}" data-s="scheduled">예약</button>` : ''}<span class="sp"></span>${own ? '<button class="btn" id="genNow">지금 1건 생성</button>' : ''}<a class="btn" href="/blog" target="_blank">블로그 열기 ↗</a><button class="btn green" id="newPost">+ 직접 작성</button></div>
+<div class="tbl"><table><thead><tr><th></th><th>제목</th><th>유형</th><th>상태</th>${own ? '<th>생성</th><th>인블로그</th>' : ''}<th>발행일</th><th></th></tr></thead><tbody>${rows.map(r => `<tr><td>${thumbOf(r) ? `<img class="thumb" src="${esc(thumbOf(r))}" alt="" loading="lazy">` : '<span class="thumb ph"></span>'}</td><td><b>${esc(r.title)}</b><br>${r.status === 'published' ? `<a class="small" href="/blog/${esc(r.slug)}" target="_blank">글 보기 ↗</a>` : `<span class="small muted">/blog/${esc(r.slug)}</span>`}</td><td>${TL[r.type] || r.type || ''}</td><td><span class="pill ${r.status === 'published' ? 'ok' : r.status === 'scheduled' ? '' : 'warn'}">${stLabel(r)}</span></td>${own ? `<td class="small">${r.source === 'ai' ? 'AI ' + esc(r.model || '') : r.source === 'template' ? '템플릿' : '수동'}</td><td>${r.inblog_status === 'published' ? '<span class="pill ok">동기화</span>' : r.inblog_status === 'error' ? `<span class="pill err" title="${esc(r.inblog_error || '')}">오류</span>` : '<span class="pill muted">-</span>'}</td>` : ''}<td class="small">${dt(r.published_at)}</td><td class="nowrap"><button class="btn sm primary" data-edit="${r.id}">편집</button> <button class="btn sm" data-pub="${r.id}" data-to="${r.status === 'published' ? '0' : '1'}">${r.status === 'published' ? '내리기' : '발행'}</button>${own ? ` <button class="btn sm" data-ib="${r.id}">인블로그 전송</button>` : ''} <button class="btn sm danger" data-del="${r.id}">삭제</button></td></tr>`).join('') || `<tr><td colspan="${own ? 8 : 6}" class="muted">없음</td></tr>`}</tbody></table></div>`;
     $$('[data-s]').forEach(b => b.onclick = () => views.posts(b.dataset.s));
-    $('#genNow').onclick = (e) => busy(e.target, async () => { const r = await api('/automation/generate', { method: 'POST', body: {} }); toast(`생성: ${r.post.title} (${r.autoPublished ? '발행' : '초안'})`); views.posts(status); });
-    $$('[data-pub]').forEach(b => b.onclick = () => busy(b, async () => { const r = await api(`/posts/${b.dataset.pub}/publish`, { method: 'POST', body: { publish: b.dataset.to === '1' } }); toast(b.dataset.to === '1' ? '발행 완료' + (r.inblog?.ok ? ' · 인블로그 전송' : r.inblog?.error ? ' · 인블로그 오류: ' + r.inblog.error : '') : '초안으로 전환'); views.posts(status); }));
+    if ($('#genNow')) $('#genNow').onclick = (e) => busy(e.target, async () => { const r = await api('/automation/generate', { method: 'POST', body: {} }); toast(`생성: ${r.post.title} (${r.autoPublished ? '발행' : '초안'})`); views.posts(status); });
+    $$('[data-pub]').forEach(b => b.onclick = () => busy(b, async () => { if (b.dataset.to === '0' && !confirm('이 글을 홈페이지에서 내릴까요? (초안으로 바뀝니다)')) return; await api(`/posts/${b.dataset.pub}/publish`, { method: 'POST', body: { publish: b.dataset.to === '1' } }); toast(b.dataset.to === '1' ? '발행 완료' : '초안으로 전환'); views.posts(status); }));
     $$('[data-ib]').forEach(b => b.onclick = () => busy(b, async () => { const r = await api(`/posts/${b.dataset.ib}/inblog`, { method: 'POST' }); if (r.skipped) toast('인블로그 API 키가 없거나 전송이 꺼져 있습니다.', true); else if (r.ok) toast('인블로그 전송 완료'); else toast('오류: ' + r.error, true); views.posts(status); }));
-    $$('[data-del]').forEach(b => b.onclick = async () => { if (confirm('삭제?')) { await api('/posts/' + b.dataset.del, { method: 'DELETE' }); views.posts(status); } });
-    const form = async (id) => { const p = id ? await api('/posts/' + id) : { kind: 'blog', type: 'guide' }; modal(`<h2>${id ? '글 편집' : '새 글'}</h2><form class="form" id="pform"><input type="hidden" name="id" value="${id || ''}"><input type="hidden" name="kind" value="blog"><label>제목 <input name="title" value="${esc(p.title || '')}" required></label><div class="row3"><label>유형 <select name="type">${Object.entries(TL).map(([k, v]) => `<option value="${k}" ${p.type === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label><label>슬러그 <input name="slug" value="${esc(p.slug || '')}" placeholder="영문-하이픈"></label><label>태그(콤마) <input name="tags" value="${esc(p.tags || '')}"></label></div><label>요약(excerpt) <input name="excerpt" value="${esc(p.excerpt || '')}"></label><label>meta description(120~155자) <input name="meta_description" value="${esc(p.meta_description || '')}" maxlength="160"></label><label>본문 HTML(h2 질문형 소제목 + 직답 문단 + FAQ 권장) <textarea name="body_html" style="min-height:320px" required>${esc(p.body_html || '')}</textarea></label>${(() => { let fq = []; try { const j = JSON.parse(p.source_urls || '{}'); fq = Array.isArray(j.faq) ? j.faq : []; } catch (_) { fq = []; } return `<label>자주 묻는 질문(한 줄에 「질문 | 답」, 글 아래 FAQ와 검색 답변용 구조화 데이터로 나갑니다) <textarea name="faq" style="min-height:90px;font-family:inherit" placeholder="골프회원권은 얼마부터 있나요? | 시세표 기준 2,000만원대부터 있습니다.">${esc(fq.map(f => f.q + ' | ' + f.a).join('\n'))}</textarea></label>`; })()}
-<div class="row3"><label>상태 <select name="status" id="pStatus"><option value="draft" ${!['published', 'scheduled'].includes(p.status) ? 'selected' : ''}>초안(비공개)</option><option value="published" ${p.status === 'published' ? 'selected' : ''}>지금 발행</option><option value="scheduled" ${p.status === 'scheduled' ? 'selected' : ''}>예약 발행</option></select></label><label>예약 날짜·시각(한국 시각) <input type="datetime-local" name="publish_at" id="pAt" value="${p.published_at ? new Date((p.published_at + 9 * 3600) * 1000).toISOString().slice(0, 16) : ''}"></label><span class="small muted" style="align-self:end">예약 시각이 되면 1분 안에 자동 발행됩니다. 오전 9시 발행을 권장합니다.</span></div><button class="btn primary">저장</button></form>`);
-      $('#pform').onsubmit = async (e) => { e.preventDefault(); try { await api('/posts', { method: 'POST', body: Object.fromEntries(new FormData(e.target)) }); closeModal(); toast('저장'); views.posts(status); } catch (err) { toast(err.message, true); } }; };
+    $$('[data-del]').forEach(b => b.onclick = async () => { if (confirm('이 글을 삭제할까요? 되돌릴 수 없습니다.')) { await api('/posts/' + b.dataset.del, { method: 'DELETE' }); views.posts(status); } });
+
+    const TB = [['h2', '소제목'], ['h3', '작은 소제목'], ['p', '본문'], ['bold', '<b>굵게</b>'], ['italic', '<i>기울임</i>'], ['underline', '<u>밑줄</u>'], ['ul', '• 목록'], ['ol', '1. 목록'], ['quote', '❝ 인용'], ['hr', '― 구분선'], ['link', '🔗 링크'], ['img', '📷 사진']];
+    const clean = (h) => String(h || '')
+      .replace(/\sstyle="[^"]*"/gi, '').replace(/\s(data-[\w-]+|contenteditable|dir)="[^"]*"/gi, '')
+      .replace(/<span>([\s\S]*?)<\/span>/gi, '$1').replace(/<span>([\s\S]*?)<\/span>/gi, '$1')
+      .replace(/<div>/gi, '<p>').replace(/<\/div>/gi, '</p>')
+      .replace(/<b>/gi, '<strong>').replace(/<\/b>/gi, '</strong>').replace(/<i>/gi, '<em>').replace(/<\/i>/gi, '</em>')
+      .replace(/<p>(\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, '').trim();
+    const form = async (id) => {
+      const p = id ? await api('/posts/' + id) : { kind: 'blog', type: 'guide', status: 'draft' };
+      let fq = []; try { const j = JSON.parse(p.source_urls || '{}'); fq = Array.isArray(j.faq) ? j.faq : []; } catch (_) { fq = []; }
+      const at = p.published_at ? new Date((p.published_at + 9 * 3600) * 1000).toISOString().slice(0, 16) : '';
+      const startHtml = /<table|class="/i.test(p.body_html || ''); // 표·스타일이 있는 기존 글은 HTML로 열기(에디터가 구조를 바꾸지 않도록)
+      modal(`<h2>${id ? '글 편집' : '새 글 쓰기'}</h2><form class="form" id="pform"><input type="hidden" name="id" value="${id || ''}"><input type="hidden" name="kind" value="blog">
+<label>제목 <input name="title" value="${esc(p.title || '')}" required placeholder="예: 골프회원권은 얼마부터 살 수 있나요?"></label>
+<div class="row3"><label>유형 <select name="type">${Object.entries(TL).filter(([k]) => own || k !== 'report' || p.type === 'report').map(([k, v]) => `<option value="${k}" ${p.type === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label><label>주소(슬러그) — 비우면 제목으로 자동 <input name="slug" value="${esc(p.slug || '')}" placeholder="비워 두세요"></label><label>태그(쉼표로 구분) <input name="tags" value="${esc(p.tags || '')}" placeholder="골프회원권, 시세"></label></div>
+<label>요약 — 목록과 검색 결과에 나오는 1~2문장 <input name="excerpt" value="${esc(p.excerpt || '')}" placeholder="질문에 대한 답을 한두 문장으로"></label>
+<label>검색 설명(meta description, 120~155자) — 비우면 요약 사용 <input name="meta_description" value="${esc(p.meta_description || '')}" maxlength="160"></label>
+${imgField('image', '대표 이미지 — 목록 썸네일·공유 이미지(비우면 본문 첫 사진, 사진도 없으면 제목 이미지 자동)', p.image)}
+<div class="rte-mode"><b>본문</b><span class="small muted">에디터와 HTML은 언제든 바꿔 가며 쓸 수 있습니다.</span><span class="sp"></span><button type="button" class="btn sm" data-mode="rte">에디터(일반)</button><button type="button" class="btn sm" data-mode="html">HTML</button></div>
+<div class="rte" id="rteWrap"><div class="rte-bar">${TB.map(([k, l]) => `<button type="button" class="btn sm" data-cmd="${k}" title="${l.replace(/<[^>]+>/g, '')}">${l}</button>`).join('')}<input type="file" id="rteFile" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden></div><div class="rte-body prose" id="rteBody" contenteditable="true"></div><p class="small muted">사진: 「📷 사진」(여러 장 선택 가능) · 사진 파일을 본문에 끌어다 놓기 · 캡처 이미지 붙여넣기(Ctrl+V). 장당 10MB 이하(JPG·PNG·WEBP·GIF). 다른 곳의 글을 붙여 넣으면 서식 없이 글자만 들어갑니다.</p></div>
+<label id="htmlWrap" hidden>본문 HTML <textarea name="body_html" id="pBody" style="min-height:380px;font-family:Consolas,monospace;font-size:13px">${esc(p.body_html || '')}</textarea></label>
+<label>자주 묻는 질문(선택) — 한 줄에 「질문 | 답」, 글 아래 FAQ로 나갑니다 <textarea name="faq" style="min-height:80px;font-family:inherit" placeholder="골프회원권은 얼마부터 있나요? | 시세표 기준 2,000만원대부터 있습니다.">${esc(fq.map(f => f.q + ' | ' + f.a).join('\n'))}</textarea></label>
+<div class="row3"><label>상태 <select name="status" id="pStatus"><option value="draft" ${!['published', 'scheduled'].includes(p.status) ? 'selected' : ''}>초안(비공개)</option><option value="published" ${p.status === 'published' ? 'selected' : ''}>지금 발행(공개)</option>${own ? `<option value="scheduled" ${p.status === 'scheduled' ? 'selected' : ''}>예약 발행</option>` : ''}</select></label>${own ? `<label>예약 날짜·시각(한국 시각) <input type="datetime-local" name="publish_at" id="pAt" value="${at}"></label><span class="small muted" style="align-self:end">예약 시각이 되면 1분 안에 자동 발행됩니다.</span>` : '<span class="small muted" style="align-self:end;grid-column:span 2">초안은 홈페이지에 보이지 않습니다. 「지금 발행(공개)」로 저장하면 바로 공개됩니다.</span>'}</div>
+<div class="toolbar"><button class="btn primary">저장</button>${id && p.status === 'published' ? `<a class="btn" href="/blog/${esc(p.slug)}" target="_blank">글 보기 ↗</a>` : ''}</div></form>`);
+      const root = $('#pform'); wireImg(root);
+      const body = $('#rteBody'), ta = $('#pBody'), file = $('#rteFile');
+      try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch (_) { /* no-op */ }
+      let mode = startHtml ? 'html' : 'rte'; let range = null;
+      const setMode = (m) => {
+        if (m === mode && $('[data-mode].primary')) return;
+        if (m === 'html' && mode === 'rte') ta.value = clean(body.innerHTML);
+        if (m === 'rte' && mode === 'html') body.innerHTML = ta.value;
+        mode = m; $('#rteWrap').hidden = m !== 'rte'; $('#htmlWrap').hidden = m !== 'html';
+        $$('[data-mode]').forEach(b => b.classList.toggle('primary', b.dataset.mode === m));
+      };
+      body.innerHTML = ta.value; $('#rteWrap').hidden = mode !== 'rte'; $('#htmlWrap').hidden = mode !== 'html'; $$('[data-mode]').forEach(b => b.classList.toggle('primary', b.dataset.mode === mode));
+      $$('[data-mode]').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+      const keep = () => { const s = window.getSelection(); if (s.rangeCount && body.contains(s.anchorNode)) range = s.getRangeAt(0).cloneRange(); };
+      ['keyup', 'mouseup', 'input', 'focus'].forEach(ev => body.addEventListener(ev, keep));
+      const restore = () => { const cur = window.getSelection(); if (cur.rangeCount && body.contains(cur.anchorNode)) return; body.focus(); if (range) { cur.removeAllRanges(); cur.addRange(range); } }; // 지금 본문 안에 선택이 있으면 그대로 사용
+      const insertImgs = async (files) => {
+        const list = [...files].filter(f => /^image\//.test(f.type)); if (!list.length) return;
+        const alt = esc(($('[name="title"]', root).value || '').trim());
+        for (const f of list) {
+          if (f.size > 10 * 1024 * 1024) { toast(`${f.name}: 10MB를 넘습니다`, true); continue; }
+          try { toast('사진 올리는 중…'); const url = await uploadImg(f); restore(); document.execCommand('insertHTML', false, `<p><img src="${esc(url)}" alt="${alt}"></p><p><br></p>`); keep(); MODAL_DIRTY = true; } catch (e) { toast('사진 올리기 실패: ' + e.message, true); }
+        }
+        toast('사진을 넣었습니다');
+      };
+      $$('[data-cmd]', root).forEach(b => { b.onmousedown = (e) => e.preventDefault(); b.onclick = () => {
+        const c = b.dataset.cmd; restore();
+        if (c === 'img') return file.click();
+        if (c === 'link') { const sel = window.getSelection(); const txt = sel.toString(); const u = prompt(txt ? '「' + txt.slice(0, 30) + '」에 연결할 주소(https://… 또는 /market/golf 같은 홈페이지 주소)' : '연결할 주소 — 먼저 링크로 만들 글자를 드래그해 선택하면 그 글자에 연결됩니다'); if (u) { const url = u.trim(); if (txt) document.execCommand('createLink', false, url); else document.execCommand('insertHTML', false, `<a href="${esc(url)}">${esc(url)}</a>`); } }
+        else if (c === 'h2' || c === 'h3' || c === 'p') document.execCommand('formatBlock', false, '<' + c + '>');
+        else if (c === 'quote') document.execCommand('formatBlock', false, '<blockquote>');
+        else if (c === 'ul') document.execCommand('insertUnorderedList');
+        else if (c === 'ol') document.execCommand('insertOrderedList');
+        else if (c === 'hr') document.execCommand('insertHorizontalRule');
+        else document.execCommand(c);
+        keep(); MODAL_DIRTY = true;
+      }; });
+      file.onchange = async () => { await insertImgs(file.files); file.value = ''; };
+      body.addEventListener('dragover', (e) => e.preventDefault());
+      body.addEventListener('drop', (e) => { if (e.dataTransfer.files.length) { e.preventDefault(); const r = document.caretRangeFromPoint ? document.caretRangeFromPoint(e.clientX, e.clientY) : null; if (r) range = r; insertImgs(e.dataTransfer.files); } });
+      body.addEventListener('paste', (e) => {
+        const cd = e.clipboardData; if (!cd) return;
+        if (cd.files && cd.files.length) { e.preventDefault(); keep(); insertImgs(cd.files); return; }
+        const t = cd.getData('text/plain'); if (t) { e.preventDefault(); document.execCommand('insertHTML', false, t.split(/\r?\n\r?\n/).map(par => '<p>' + esc(par).replace(/\r?\n/g, '<br>') + '</p>').join('')); }
+      });
+      root.onsubmit = async (e) => {
+        e.preventDefault();
+        if (mode === 'rte') ta.value = clean(body.innerHTML);
+        if (!ta.value.replace(/<[^>]+>/g, '').trim() && !/<img/i.test(ta.value)) return toast('본문을 입력해 주세요', true);
+        try { const r = await api('/posts', { method: 'POST', body: Object.fromEntries(new FormData(root)) }); MODAL_DIRTY = false; closeModal(); toast(r.status === 'published' ? '저장·발행했습니다' : '저장했습니다'); views.posts(status); } catch (err) { toast(err.message, true); }
+      };
+    };
     $('#newPost').onclick = () => form(); $$('[data-edit]').forEach(b => b.onclick = () => form(b.dataset.edit));
   };
 

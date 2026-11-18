@@ -247,8 +247,11 @@ let fails = 0; const ok = (c, msg, extra = '') => { console.log(`${c ? '✔' : '
     let blocked = 0; for (const p of ['/settings', '/automation', '/plan', '/reports', '/audit', '/traffic']) { const rr = await M(p); if (rr.status === 403) blocked++; await rr.text(); }
     ok(blocked === 6, '업체 관리자: 개발·운영 API 6개 403', `${blocked}/6`);
     r = await M('/posts?kind=blog'); const bl = await r.json(); ok(r.status === 200 && bl.length >= 1, '업체 관리자: 블로그 발행 현황 열람');
-    r = await M('/posts', { method: 'POST', body: JSON.stringify({ kind: 'blog', title: 'x', body_html: '<p>x</p>' }) }); ok(r.status === 403, '업체 관리자: 블로그 작성 403');
-    r = await M('/posts/' + bl[0].id + '/publish', { method: 'POST', body: '{}' }); ok(r.status === 403, '업체 관리자: 블로그 발행 403');
+    r = await M('/posts', { method: 'POST', body: JSON.stringify({ kind: 'blog', title: '업체 작성 시험 글?', body_html: '<p>본문</p><p><img src="/uploads/202611/t.jpg" alt=""></p>', image: '/uploads/202611/cover.jpg', status: 'scheduled', publish_at: '2099-01-01T09:00' }) }); const mp = await r.json(); ok(r.status === 200 && mp.status === 'draft', '업체 관리자: 블로그 작성 200(예약은 초안으로)');
+    ok(db.prepare('SELECT image FROM posts WHERE id=?').get(mp.id).image === '/uploads/202611/cover.jpg', '블로그 대표 이미지 저장');
+    r = await M('/posts', { method: 'POST', body: JSON.stringify({ id: mp.id, kind: 'blog', title: '업체 작성 시험 글?', body_html: '<p>본문</p>', image: 'javascript:alert(1)', status: 'published' }) }); ok(r.status === 200 && db.prepare('SELECT image, status FROM posts WHERE id=?').get(mp.id).image === '', '대표 이미지 주소 검증(허용 안 되는 값은 비움)');
+    r = await M('/posts/' + mp.id + '/publish', { method: 'POST', body: JSON.stringify({ publish: false }) }); ok(r.status === 200 && db.prepare('SELECT status FROM posts WHERE id=?').get(mp.id).status === 'draft', '업체 관리자: 블로그 내리기·발행');
+    db.prepare('DELETE FROM posts WHERE id=?').run(mp.id);
     r = await M('/dashboard'); const md = await r.json(); ok(r.status === 200 && md.role === 'manager' && md.visitors && md.visitors.days.length === 14 && md.visitors.today.sessions >= 1 && !md.scheduler && !md.llm, '업체 관리자 대시보드(일간 방문자·문의, 개발 항목 없음)', `오늘 방문 ${md.visitors.today.sessions}`);
     r = await M('/posts?kind=notice'); ok(r.status === 200, '업체 관리자: 공지 목록 허용');
     r = await M('/prices?category=condo'); ok(r.status === 200 && (await r.json()).rows.length > 10, '업체 관리자: 콘도 시세 조회');

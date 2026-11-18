@@ -197,7 +197,9 @@ router.post('/upload', upload.single('file'), (req, res) => {
 router.delete('/listings/:id', (req, res) => { if (!listingWritable(req, res, null, req.params.id)) return; db.prepare('DELETE FROM listings WHERE id=?').run(req.params.id); res.json({ ok: true }); });
 
 // ── 콘텐츠(블로그·공지·뉴스) — 블로그는 총괄 전용, 공지·뉴스는 전 권한 ──
-function postKindAllowed(req, res, kind) { if (req.admin.role !== 'owner' && kind === 'blog') { res.status(403).json({ error: '블로그 콘텐츠는 총괄 관리자 전용입니다.' }); return false; } return true; }
+// 2026-11-18: 블로그는 업체 관리자도 작성·발행(자동 생성·예약·인블로그는 총괄 전용)
+function postKindAllowed(req, res, kind) { if (!['owner', 'manager'].includes(req.admin.role) && kind === 'blog') { res.status(403).json({ error: '블로그 콘텐츠는 관리자 전용입니다.' }); return false; } return true; }
+const postImage = (v) => { const s = String(v || '').trim(); return /^(\/(uploads|img)\/|https:\/\/)[^\s"'<>]+$/.test(s) ? s : ''; };
 router.get('/posts', (req, res) => {
   const kind = ['blog', 'notice', 'news'].includes(req.query.kind) ? req.query.kind : 'blog'; // 블로그는 전 권한 열람 가능(발행 현황), 쓰기는 총괄만
   const status = req.query.status ? ' AND status=?' : ''; const args = [kind]; if (req.query.status) args.push(req.query.status);
@@ -213,6 +215,7 @@ router.post('/posts', (req, res) => {
   const kind = ['blog', 'notice', 'news'].includes(b.kind) ? b.kind : 'blog';
   if (!postKindAllowed(req, res, kind)) return;
   let status = ['published', 'scheduled'].includes(b.status) ? b.status : 'draft';
+  if (status === 'scheduled' && req.admin.role !== 'owner') status = 'draft'; // 예약 발행은 총괄 전용(자동 발행 없음)
   let when = null; if (status === 'scheduled') { when = kstTs(b.publish_at); if (!when) return res.status(400).json({ error: '예약할 날짜·시각을 넣어 주세요.' }); if (when <= ts) status = 'published'; }
   const old = b.id ? db.prepare('SELECT * FROM posts WHERE id=?').get(b.id) : null; if (b.id && !old) return res.status(404).json({ error: 'not found' });
   let src = { sources: [], faq: [] }; try { src = { ...src, ...JSON.parse((old && old.source_urls) || '{}') }; } catch (_) { /* no-op */ } if (Array.isArray(src)) src = { sources: src, faq: [] };
@@ -220,15 +223,15 @@ router.post('/posts', (req, res) => {
   const pubAt = status === 'scheduled' ? when : status === 'published' ? (when || (old && old.status === 'published' && old.published_at) || ts) : (old ? old.published_at : null);
   if (old) {
     if (!postKindAllowed(req, res, old.kind)) return;
-    db.prepare('UPDATE posts SET kind=?,type=?,title=?,slug=?,excerpt=?,meta_description=?,body_html=?,tags=?,author=?,status=?,published_at=?,source_urls=?,updated_at=? WHERE id=?')
-      .run(kind, b.type || old.type, b.title, b.slug || old.slug, b.excerpt || '', b.meta_description || '', sanitizeHtml(b.body_html), b.tags || '', b.author || old.author, status, pubAt, JSON.stringify(src), ts, b.id);
+    db.prepare('UPDATE posts SET kind=?,type=?,title=?,slug=?,excerpt=?,meta_description=?,body_html=?,tags=?,author=?,status=?,published_at=?,source_urls=?,image=?,updated_at=? WHERE id=?')
+      .run(kind, b.type || old.type, b.title, b.slug || old.slug, b.excerpt || '', b.meta_description || '', sanitizeHtml(b.body_html), b.tags || '', b.author || old.author, status, pubAt, JSON.stringify(src), b.image !== undefined ? postImage(b.image) : (old.image || ''), ts, b.id);
     og.invalidate(`v3-post-${b.slug || old.slug}`);
     if (status === 'published') indexnow.submit([`/${kind === 'blog' ? 'blog' : kind}/${encodeURIComponent(b.slug || old.slug)}`]).catch(() => {});
     return res.json({ ok: true, id: Number(b.id), status });
   }
   let slug = slugify(b.slug || b.title, `${kind}-${ts.toString(36)}`); let n = 1; const base = slug; while (db.prepare('SELECT 1 FROM posts WHERE slug=?').get(slug)) slug = `${base}-${++n}`;
-  const info = db.prepare('INSERT INTO posts (kind,type,slug,title,excerpt,meta_description,body_html,tags,author,status,source,source_urls,published_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-    .run(kind, b.type || (kind === 'blog' ? 'guide' : null), slug, b.title, b.excerpt || truncate(stripHtml(b.body_html), 160), b.meta_description || '', sanitizeHtml(b.body_html), b.tags || '', b.author || '하나회원권거래소 편집팀', status, 'manual', JSON.stringify(src), pubAt, ts, ts);
+  const info = db.prepare('INSERT INTO posts (kind,type,slug,title,excerpt,meta_description,body_html,tags,author,status,source,source_urls,published_at,created_at,updated_at,image) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+    .run(kind, b.type || (kind === 'blog' ? 'guide' : null), slug, b.title, b.excerpt || truncate(stripHtml(b.body_html), 160), b.meta_description || '', sanitizeHtml(b.body_html), b.tags || '', b.author || '하나회원권거래소 편집팀', status, 'manual', JSON.stringify(src), pubAt, ts, ts, postImage(b.image));
   if (status === 'published') indexnow.submit([`/${kind === 'blog' ? 'blog' : kind}/${encodeURIComponent(slug)}`]).catch(() => {});
   res.json({ ok: true, id: Number(info.lastInsertRowid), status });
 });
@@ -238,7 +241,7 @@ router.post('/posts/:id/publish', async (req, res) => {
   const pub = req.body?.publish !== false; const ts = now();
   db.prepare('UPDATE posts SET status=?, published_at=?, updated_at=? WHERE id=?').run(pub ? 'published' : 'draft', pub ? Math.min(p.published_at || ts, ts) : p.published_at, ts, p.id);
   let ib = { skipped: true };
-  if (p.kind === 'blog') { const full = db.prepare('SELECT * FROM posts WHERE id=?').get(p.id); try { const j = JSON.parse(full.source_urls || '[]'); full.faq_json = JSON.stringify(j.faq || []); } catch (_) { full.faq_json = '[]'; } ib = await pushToInblog(full); if (!pub && full.inblog_id && inblog.enabled()) { try { await inblog.unpublish(full.inblog_id); db.prepare("UPDATE posts SET inblog_status='draft' WHERE id=?").run(p.id); } catch (_) { /* no-op */ } } }
+  if (p.kind === 'blog' && req.admin.role === 'owner') { const full = db.prepare('SELECT * FROM posts WHERE id=?').get(p.id); try { const j = JSON.parse(full.source_urls || '[]'); full.faq_json = JSON.stringify(j.faq || []); } catch (_) { full.faq_json = '[]'; } ib = await pushToInblog(full); if (!pub && full.inblog_id && inblog.enabled()) { try { await inblog.unpublish(full.inblog_id); db.prepare("UPDATE posts SET inblog_status='draft' WHERE id=?").run(p.id); } catch (_) { /* no-op */ } } }
   if (pub) indexnow.submit([`/${p.kind === 'blog' ? 'blog' : p.kind}/${p.slug}`]).catch(() => {});
   res.json({ ok: true, inblog: ib });
 });
